@@ -48,6 +48,18 @@ const I18N = {
     "work.more": "Ещё проекты",
     "work.lab": "Лаборатория и учебные",
     "work.lessons": "Учебные и pet-проекты",
+    "work.filterLabel": "Фильтр проектов",
+    "work.filterAll": "Все",
+    "work.filterWeb": "Интерфейсы",
+    "work.filterMobile": "Мобильные",
+    "work.filterAi": "ИИ-автоматизация",
+    "work.projectOne": "проект",
+    "work.projectFew": "проекта",
+    "work.projectMany": "проектов",
+    "work.details": "Подробнее",
+    "work.collapse": "Свернуть",
+    "work.labHint": "экспериментов",
+    "work.labPath": "~/lab",
     "skills.note.frontend": "Компонентный подход, состояние, анимации, доступность",
     "skills.note.backend": "Локальные API, SSE-стримы, безопасность, без лишних абстракций",
     "skills.note.mobile": "Кроссплатформенные приложения, Supabase, криптография на клиенте",
@@ -332,6 +344,18 @@ const I18N = {
     "work.more": "More projects",
     "work.lab": "Lab and study projects",
     "work.lessons": "Study and pet projects",
+    "work.filterLabel": "Project filters",
+    "work.filterAll": "All",
+    "work.filterWeb": "Web",
+    "work.filterMobile": "Mobile",
+    "work.filterAi": "AI",
+    "work.projectOne": "project",
+    "work.projectFew": "projects",
+    "work.projectMany": "projects",
+    "work.details": "Details",
+    "work.collapse": "Collapse",
+    "work.labHint": "experiments",
+    "work.labPath": "~/lab",
     "skills.note.frontend": "Component thinking, state, animation, accessibility",
     "skills.note.backend": "Local APIs, SSE streams, security, no needless abstractions",
     "skills.note.mobile": "Cross-platform apps, Supabase, client-side crypto",
@@ -624,93 +648,359 @@ function renderSkills() {
   });
 }
 
-function projectCard(project) {
-  const card = el("article", `project reveal${project.featured ? " featured" : ""}`);
-  card.style.setProperty("--accent", project.accent);
+const PROJECT_CATS = {
+  ciel: ["web", "ai"],
+  esep: ["mobile", "ai"],
+  tradepro: ["web"],
+  courses: ["web"],
+};
 
-  const main = el("div", "project-main");
-  const top = el("div", "project-top");
-  top.appendChild(el("h3", "project-title", pick(project, "title")));
-  if (project.featured) {
-    top.appendChild(el("span", "chip chip-featured", t("work.featured")));
-  }
-  top.appendChild(el("span", "chip chip-year mono", project.year));
-  main.appendChild(top);
-  main.appendChild(el("p", "project-desc", pick(project, "desc")));
+const WORK_FILTERS = [
+  ["all", "work.filterAll"],
+  ["web", "work.filterWeb"],
+  ["mobile", "work.filterMobile"],
+  ["ai", "work.filterAi"],
+];
 
-  const list = el("ul", "project-list");
-  pick(project, "points").forEach((point) => list.appendChild(el("li", null, point)));
-  main.appendChild(list);
+const FLIP_EASE = "cubic-bezier(0.16, 1, 0.3, 1)";
 
-  const links = el("div", "project-links");
-  project.links.forEach((link) => {
-    links.appendChild(
-      el(
-        "a",
-        "link",
-        `<span>${lang === "en" ? link.labelEn : link.label}</span><svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
-      ),
-    ).href = link.href;
-    links.lastChild.target = "_blank";
-    links.lastChild.rel = "noreferrer";
+let workFilter = "all";
+let openProject = null;
+
+function canAnimate() {
+  return !reduced && typeof Element.prototype.animate === "function";
+}
+
+function plural(count, one, few, many) {
+  const n10 = count % 10;
+  const n100 = count % 100;
+  if (n10 === 1 && n100 !== 11) return one;
+  if (n10 >= 2 && n10 <= 4 && (n100 < 10 || n100 >= 20)) return few;
+  return many;
+}
+
+function projectWord(count) {
+  if (lang !== "ru") return t("work.projectMany");
+  return plural(count, t("work.projectOne"), t("work.projectFew"), t("work.projectMany"));
+}
+
+function matchesFilter(card, filter) {
+  if (filter === "all") return true;
+  return card.dataset.cats.split(" ").includes(filter);
+}
+
+function captureRects(cards) {
+  const map = new Map();
+  cards.forEach((card) => {
+    if (!card.classList.contains("is-filtered")) map.set(card, card.getBoundingClientRect());
   });
-  links.appendChild(el("span", "link link-ghost", project.key));
-  main.appendChild(links);
+  return map;
+}
 
-  card.appendChild(main);
+function playFlip(cards, before, after) {
+  if (!canAnimate()) return;
+  cards.forEach((card) => {
+    if (card.classList.contains("is-filtered")) return;
+    const target = after.get(card);
+    const from = before.get(card);
+    if (!target) return;
+    if (!from) {
+      card.animate(
+        [
+          { opacity: 0, transform: "translateY(16px) scale(0.96)" },
+          { opacity: 1, transform: "translateY(0) scale(1)" },
+        ],
+        { duration: 460, easing: FLIP_EASE },
+      );
+      return;
+    }
+    const dx = from.left - target.left;
+    const dy = from.top - target.top;
+    if (Math.abs(dx) < 1 && Math.abs(dy) < 1) return;
+    card.animate(
+      [{ transform: `translate(${dx}px, ${dy}px)` }, { transform: "translate(0, 0)" }],
+      { duration: 520, easing: FLIP_EASE },
+    );
+  });
+}
+
+function withFlip(cards, mutate) {
+  const grid = document.querySelector(".work-grid");
+  const before = captureRects(cards);
+  grid.classList.add("is-measuring");
+  mutate();
+  const after = captureRects(cards);
+  grid.classList.remove("is-measuring");
+  playFlip(cards, before, after);
+}
+
+function setFilter(next) {
+  const grid = document.getElementById("projects");
+  if (!grid || next === workFilter) return;
+  const cards = [...grid.querySelectorAll(".project")];
+  const leaving = cards.filter(
+    (card) => !matchesFilter(card, next) && !card.classList.contains("is-filtered"),
+  );
+
+  const commit = () => {
+    cards.forEach((card) => card.classList.toggle("is-filtered", !matchesFilter(card, next)));
+    withFlip(cards, () => syncCount(cards));
+  };
+
+  if (!canAnimate() || !leaving.length) {
+    workFilter = next;
+    commit();
+    return;
+  }
+
+  const fade = leaving.map((card) =>
+    card
+      .animate([{ opacity: 1 }, { opacity: 0, transform: "scale(0.94)" }], {
+        duration: 200,
+        easing: "ease-in",
+        fill: "forwards",
+      })
+      .finished.catch(() => {}),
+  );
+
+  workFilter = next;
+  Promise.all(fade).then(() => {
+    commit();
+    leaving.forEach((card) => card.getAnimations().forEach((item) => item.cancel()));
+  });
+}
+
+function syncCount(cards) {
+  const total = cards.length;
+  const shown = cards.filter((card) => !card.classList.contains("is-filtered")).length;
+  const counter = document.querySelector(".work-count");
+  if (counter) {
+    counter.innerHTML = `<b>${shown}</b><i>/</i>${total}`;
+  }
+  const status = document.getElementById("workStatus");
+  if (status) {
+    status.textContent =
+      lang === "ru"
+        ? `Показано ${shown} из ${total} ${projectWord(total)}`
+        : `Showing ${shown} of ${total} ${t("work.projectMany")}`;
+  }
+}
+
+function setProjectOpen(card, open) {
+  const key = card.dataset.key;
+  const toggle = card.querySelector(".project-toggle");
+  card.classList.toggle("is-open", open);
+  toggle.setAttribute("aria-expanded", String(open));
+  toggle.querySelector("span").textContent = t(open ? "work.collapse" : "work.details");
+  openProject = open ? key : null;
+}
+
+function projectCard(project, index) {
+  const card = el("article", "project reveal");
+  card.dataset.key = project.key;
+  card.dataset.cats = (PROJECT_CATS[project.key] || []).join(" ");
+  card.style.setProperty("--accent", project.accent);
+  card.style.setProperty("--i", String(index));
+
+  const detailId = `work-detail-${project.key}`;
+  card.setAttribute("aria-labelledby", `work-title-${project.key}`);
+  card.appendChild(el("span", "project-rail"));
+
+  const top = el("div", "project-top");
+  top.appendChild(el("span", "project-num mono", String(index + 1).padStart(2, "0")));
+  const title = el("h3", "project-title", pick(project, "title"));
+  title.id = `work-title-${project.key}`;
+  top.appendChild(title);
+  if (project.featured) top.appendChild(el("span", "chip chip-featured", t("work.featured")));
+  top.appendChild(el("span", "chip chip-year mono", project.year));
+
+  const toggle = el(
+    "button",
+    "project-toggle",
+    `<span>${t("work.details")}</span><svg viewBox="0 0 24 24" width="12" height="12" aria-hidden="true"><path d="m6 9 6 6 6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+  );
+  toggle.type = "button";
+  toggle.setAttribute("aria-expanded", "false");
+  toggle.setAttribute("aria-controls", detailId);
+  top.appendChild(toggle);
+  card.appendChild(top);
+
+  card.appendChild(el("p", "project-tagline", pick(project, "tagline")));
 
   if (project.metrics.length) {
-    const side = el("div", "project-side");
-    side.appendChild(el("h4", null, t("work.metrics")));
+    const metrics = el("ul", "project-metrics");
     project.metrics.forEach(([value, label]) => {
-      side.appendChild(
-        el("div", "metric", `<b>${value}</b><span>${label}</span>`),
-      );
+      metrics.appendChild(el("li", null, `<b>${value}</b>${label}`));
     });
-    card.appendChild(side);
+    card.appendChild(metrics);
   }
 
+  const detail = el("div", "project-detail");
+  detail.id = detailId;
+  const inner = el("div", "project-detail-inner");
+
+  const text = el("div", "project-detail-text");
+  text.appendChild(el("p", "project-desc", pick(project, "desc")));
+  const list = el("ul", "project-list");
+  pick(project, "points").forEach((point) => list.appendChild(el("li", null, point)));
+  text.appendChild(list);
+  inner.appendChild(text);
+
+  const aside = el("div", "project-detail-aside");
+  const links = el("div", "project-links");
+  project.links.forEach((link) => {
+    const node = el(
+      "a",
+      "link",
+      `<span>${pick(link, "label")}</span><svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+    );
+    node.href = link.href;
+    node.target = "_blank";
+    node.rel = "noreferrer";
+    links.appendChild(node);
+  });
+  links.appendChild(el("span", "link link-ghost", project.key));
+  aside.appendChild(links);
+  inner.appendChild(aside);
+
+  detail.appendChild(inner);
+  card.appendChild(detail);
+
   return card;
+}
+
+function renderLabs(host) {
+  const labs = I18N[lang].labsList;
+  const wrap = el("div", "labs");
+  wrap.appendChild(el("h3", "sub-label reveal", t("work.lab")));
+
+  const console_ = el("div", "console reveal");
+  const bar = el(
+    "div",
+    "console-bar",
+    `<i>●</i><span>${t("work.labPath")}</span><em>${labs.length} ${t("work.labHint")}</em>`,
+  );
+  console_.appendChild(bar);
+
+  const list = el("ul", "console-list");
+  labs.forEach((lab, index) => {
+    const row = el(
+      "li",
+      "console-row",
+      `<span class="console-prompt" aria-hidden="true">›</span><span class="console-name">${pick(
+        lab,
+        "title",
+      )}</span><span class="console-note">${pick(lab, "desc")}</span><span class="console-tag">${
+        lab.tag
+      }</span>`,
+    );
+    row.style.setProperty("--i", String(index));
+    list.appendChild(row);
+  });
+  console_.appendChild(list);
+  wrap.appendChild(console_);
+  host.appendChild(wrap);
 }
 
 function renderProjects() {
   const host = document.getElementById("projects");
   host.textContent = "";
   const list = I18N[lang].projectsList;
+  openProject = (list.find((item) => item.featured) || list[0]).key;
+  workFilter = "all";
 
-  const featured = list.filter((item) => item.featured);
-  const rest = list.filter((item) => !item.featured);
+  const bar = el("div", "work-bar");
+  const filters = el("div", "filters");
+  filters.setAttribute("role", "group");
+  filters.setAttribute("aria-label", t("work.filterLabel"));
+  filters.appendChild(el("span", "filter-thumb"));
 
-  if (featured.length) {
-    const wrap = el("div", "projects");
-    featured.forEach((item) => wrap.appendChild(projectCard(item)));
-    host.appendChild(wrap);
-  }
-
-  const moreLabel = el("h3", "sub-label", t("work.more"));
-  moreLabel.style.margin = "38px 0 16px";
-  host.appendChild(moreLabel);
-
-  const grid = el("div", "grid-projects");
-  rest.forEach((item) => grid.appendChild(projectCard(item)));
-  host.appendChild(grid);
-
-  const labLabel = el("h3", "sub-label", t("work.lab"));
-  labLabel.style.margin = "40px 0 0";
-  host.appendChild(labLabel);
-
-  const labs = el("div", "small-projects");
-  I18N[lang].labsList.forEach((lab) => {
-    labs.appendChild(
-      el(
-        "article",
-        "small-card",
-        `<h5>${pick(lab, "title")}</h5><p>${pick(lab, "desc")}</p><span class="mono">${lab.tag}</span>`,
-      ),
-    );
+  WORK_FILTERS.forEach(([value, key]) => {
+    const chip = el("button", "filter", t(key));
+    chip.type = "button";
+    chip.dataset.filter = value;
+    chip.setAttribute("aria-pressed", String(value === workFilter));
+    filters.appendChild(chip);
   });
-  host.appendChild(labs);
+  bar.appendChild(filters);
+  bar.appendChild(el("p", "work-count mono", `<b>${list.length}</b><i>/</i>${list.length}`));
+  host.appendChild(bar);
+
+  const status = el("p", "sr-only");
+  status.id = "workStatus";
+  status.setAttribute("aria-live", "polite");
+  host.appendChild(status);
+
+  const grid = el("div", "work-grid");
+  list.forEach((project, index) => {
+    const card = projectCard(project, index);
+    if (project.key === openProject) setProjectOpen(card, true);
+    grid.appendChild(card);
+  });
+  host.appendChild(grid);
+  renderLabs(host);
+
+  const cards = [...grid.querySelectorAll(".project")];
+
+  filters.addEventListener("click", (event) => {
+    const chip = event.target.closest(".filter");
+    if (!chip) return;
+    filters.querySelectorAll(".filter").forEach((node) => {
+      node.setAttribute("aria-pressed", String(node === chip));
+    });
+    placeThumb(filters);
+    setFilter(chip.dataset.filter);
+  });
+
+  grid.addEventListener("click", (event) => {
+    const toggle = event.target.closest(".project-toggle");
+    if (!toggle) return;
+    const card = toggle.closest(".project");
+    const willOpen = !card.classList.contains("is-open");
+    const others = cards.filter((node) => node !== card && node.classList.contains("is-open"));
+    withFlip(cards, () => {
+      others.forEach((node) => setProjectOpen(node, false));
+      setProjectOpen(card, willOpen);
+    });
+    if (willOpen) placeThumb(filters);
+  });
+
+  grid.addEventListener("keydown", (event) => {
+    const toggles = cards
+      .filter((card) => !card.classList.contains("is-filtered"))
+      .map((card) => card.querySelector(".project-toggle"));
+    const index = toggles.indexOf(document.activeElement);
+    if (index < 0) return;
+    const step = { ArrowDown: 1, ArrowRight: 1, ArrowUp: -1, ArrowLeft: -1 }[event.key];
+    if (step) {
+      event.preventDefault();
+      toggles[(index + step + toggles.length) % toggles.length].focus();
+      return;
+    }
+    if (event.key === "Home" || event.key === "End") {
+      event.preventDefault();
+      toggles[event.key === "Home" ? 0 : toggles.length - 1].focus();
+      return;
+    }
+    if (event.key === "Escape") {
+      const card = toggles[index].closest(".project");
+      if (!card.classList.contains("is-open")) return;
+      withFlip(cards, () => setProjectOpen(card, false));
+    }
+  });
+
+  placeThumb(filters);
+  syncCount(cards);
 }
+
+function placeThumb(filters) {
+  const active = filters.querySelector('.filter[aria-pressed="true"]');
+  const thumb = filters.querySelector(".filter-thumb");
+  if (!active || !thumb) return;
+  thumb.style.width = `${active.offsetWidth}px`;
+  thumb.style.transform = `translateX(${active.offsetLeft - 5}px)`;
+}
+
 
 function renderTimeline() {
   const host = document.getElementById("timeline");
@@ -843,10 +1133,22 @@ function bindReveal() {
         if (entry.target.classList.contains("stat")) animateCounters();
       });
     },
-    { rootMargin: "0px 0px -12% 0px", threshold: 0.12 },
+    { rootMargin: "0px 0px -6% 0px", threshold: 0 },
   );
   items.forEach((item) => revealObserver.observe(item));
 }
+
+document.addEventListener("click", (event) => {
+  const link = event.target instanceof Element ? event.target.closest('a[href^="#"]') : null;
+  if (!link) return;
+  const id = link.getAttribute("href").slice(1);
+  const target = id ? document.getElementById(id) : null;
+  if (!target) return;
+  target.querySelectorAll(".reveal:not(.is-in)").forEach((node) => {
+    node.classList.add("is-in");
+    if (revealObserver) revealObserver.unobserve(node);
+  });
+});
 
 function animateCounters() {
   document.querySelectorAll(".stat-value").forEach((node) => {
@@ -910,6 +1212,8 @@ window.addEventListener(
 window.addEventListener("resize", () => {
   setActiveNav();
   if (window.innerWidth > 940) closeMenu();
+  const filters = document.querySelector(".filters");
+  if (filters) placeThumb(filters);
 });
 
 function closeMenu() {
