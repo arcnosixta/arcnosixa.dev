@@ -1,0 +1,228 @@
+<!doctype html>
+<html lang="ru" data-lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#0b0d0d" />
+    <meta
+      name="description"
+      content="Arcnosixa — frontend-разработчик: React, дизайн-системы, локальные сервисы и мобильные приложения. Портфолио и избранные проекты."
+    />
+    <meta name="color-scheme" content="dark" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Arcnosixa — frontend / React" />
+    <meta
+      property="og:description"
+      content="Портфолио frontend-разработчика: React, локальные сервисы, Flutter и Telegram Mini Apps."
+    />
+    <title>Arcnosixa — frontend / React</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230b0d0d'/%3E%3Cpath d='M9 22 16 9l7 13' stroke='%23d8f26c' stroke-width='2.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M12.5 18.5h7' stroke='%23d8f26c' stroke-width='2.5' stroke-linecap='round'/%3E%3C/svg%3E" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <a class="skip-link" href="#about" data-i18n="a11y.skip">К содержанию</a>
+
+    <div class="progress" aria-hidden="true"><span id="progressBar"></span></div>
+
+    <header class="topbar" id="topbar">
+      <a class="brand" href="#home">
+        <span class="brand-mark" aria-hidden="true">A</span>
+        <span class="brand-text">Arcnosixa</span>
+      </a>
+
+      <nav class="nav" id="nav" aria-label="Primary">
+        <a href="#about" data-i18n="nav.about">Обо мне</a>
+        <a href="#skills" data-i18n="nav.skills">Навыки</a>
+        <a href="#work" data-i18n="nav.work">Проекты</a>
+        <a href="#path" data-i18n="nav.path">Путь</a>
+        <a href="#contact" data-i18n="nav.contact">Контакты</a>
+      </nav>
+
+      <div class="topbar-actions">
+        <button class="lang" id="langToggle" type="button" aria-label="Switch language">
+          <span class="lang-item" data-lang-label="ru">RU</span>
+          <span class="lang-item" data-lang-label="en">EN</span>
+        </button>
+        <button class="burger" id="burger" type="button" aria-label="Menu" aria-expanded="false">
+          <span></span><span></span>
+        </button>
+      </div>
+    </header>
+
+    <main>
+      <section class="hero" id="home">
+        <div class="hero-glow" aria-hidden="true"></div>
+        <div class="hero-grid" aria-hidden="true"></div>
+        <canvas class="hero-canvas" id="hero-canvas" aria-hidden="true"></canvas>
+        <div class="cursor-glow" id="cursorGlow" aria-hidden="true"></div>
+
+        <div class="hero-inner">
+          <p class="eyebrow reveal">
+            <span class="dot" aria-hidden="true"></span>
+            <span data-i18n="hero.status">Открыт к проектам и стажировкам</span>
+          </p>
+
+          <h1 class="hero-title reveal" data-delay="1">
+            <span data-i18n="hero.hi">Привет, я</span>
+            <span class="accent">Arcnosixa</span>
+          </h1>
+
+          <p class="hero-role reveal" data-delay="2">
+            <span class="mono" data-i18n="hero.roleLabel">Роль:</span>
+            <span class="typed" id="typed"></span>
+          </p>
+
+          <p class="hero-lead reveal" data-delay="3" data-i18n="hero.lead">
+            Делаю интерфейсы, которые не стыдно показать: React-приложения, локальные
+            инструменты для работы с ИИ-агентами и мобильные продукты с упором на
+            производительность и детали.
+          </p>
+
+          <div class="hero-actions reveal" data-delay="4">
+            <a class="btn btn-primary" href="#work" data-i18n="hero.ctaWork">Смотреть проекты</a>
+            <a class="btn btn-ghost" href="#contact" data-i18n="hero.ctaContact">Написать мне</a>
+            <a class="btn btn-ghost" href="https://github.com/" target="_blank" rel="noreferrer">
+              <span>GitHub</span>
+              <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true">
+                <path
+                  d="M7 17 17 7M9 7h8v8"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.8"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
+            </a>
+          </div>
+
+          <div class="hero-cards reveal" data-delay="5">
+            <article class="mini-card">
+              <span class="mini-label" data-i18n="hero.nowLabel">Сейчас</span>
+              <p data-i18n="hero.now">Полирую Ciel: локальный мост к OpenCode, SSE-стримы и аккуратная типографика</p>
+            </article>
+            <article class="mini-card">
+              <span class="mini-label" data-i18n="hero.stackLabel">Стек</span>
+              <p class="mono" data-i18n="hero.stack">React 19 · Vite · TypeScript · Node · Flutter · Supabase</p>
+            </article>
+            <article class="mini-card">
+              <span class="mini-label" data-i18n="hero.focusLabel">Фокус</span>
+              <p data-i18n="hero.focus">Продуктовый фронтенд, локальные сервисы, интеграции ИИ-агентов</p>
+            </article>
+          </div>
+        </div>
+
+        <div class="hero-scroll" aria-hidden="true">
+          <span class="mono" data-i18n="hero.scroll">скролл</span>
+          <span class="line"></span>
+        </div>
+      </section>
+
+      <section class="section" id="about">
+        <div class="section-head reveal">
+          <span class="section-index mono">01</span>
+          <h2 data-i18n="about.title">Обо мне</h2>
+        </div>
+
+        <div class="about">
+          <div class="about-text reveal">
+            <p data-i18n="about.p1">
+              Я frontend-разработчик, которому нравится доводить продукты до конца: от
+              структуры данных и API до анимаций, состояния загрузки и текста ошибки.
+            </p>
+            <p data-i18n="about.p2">
+              Большую часть времени работаю с React: собираю интерфейсы, поднимаю локальные
+              сервисы, пишу логику на Node, прикручиваю ИИ-агентов к рабочим инструментам.
+              Отдельно люблю мобильную разработку на Flutter и Telegram Mini Apps.
+            </p>
+            <p data-i18n="about.p3">
+              Ценю простые решения без лишних зависимостей, читаемый код и то, что продукт
+              остаётся понятным после того, как я перестал его трогать.
+            </p>
+          </div>
+
+          <ul class="stats" data-delay="1" id="stats">
+            <li class="stat reveal">
+              <span class="stat-value mono" data-count="6">0</span>
+              <span class="stat-label" data-i18n="about.stat1">проектов в портфолио</span>
+            </li>
+            <li class="stat reveal">
+              <span class="stat-value mono" data-count="4">0</span>
+              <span class="stat-label" data-i18n="about.stat2">года коммерческой разработки</span>
+            </li>
+            <li class="stat reveal">
+              <span class="stat-value mono" data-count="2">0</span>
+              <span class="stat-label" data-i18n="about.stat3">языка интерфейса в проектах</span>
+            </li>
+            <li class="stat reveal">
+              <span class="stat-value mono" data-count="3">0</span>
+              <span class="stat-label" data-i18n="about.stat4">платформы: web, mobile, desktop</span>
+            </li>
+          </ul>
+        </div>
+      </section>
+
+      <section class="section" id="skills">
+        <div class="section-head reveal">
+          <span class="section-index mono">02</span>
+          <h2 data-i18n="skills.title">Навыки</h2>
+        </div>
+
+        <div class="skills" id="skillsGrid"></div>
+      </section>
+
+      <section class="section" id="work">
+        <div class="section-head reveal">
+          <span class="section-index mono">03</span>
+          <h2 data-i18n="work.title">Проекты</h2>
+        </div>
+
+        <div class="projects" id="projects"></div>
+      </section>
+
+      <section class="section" id="path">
+        <div class="section-head reveal">
+          <span class="section-index mono">04</span>
+          <h2 data-i18n="path.title">Путь</h2>
+        </div>
+
+        <ol class="timeline" id="timeline"></ol>
+      </section>
+
+      <section class="section contact" id="contact">
+        <div class="section-head reveal">
+          <span class="section-index mono">05</span>
+          <h2 data-i18n="contact.title">Контакты</h2>
+        </div>
+
+        <div class="contact-card reveal">
+          <p class="contact-lead" data-i18n="contact.lead">
+            Открыт к фронтенд-проектам, стажировкам и задачам, где нужен аккуратный интерфейс
+            и надёжная интеграция с ИИ. Пишите — отвечаю быстро.
+          </p>
+
+          <div class="contact-links" id="contactLinks"></div>
+
+          <p class="contact-note mono" data-i18n="contact.note">
+            Обычно отвечаю в течение дня. Люблю задачи с реальными пользователями.
+          </p>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <p class="mono">© <span id="year"></span> Arcnosixa</p>
+      <p class="mono" data-i18n="footer.built">Сделано вручную: HTML, CSS, немного JavaScript</p>
+    </footer>
+
+    <script src="scene3d.js"></script>
+    <script src="motion.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>

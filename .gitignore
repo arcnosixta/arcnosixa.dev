@@ -1,0 +1,14 @@
+# Служебное
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Логи и временное
+*.log
+npm-debug.log*
+.cache/
+
+# Редакторы
+.idea/
+.vscode/
+*.swp
