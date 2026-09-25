@@ -86,127 +86,6 @@ const I18N = {
       design: ["Figma", "Design tokens", "CSS Grid", "Dark UI", "Анимации", "A11y"],
       flow: ["Vite", "TypeScript", "Oxlint", "Vitest", "node:test", "Git"],
     },
-    "projectsList": [
-      {
-        key: "ciel",
-        featured: true,
-        accent: "#d8f26c",
-        year: "2026",
-        title: "Ciel",
-        titleEn: "Ciel",
-        tagline: "Локальное рабочее пространство для ИИ-агента",
-        taglineEn: "A local-first workspace for an AI coding agent",
-        desc: "Спокойная оболочка вокруг локальной установки OpenCode: пространства, файлы, память, плейбуки и подключённый агент с сессиями, стримингом, моделями, инструментами, разрешениями и диффами.",
-        descEn:
-          "A calm shell around a local OpenCode install: spaces, files, memory, playbooks and a connected agent with sessions, streaming, models, tools, permissions and diffs.",
-        points: [
-          "React 19 + Vite, тёмная тема, i18n RU/KZ, адаптив",
-          "Локальный мост на Node: JSON/SSE-прокси к серверу OpenCode",
-          "Проверки Host/Origin, биндинг только на loopback",
-          "Нормализация событий сессии, вопросы агенту, восстановление pending-вопросов",
-          "Тесты на node:test, линтинг Oxlint",
-        ],
-        pointsEn: [
-          "React 19 + Vite, dark theme, RU/KZ i18n, responsive",
-          "Node bridge: JSON/SSE proxy to the OpenCode server",
-          "Host/Origin checks, loopback-only binding",
-          "Session event normalization, agent questions, pending-question restore",
-          "node:test suites, Oxlint",
-        ],
-        metrics: [
-          ["~40", "событий сессии нормализовано"],
-          ["2", "потока: JSON и SSE"],
-          ["RU/KZ", "локализация интерфейса"],
-        ],
-        links: [{ label: "Живой сайт", labelEn: "Live site", href: "https://ciel-flax.vercel.app" }],
-      },
-      {
-        key: "esep",
-        accent: "#f49a70",
-        year: "2025—2026",
-        title: "ESEP",
-        titleEn: "ESEP",
-        tagline: "Оценка недвижимости: Flutter + Supabase",
-        taglineEn: "Real-estate appraisal: Flutter + Supabase",
-        desc: "Платформа для оценки объектов: заявки, кабинеты оценщика и компании, документы, отчёты, платежи, интеграция с egov и подпись документов.",
-        descEn:
-          "An appraisal platform: requests, appraiser and company dashboards, documents, reports, payments, egov integration and document signing.",
-        points: [
-          "Flutter 3 для Android, iOS, Web, desktop",
-          "Supabase: Auth, RLS для каждой роли, миграции SQL",
-          "Криптография на клиенте, secure storage, local auth",
-          "ИИ-модуль: разбор и проверка подписи, чат по делу",
-          "Push-уведомления, платежи, deploy-скрипт",
-        ],
-        pointsEn: [
-          "Flutter 3 for Android, iOS, Web, desktop",
-          "Supabase: Auth, per-role RLS, SQL migrations",
-          "Client-side crypto, secure storage, local auth",
-          "AI module: signature parsing and verification, case chat",
-          "Push notifications, payments, deploy script",
-        ],
-        metrics: [
-          ["6", "платформ из одной кодовой базы"],
-          ["24+", "экранов и сценариев"],
-          ["RLS", "изоляция данных по ролям"],
-        ],
-        links: [],
-      },
-      {
-        key: "tradepro",
-        accent: "#a8c9ff",
-        year: "2025",
-        title: "TradePro",
-        titleEn: "TradePro",
-        tagline: "Telegram Mini App для трейдеров",
-        taglineEn: "A Telegram Mini App for traders",
-        desc: "Приложение внутри Telegram: дашборд, сигналы и разбор сделок, авторизация через Telegram SDK, данные в Firebase.",
-        descEn:
-          "An in-Telegram app: dashboard, signals and trade reviews, Telegram SDK auth, Firebase backend.",
-        points: [
-          "React 19 + TypeScript + Vite",
-          "Telegram WebApp SDK: авторизация, тема, haptic",
-          "Firebase: Firestore, Storage, правила доступа",
-          "Motion для анимаций переходов и графиков",
-        ],
-        pointsEn: [
-          "React 19 + TypeScript + Vite",
-          "Telegram WebApp SDK: auth, theme, haptics",
-          "Firebase: Firestore, Storage, security rules",
-          "Motion for transitions and chart animations",
-        ],
-        metrics: [
-          ["TS", "строгий типобезопасный слой"],
-          ["1 клик", "вход через Telegram"],
-          ["Rules", "Firestore и Storage под контролем"],
-        ],
-        links: [],
-      },
-      {
-        key: "courses",
-        accent: "#d8f26c",
-        year: "2024",
-        title: "Trading Courses",
-        titleEn: "Trading Courses",
-        tagline: "Сайт курсов с прогрессией уроков",
-        taglineEn: "A course site with lesson progression",
-        desc: "Сайт с каталогом курсов, страницами уроков и прогрессом обучения. Акцент на читаемый контент и быстрые анимации переходов.",
-        descEn:
-          "A course catalogue with lesson pages and learning progress, focused on readable content and quick transitions.",
-        points: [
-          "React 19 + TypeScript + Vite, React Router",
-          "Motion: анимации списков и переходов",
-          "Адаптивная вёрстка и тёмная тема",
-        ],
-        pointsEn: [
-          "React 19 + TypeScript + Vite, React Router",
-          "Motion animations for lists and transitions",
-          "Responsive layout and dark theme",
-        ],
-        metrics: [],
-        links: [],
-      },
-    ],
     "labsList": [
       {
         title: "ML-эксперименты",
@@ -382,127 +261,6 @@ const I18N = {
       design: ["Figma", "Design tokens", "CSS Grid", "Dark UI", "Animation", "A11y"],
       flow: ["Vite", "TypeScript", "Oxlint", "Vitest", "node:test", "Git"],
     },
-    "projectsList": [
-      {
-        key: "ciel",
-        featured: true,
-        accent: "#d8f26c",
-        year: "2026",
-        title: "Ciel",
-        titleEn: "Ciel",
-        tagline: "A local-first workspace for an AI coding agent",
-        taglineEn: "A local-first workspace for an AI coding agent",
-        desc: "A calm shell around a local OpenCode install: spaces, files, memory, playbooks and a connected agent with sessions, streaming, models, tools, permissions and diffs.",
-        descEn:
-          "A calm shell around a local OpenCode install: spaces, files, memory, playbooks and a connected agent with sessions, streaming, models, tools, permissions and diffs.",
-        points: [
-          "React 19 + Vite, dark theme, RU/KZ i18n, responsive",
-          "Node bridge: JSON/SSE proxy to the OpenCode server",
-          "Host/Origin checks, loopback-only binding",
-          "Session event normalization, agent questions, pending-question restore",
-          "node:test suites, Oxlint",
-        ],
-        pointsEn: [
-          "React 19 + Vite, dark theme, RU/KZ i18n, responsive",
-          "Node bridge: JSON/SSE proxy to the OpenCode server",
-          "Host/Origin checks, loopback-only binding",
-          "Session event normalization, agent questions, pending-question restore",
-          "node:test suites, Oxlint",
-        ],
-        metrics: [
-          ["~40", "session events normalized"],
-          ["2", "streams: JSON and SSE"],
-          ["RU/KZ", "interface localization"],
-        ],
-        links: [{ label: "Live site", labelEn: "Live site", href: "https://ciel-flax.vercel.app" }],
-      },
-      {
-        key: "esep",
-        accent: "#f49a70",
-        year: "2025—2026",
-        title: "ESEP",
-        titleEn: "ESEP",
-        tagline: "Real-estate appraisal: Flutter + Supabase",
-        taglineEn: "Real-estate appraisal: Flutter + Supabase",
-        desc: "An appraisal platform: requests, appraiser and company dashboards, documents, reports, payments, egov integration and document signing.",
-        descEn:
-          "An appraisal platform: requests, appraiser and company dashboards, documents, reports, payments, egov integration and document signing.",
-        points: [
-          "Flutter 3 for Android, iOS, Web, desktop",
-          "Supabase: Auth, per-role RLS, SQL migrations",
-          "Client-side crypto, secure storage, local auth",
-          "AI module: signature parsing and verification, case chat",
-          "Push notifications, payments, deploy script",
-        ],
-        pointsEn: [
-          "Flutter 3 for Android, iOS, Web, desktop",
-          "Supabase: Auth, per-role RLS, SQL migrations",
-          "Client-side crypto, secure storage, local auth",
-          "AI module: signature parsing and verification, case chat",
-          "Push notifications, payments, deploy script",
-        ],
-        metrics: [
-          ["6", "platforms from one codebase"],
-          ["24+", "screens and flows"],
-          ["RLS", "per-role data isolation"],
-        ],
-        links: [],
-      },
-      {
-        key: "tradepro",
-        accent: "#a8c9ff",
-        year: "2025",
-        title: "TradePro",
-        titleEn: "TradePro",
-        tagline: "A Telegram Mini App for traders",
-        taglineEn: "A Telegram Mini App for traders",
-        desc: "An in-Telegram app: dashboard, signals and trade reviews, Telegram SDK auth, Firebase data.",
-        descEn:
-          "An in-Telegram app: dashboard, signals and trade reviews, Telegram SDK auth, Firebase data.",
-        points: [
-          "React 19 + TypeScript + Vite",
-          "Telegram WebApp SDK: auth, theme, haptics",
-          "Firebase: Firestore, Storage, security rules",
-          "Motion for transitions and chart animations",
-        ],
-        pointsEn: [
-          "React 19 + TypeScript + Vite",
-          "Telegram WebApp SDK: auth, theme, haptics",
-          "Firebase: Firestore, Storage, security rules",
-          "Motion for transitions and chart animations",
-        ],
-        metrics: [
-          ["TS", "strict type-safe layer"],
-          ["1 tap", "Telegram sign-in"],
-          ["Rules", "Firestore and Storage under control"],
-        ],
-        links: [],
-      },
-      {
-        key: "courses",
-        accent: "#d8f26c",
-        year: "2024",
-        title: "Trading Courses",
-        titleEn: "Trading Courses",
-        tagline: "A course site with lesson progression",
-        taglineEn: "A course site with lesson progression",
-        desc: "A course catalogue with lesson pages and learning progress, focused on readable content and quick transitions.",
-        descEn:
-          "A course catalogue with lesson pages and learning progress, focused on readable content and quick transitions.",
-        points: [
-          "React 19 + TypeScript + Vite, React Router",
-          "Motion animations for lists and transitions",
-          "Responsive layout and dark theme",
-        ],
-        pointsEn: [
-          "React 19 + TypeScript + Vite, React Router",
-          "Motion animations for lists and transitions",
-          "Responsive layout and dark theme",
-        ],
-        metrics: [],
-        links: [],
-      },
-    ],
     "labsList": [
       {
         title: "ML experiments",
@@ -593,6 +351,166 @@ const I18N = {
   },
 };
 
+/**
+ * Проекты: один источник данных на оба языка.
+ *
+ * Поле с суффиксом En — английский вариант, без него — русский. Каждая метрика
+ * задана тройкой [значение, ru, en]. Ниже I18N.ru/en.projectsList собираются из
+ * этого списка, поэтому тексты не расходятся при правках.
+ */
+const PROJECTS = [
+  {
+    key: "ciel",
+    featured: true,
+    accent: "#d8f26c",
+    year: "2026",
+    title: "Ciel",
+    titleEn: "Ciel",
+    tagline: "Локальное рабочее пространство для ИИ-агента",
+    taglineEn: "A local-first workspace for an AI coding agent",
+    desc: "Спокойная оболочка вокруг локальной установки OpenCode: пространства, файлы, память, плейбуки и подключённый агент с сессиями, стримингом, моделями, инструментами, разрешениями и диффами.",
+    descEn:
+      "A calm shell around a local OpenCode install: spaces, files, memory, playbooks and a connected agent with sessions, streaming, models, tools, permissions and diffs.",
+    points: [
+      "React 19 + Vite, тёмная тема, i18n RU/KZ, адаптив",
+      "Локальный мост на Node: JSON/SSE-прокси к серверу OpenCode",
+      "Проверки Host/Origin, биндинг только на loopback",
+      "Нормализация событий сессии, вопросы агенту, восстановление pending-вопросов",
+      "Тесты на node:test, линтинг Oxlint",
+    ],
+    pointsEn: [
+      "React 19 + Vite, dark theme, RU/KZ i18n, responsive",
+      "Node bridge: JSON/SSE proxy to the OpenCode server",
+      "Host/Origin checks, loopback-only binding",
+      "Session event normalization, agent questions, pending-question restore",
+      "node:test suites, Oxlint",
+    ],
+    metrics: [
+      ["~40", "событий сессии нормализовано", "session events normalized"],
+      ["2", "потока: JSON и SSE", "streams: JSON and SSE"],
+      ["RU/KZ", "локализация интерфейса", "interface localization"],
+    ],
+    links: [{ label: "Живой сайт", labelEn: "Live site", href: "https://ciel-flax.vercel.app" }],
+  },
+  {
+    key: "esep-web",
+    accent: "#f49a70",
+    year: "2025—2026",
+    title: "ESEP",
+    titleEn: "ESEP",
+    tagline: "Платформа онлайн-оценки: Flutter, Edge, Supabase",
+    taglineEn: "Online appraisal platform: Flutter, Edge, Supabase",
+    desc: "B2B-платформа оценки недвижимости: компания получает API-ключ, отправляет заявку на оценку и забирает готовый отчёт. Фронтенд — Flutter с одной кодовой базой на шесть платформ, бэкенд — Cloudflare Pages Functions и Supabase с RLS.",
+    descEn:
+      "A B2B real-estate appraisal platform: a company gets an API key, submits an appraisal request and collects the finished report. The frontend is Flutter from a single codebase across six platforms, the backend is Cloudflare Pages Functions plus Supabase with RLS.",
+    points: [
+      "Flutter 3: Android, iOS, Web, Windows, macOS, Linux",
+      "Cloudflare Pages Functions: платежи XPayment и Kaspi, ИИ-чат, FCM-push",
+      "Supabase: Auth, Postgres, RLS под каждую роль, PL/pgSQL-миграции",
+      "Публичный REST API v1: вебхуки, отчёты, PDF, шаблон заявки",
+      "Sentry, аналитика, автотесты функций на node:test",
+    ],
+    pointsEn: [
+      "Flutter 3: Android, iOS, Web, Windows, macOS, Linux",
+      "Cloudflare Pages Functions: XPayment and Kaspi payments, AI chat, FCM push",
+      "Supabase: Auth, Postgres, per-role RLS, PL/pgSQL migrations",
+      "Public REST API v1: webhooks, reports, PDF, request template",
+      "Sentry, analytics, function tests on node:test",
+    ],
+    metrics: [
+      ["v1", "публичный API для интеграторов", "public API for integrators"],
+      ["SHA-256", "ключи хранятся только хешами", "keys are stored as hashes only"],
+      ["6", "платформ из одной кодовой базы", "platforms from one codebase"],
+    ],
+    links: [{ label: "Живой сайт", labelEn: "Live site", href: "https://esep.pages.dev" }],
+  },
+  {
+    key: "osint-portal",
+    accent: "#a8c9ff",
+    year: "2026",
+    title: "OSINT Portal",
+    titleEn: "OSINT Portal",
+    tagline: "Весь OSINT-тулчейн в одном интерфейсе",
+    taglineEn: "The whole OSINT toolchain in one interface",
+    desc: "Платформа собирает локальные инструменты разведки в один интерфейс: Sherlock, nmap, netcat, whois и десятки других. У каждого инструмента свой воркбенч — выбор цели, палитра флагов, пресеты и живой лог запуска. Всё считается локально, данные не покидают машину.",
+    descEn:
+      "A platform that pulls local reconnaissance tools into one interface: Sherlock, nmap, netcat, whois and dozens more. Every tool gets its own workbench with target picking, a flag palette, presets and a live run log. Everything runs locally, data never leaves the machine.",
+    points: [
+      "Next.js 16, TypeScript, Tailwind v4, GSAP и Three.js на лендинге",
+      "18 модулей в 6 группах, детект установленных бинарников",
+      "17 живых сегментов: nmap, masscan, netcat, TLS, DNS, WHOIS",
+      "Граф сущностей и хранилище улик: запуск → /api/evidence → /api/graph",
+      "Фильтрация shell-метасимволов, allow-list целей, таймауты и лимиты вывода",
+    ],
+    pointsEn: [
+      "Next.js 16, TypeScript, Tailwind v4, GSAP and Three.js on the landing",
+      "18 modules in 6 groups, detection of locally installed binaries",
+      "17 live segments: nmap, masscan, netcat, TLS, DNS, WHOIS",
+      "Entity graph and evidence store: run → /api/evidence → /api/graph",
+      "Shell-metacharacter filtering, target allow-lists, timeouts and output caps",
+    ],
+    metrics: [
+      ["18", "инструментов в каталоге", "tools in the catalog"],
+      ["17", "живых сегментов запуска", "live run segments"],
+      ["Apache-2.0", "open source, self-hosted", "open source, self-hosted"],
+    ],
+    links: [{ label: "GitHub", labelEn: "GitHub", href: "https://github.com/arcnosixta/osint-portal" }],
+  },
+  {
+    key: "tradingagents",
+    accent: "#c9a8ff",
+    year: "2026",
+    title: "TradingAgents",
+    titleEn: "TradingAgents",
+    tagline: "Мультиагентный трейдинг-фреймворк с веб-интерфейсом",
+    taglineEn: "A multi-agent trading framework with a web UI",
+    desc: "Форк TauricResearch/TradingAgents: команда LLM-агентов повторяет работу реальной трейдинг-фирмы — фундаментальный, сентиментный и технический аналитики, трейдер, риск-менеджмент и портфельный управляющий спорят между собой и приходят к решению. Своё добавление — веб-приложение с живым прогрессом рана и историей запусков.",
+    descEn:
+      "A fork of TauricResearch/TradingAgents: a team of LLM agents mirrors a real trading firm — fundamental, sentiment and technical analysts, a trader, risk management and a portfolio manager debate each other and settle on a decision. My addition is a web app with live run progress and a run history.",
+    points: [
+      "Форк TauricResearch/TradingAgents (arXiv 2412.20138) и свои правки",
+      "Веб-приложение: FastAPI, Jinja2, статика, Dockerfile.web",
+      "SSE-стрим прогресса рана, история запусков в JSON",
+      "Свой CLI: конфиг, каталог моделей, статистика, анонсы",
+      "Мульти-провайдерные LLM, авто-детект ключей TRADINGAGENTS_*, Ollama",
+    ],
+    pointsEn: [
+      "Fork of TauricResearch/TradingAgents (arXiv 2412.20138) plus my changes",
+      "Web app: FastAPI, Jinja2, static assets, Dockerfile.web",
+      "SSE stream of run progress, run history stored as JSON",
+      "Own CLI: config, model catalog, stats, announcements",
+      "Multi-provider LLMs, TRADINGAGENTS_* key auto-detection, Ollama",
+    ],
+    metrics: [
+      ["5+", "ролей агентов в команде", "agent roles on the team"],
+      ["SSE", "прогресс рана в браузере", "run progress in the browser"],
+      ["JSON", "история каждого запуска", "history for every run"],
+    ],
+    links: [],
+  },
+];
+
+function localizeProjects(target) {
+  return PROJECTS.map((project) => {
+    const out = { ...project, links: project.links.map((link) => ({ ...link })) };
+    Object.keys(out).forEach((field) => {
+      if (!field.endsWith("En")) return;
+      const base = field.slice(0, -2);
+      if (target === "en") {
+        out[base] = project[field];
+        delete out[field];
+      } else {
+        delete out[field];
+      }
+    });
+    out.metrics = project.metrics.map(([value, ru, en]) => [value, target === "en" ? en : ru]);
+    return out;
+  });
+}
+
+I18N.ru.projectsList = localizeProjects("ru");
+I18N.en.projectsList = localizeProjects("en");
+
 const SKILL_ORDER = ["frontend", "backend", "mobile", "ai", "design", "flow"];
 
 const root = document.documentElement;
@@ -650,9 +568,9 @@ function renderSkills() {
 
 const PROJECT_CATS = {
   ciel: ["web", "ai"],
-  esep: ["mobile", "ai"],
-  tradepro: ["web"],
-  courses: ["web"],
+  "esep-web": ["web", "mobile", "ai"],
+  "osint-portal": ["web"],
+  tradingagents: ["ai"],
 };
 
 const WORK_FILTERS = [
@@ -930,6 +848,8 @@ function renderProjects() {
   status.id = "workStatus";
   status.setAttribute("aria-live", "polite");
   host.appendChild(status);
+
+  if (window.CoreBand) host.appendChild(window.CoreBand.attach(host));
 
   const grid = el("div", "work-grid");
   list.forEach((project, index) => {
