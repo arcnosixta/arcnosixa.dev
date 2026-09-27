@@ -49,7 +49,7 @@
   }
 
   function loadLib() {
-    if (!window.WebGLRenderingContext) {
+    if (reduced || !window.WebGLRenderingContext) {
       degrade();
       return;
     }

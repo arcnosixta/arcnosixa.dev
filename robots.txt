@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://arcnosixta.github.io/arcnosixa.dev/sitemap.xml

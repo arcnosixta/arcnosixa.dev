@@ -26,7 +26,17 @@
   let fine = finePointer.matches;
   let loopId = 0;
   let lastY = window.scrollY;
-  let pointer = { x: 0, y: 0, tx: 0, ty: 0, seen: false, queued: false };
+  let pointer = {
+    x: 0,
+    y: 0,
+    tx: 0,
+    ty: 0,
+    seen: false,
+    queued: false,
+    mx: 0,
+    my: 0,
+    magnetQueued: false,
+  };
   let magnetNode = null;
   let tiltNode = null;
 
@@ -97,6 +107,12 @@
     node.style.setProperty("--my", "0px");
   }
 
+  function applyMagnetFrame() {
+    pointer.magnetQueued = false;
+    if (!magnetNode) return;
+    applyMagnet(magnetNode, pointer.mx, pointer.my);
+  }
+
   function onPointerMove(event) {
     const x = event.clientX;
     const y = event.clientY;
@@ -116,7 +132,14 @@
         if (magnetNode) resetMagnet(magnetNode);
         magnetNode = node;
       }
-      if (node) applyMagnet(node, x, y);
+      if (node) {
+        pointer.mx = x;
+        pointer.my = y;
+        if (!pointer.magnetQueued) {
+          pointer.magnetQueued = true;
+          window.requestAnimationFrame(applyMagnetFrame);
+        }
+      }
 
       const card = target.closest(TILT);
       if (card !== tiltNode) {
@@ -244,6 +267,7 @@
     if (reduced) {
       window.cancelAnimationFrame(loopId);
       loopId = 0;
+      pointer.magnetQueued = false;
       if (magnetNode) resetMagnet(magnetNode);
       if (tiltNode) resetTilt(tiltNode);
     } else if (!loopId) {
@@ -265,6 +289,8 @@
       resetMagnet(magnetNode);
       magnetNode = null;
     }
+    pointer.queued = false;
+    pointer.magnetQueued = false;
   });
 
   if (document.readyState === "loading") {

@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ru" data-lang="ru">
+<html lang="ru">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -9,12 +9,27 @@
       content="Arcnosixa — frontend-разработчик: React, дизайн-системы, локальные сервисы и мобильные приложения. Портфолио и избранные проекты."
     />
     <meta name="color-scheme" content="dark" />
+    <meta name="author" content="Arcnosixa" />
+    <link rel="canonical" href="https://arcnosixta.github.io/arcnosixa.dev/" />
     <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Arcnosixa" />
+    <meta property="og:url" content="https://arcnosixta.github.io/arcnosixa.dev/" />
     <meta property="og:title" content="Arcnosixa — frontend / React" />
     <meta
       property="og:description"
       content="Портфолио frontend-разработчика: React, локальные сервисы, Flutter и Telegram Mini Apps."
     />
+    <meta property="og:image" content="https://arcnosixta.github.io/arcnosixa.dev/og.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Arcnosixa — frontend / React" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Arcnosixa — frontend / React" />
+    <meta
+      name="twitter:description"
+      content="Портфолио frontend-разработчика: React, локальные сервисы, Flutter и Telegram Mini Apps."
+    />
+    <meta name="twitter:image" content="https://arcnosixta.github.io/arcnosixa.dev/og.png" />
     <title>Arcnosixa — frontend / React</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -24,9 +39,63 @@
     />
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230b0d0d'/%3E%3Cpath d='M9 22 16 9l7 13' stroke='%23d8f26c' stroke-width='2.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M12.5 18.5h7' stroke='%23d8f26c' stroke-width='2.5' stroke-linecap='round'/%3E%3C/svg%3E" />
     <link rel="stylesheet" href="styles.css?v=4" />
+    <noscript>
+      <style>
+        .reveal,
+        .hero-title .accent,
+        .section-head h2 {
+          opacity: 1;
+          filter: none;
+          translate: none;
+          rotate: none;
+        }
+
+        .hero-canvas,
+        .cursor-glow,
+        .burger,
+        .progress {
+          display: none;
+        }
+
+        @media (max-width: 940px) {
+          .nav {
+            position: static;
+            opacity: 1;
+            visibility: visible;
+            transform: none;
+            pointer-events: auto;
+          }
+        }
+
+        .nojs-note {
+          display: block;
+          max-width: 62ch;
+          margin: 0 auto 42px;
+          padding: 14px 18px;
+          border: 1px solid var(--line-bright);
+          border-radius: var(--radius-sm);
+          color: var(--paper-muted);
+          font-size: 15px;
+        }
+      </style>
+    </noscript>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "Person",
+        "name": "Arcnosixa",
+        "url": "https://arcnosixta.github.io/arcnosixa.dev/",
+        "jobTitle": "Frontend Developer",
+        "knowsLanguage": ["ru", "en"],
+        "sameAs": [
+          "https://github.com/arcnosixta",
+          "https://t.me/arcnosixta"
+        ]
+      }
+    </script>
   </head>
   <body>
-    <a class="skip-link" href="#about" data-i18n="a11y.skip">К содержанию</a>
+    <a class="skip-link" href="#main" data-i18n="a11y.skip">К содержанию</a>
 
     <div class="progress" aria-hidden="true"><span id="progressBar"></span></div>
 
@@ -36,7 +105,7 @@
         <span class="brand-text">Arcnosixa</span>
       </a>
 
-      <nav class="nav" id="nav" aria-label="Primary">
+      <nav class="nav" id="nav" aria-label="Primary" data-i18n-aria="a11y.nav">
         <a href="#about" data-i18n="nav.about">Обо мне</a>
         <a href="#skills" data-i18n="nav.skills">Навыки</a>
         <a href="#work" data-i18n="nav.work">Проекты</a>
@@ -45,17 +114,41 @@
       </nav>
 
       <div class="topbar-actions">
-        <button class="lang" id="langToggle" type="button" aria-label="Switch language">
+        <button
+          class="lang"
+          id="langToggle"
+          type="button"
+          aria-label="Switch language"
+          data-i18n-aria="a11y.lang"
+        >
           <span class="lang-item" data-lang-label="ru">RU</span>
           <span class="lang-item" data-lang-label="en">EN</span>
         </button>
-        <button class="burger" id="burger" type="button" aria-label="Menu" aria-expanded="false">
+        <button
+          class="burger"
+          id="burger"
+          type="button"
+          aria-label="Menu"
+          aria-expanded="false"
+          data-i18n-aria="a11y.menu"
+        >
           <span></span><span></span>
         </button>
       </div>
     </header>
 
-    <main>
+    <main id="main" tabindex="-1">
+      <noscript>
+        <p class="nojs-note">
+          JavaScript выключен, поэтому список проектов, навыки, таймлайн и контакты не
+          подгрузились. Со страницы
+          <a href="https://github.com/arcnosixta" target="_blank" rel="noreferrer"
+            >профиля на GitHub</a
+          >
+          они доступны всегда.
+        </p>
+      </noscript>
+
       <section class="hero" id="home">
         <div class="hero-glow" aria-hidden="true"></div>
         <div class="hero-grid" aria-hidden="true"></div>
@@ -87,7 +180,7 @@
           <div class="hero-actions reveal" data-delay="4">
             <a class="btn btn-primary" href="#work" data-i18n="hero.ctaWork">Смотреть проекты</a>
             <a class="btn btn-ghost" href="#contact" data-i18n="hero.ctaContact">Написать мне</a>
-            <a class="btn btn-ghost" href="https://github.com/" target="_blank" rel="noreferrer">
+            <a class="btn btn-ghost" href="https://github.com/arcnosixta" target="_blank" rel="noreferrer">
               <span>GitHub</span>
               <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true">
                 <path
@@ -149,7 +242,7 @@
 
           <ul class="stats" data-delay="1" id="stats">
             <li class="stat reveal">
-              <span class="stat-value mono" data-count="6">0</span>
+              <span class="stat-value mono" data-count="4">0</span>
               <span class="stat-label" data-i18n="about.stat1">проектов в портфолио</span>
             </li>
             <li class="stat reveal">

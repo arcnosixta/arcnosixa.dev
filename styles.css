@@ -89,6 +89,11 @@ svg {
   border-radius: 6px;
 }
 
+main:focus,
+main:focus-visible {
+  outline: none;
+}
+
 .skip-link {
   position: fixed;
   top: -60px;
@@ -1422,7 +1427,9 @@ svg {
   position: relative;
   display: grid;
   gap: 8px;
+  margin: 0;
   padding-left: 26px;
+  list-style: none;
 }
 
 .timeline::before {
@@ -1765,13 +1772,18 @@ body.is-swapping .footer {
     opacity: 0;
     transform: translateY(-10px);
     pointer-events: none;
-    transition: opacity 0.25s var(--ease-out), transform 0.25s var(--ease-out);
+    visibility: hidden;
+    transition: opacity 0.25s var(--ease-out), transform 0.25s var(--ease-out),
+      visibility 0s linear 0.25s;
   }
 
   .nav.is-open {
     opacity: 1;
     transform: none;
     pointer-events: auto;
+    visibility: visible;
+    transition: opacity 0.25s var(--ease-out), transform 0.25s var(--ease-out),
+      visibility 0s linear 0s;
   }
 
   .nav a {

@@ -1,6 +1,12 @@
 const I18N = {
   ru: {
     "a11y.skip": "К содержанию",
+    "a11y.nav": "Основная навигация",
+    "a11y.lang": "Переключить язык",
+    "a11y.menu": "Меню",
+    "meta.title": "Arcnosixa — frontend / React",
+    "meta.description":
+      "Arcnosixa — frontend-разработчик: React, дизайн-системы, локальные сервисы и мобильные приложения. Портфолио и избранные проекты.",
     "nav.about": "Обо мне",
     "nav.skills": "Навыки",
     "nav.work": "Проекты",
@@ -154,15 +160,15 @@ const I18N = {
       {
         label: "Telegram",
         labelEn: "Telegram",
-        value: "@arcnosixa",
-        href: "https://t.me/arcnosixa",
+        value: "@arcnosixta",
+        href: "https://t.me/arcnosixta",
         icon: "M12 3c-5 0-9 4.4-9 9.5 0 1.6.4 3.2 1.2 4.6L3 21l4-1.1c1.3.7 2.8 1.1 5 1.1 5 0 9-4.4 9-9.5S17 3 12 3Zm4.6 13.2c-.2.5-1 .9-1.4 1-.4.1-.8.2-2.7-.6-2.3-1-3.7-3.3-3.8-3.4-.1-.2-.9-1.2-.9-2.3 0-1.1.6-1.6.8-1.8.2-.2.4-.3.6-.3h.4c.1 0 .3 0 .5.4l.7 1.7c.1.2.1.3 0 .5l-.3.5-.4.4c-.1.1-.3.3-.1.6.2.3.7 1.1 1.5 1.8 1 .9 1.8 1.2 2.1 1.3.3.1.4.1.6-.1l.9-1c.2-.3.4-.2.7-.1l1.7.8c.3.1.5.2.5.3.1.2.1.7-.1 1.2Z",
       },
       {
         label: "GitHub",
         labelEn: "GitHub",
-        value: "github.com/arcnosixa",
-        href: "https://github.com/arcnosixa",
+        value: "github.com/arcnosixta",
+        href: "https://github.com/arcnosixta",
         icon: "M12 2a10 10 0 0 0-3.2 19.5c.5.1.7-.2.7-.5v-1.8c-2.8.6-3.4-1.3-3.4-1.3-.4-1.2-1.1-1.5-1.1-1.5-.9-.6.1-.6.1-.6 1 .1 1.5 1 1.5 1 .9 1.5 2.3 1.1 2.9.8.1-.6.4-1.1.6-1.3-2.2-.3-4.6-1.1-4.6-5 0-1.1.4-2 1-2.7-.1-.3-.4-1.3.1-2.6 0 0 .8-.3 2.7 1a9.4 9.4 0 0 1 5 0c1.9-1.3 2.7-1 2.7-1 .5 1.3.2 2.3.1 2.6.6.7 1 1.6 1 2.7 0 3.9-2.4 4.7-4.6 5 .4.3.7.9.7 1.9v2.8c0 .3.2.6.7.5A10 10 0 0 0 12 2Z",
       },
       {
@@ -177,6 +183,12 @@ const I18N = {
   },
   en: {
     "a11y.skip": "Skip to content",
+    "a11y.nav": "Primary navigation",
+    "a11y.lang": "Switch language",
+    "a11y.menu": "Menu",
+    "meta.title": "Arcnosixa — frontend / React",
+    "meta.description":
+      "Arcnosixa — frontend developer: React, design systems, local services and mobile apps. Portfolio and selected projects.",
     "nav.about": "About",
     "nav.skills": "Skills",
     "nav.work": "Work",
@@ -328,15 +340,15 @@ const I18N = {
       {
         label: "Telegram",
         labelEn: "Telegram",
-        value: "@arcnosixa",
-        href: "https://t.me/arcnosixa",
+        value: "@arcnosixta",
+        href: "https://t.me/arcnosixta",
         icon: "M12 3c-5 0-9 4.4-9 9.5 0 1.6.4 3.2 1.2 4.6L3 21l4-1.1c1.3.7 2.8 1.1 5 1.1 5 0 9-4.4 9-9.5S17 3 12 3Zm4.6 13.2c-.2.5-1 .9-1.4 1-.4.1-.8.2-2.7-.6-2.3-1-3.7-3.3-3.8-3.4-.1-.2-.9-1.2-.9-2.3 0-1.1.6-1.6.8-1.8.2-.2.4-.3.6-.3h.4c.1 0 .3 0 .5.4l.7 1.7c.1.2.1.3 0 .5l-.3.5-.4.4c-.1.1-.3.3-.1.6.2.3.7 1.1 1.5 1.8 1 .9 1.8 1.2 2.1 1.3.3.1.4.1.6-.1l.9-1c.2-.3.4-.2.7-.1l1.7.8c.3.1.5.2.5.3.1.2.1.7-.1 1.2Z",
       },
       {
         label: "GitHub",
         labelEn: "GitHub",
-        value: "github.com/arcnosixa",
-        href: "https://github.com/arcnosixa",
+        value: "github.com/arcnosixta",
+        href: "https://github.com/arcnosixta",
         icon: "M12 2a10 10 0 0 0-3.2 19.5c.5.1.7-.2.7-.5v-1.8c-2.8.6-3.4-1.3-3.4-1.3-.4-1.2-1.1-1.5-1.1-1.5-.9-.6.1-.6.1-.6 1 .1 1.5 1 1.5 1 .9 1.5 2.3 1.1 2.9.8.1-.6.4-1.1.6-1.3-2.2-.3-4.6-1.1-4.6-5 0-1.1.4-2 1-2.7-.1-.3-.4-1.3.1-2.6 0 0 .8-.3 2.7 1a9.4 9.4 0 0 1 5 0c1.9-1.3 2.7-1 2.7-1 .5 1.3.2 2.3.1 2.6.6.7 1 1.6 1 2.7 0 3.9-2.4 4.7-4.6 5 .4.3.7.9.7 1.9v2.8c0 .3.2.6.7.5A10 10 0 0 0 12 2Z",
       },
       {
@@ -661,8 +673,10 @@ function setFilter(next) {
   );
 
   const commit = () => {
-    cards.forEach((card) => card.classList.toggle("is-filtered", !matchesFilter(card, next)));
-    withFlip(cards, () => syncCount(cards));
+    withFlip(cards, () => {
+      cards.forEach((card) => card.classList.toggle("is-filtered", !matchesFilter(card, next)));
+      syncCount(cards);
+    });
   };
 
   if (!canAnimate() || !leaving.length) {
@@ -930,7 +944,7 @@ function renderTimeline() {
       "li",
       "tl-item reveal",
       `<div class="tl-when">${item.when}</div>
-       <div>
+       <div class="tl-body">
          <h3 class="tl-title">${item.title}</h3>
          <span class="tl-where">${item.where}</span>
          <p class="tl-desc">${pick(item, "desc")}</p>
@@ -969,12 +983,24 @@ function applyStaticText() {
   document.querySelectorAll("[data-i18n]").forEach((node) => {
     node.textContent = t(node.dataset.i18n);
   });
-  document.title =
-    lang === "ru" ? "Arcnosixa — frontend / React" : "Arcnosixa — frontend / React";
+  document.querySelectorAll("[data-i18n-aria]").forEach((node) => {
+    node.setAttribute("aria-label", t(node.dataset.i18nAria));
+  });
+  const title = t("meta.title");
+  const description = t("meta.description");
+  document.title = title;
+  syncMeta("name", "description", description);
+  syncMeta("property", "og:title", title);
+  syncMeta("property", "og:description", description);
   document.documentElement.lang = lang;
   document.querySelectorAll("[data-lang-label]").forEach((node) => {
     node.classList.toggle("is-on", node.dataset.langLabel === lang);
   });
+}
+
+function syncMeta(attr, name, content) {
+  const node = document.querySelector(`meta[${attr}="${name}"]`);
+  if (node) node.setAttribute("content", content);
 }
 
 function renderAll() {

@@ -11,7 +11,6 @@ three.js лежит в `vendor/` и грузится лениво, поэтом�
 Для проверки в браузере с корректными шрифтами и кешем:
 
 ```bash
-cd portfolio
 python3 -m http.server 4173
 # http://localhost:4173
 ```
@@ -26,7 +25,23 @@ python3 -m http.server 4173
 | `motion.js` | Разбивка текста, магнитные кнопки, наклон карточек, скролл-эффекты |
 | `core.js` | Объект в средней части секции проектов: состояние от колеса мыши |
 | `scene3d.js` | 3D-сцена hero: модели, свет, параллакс, вращение |
+| `404.html` | Страница «не найдено» для GitHub Pages |
+| `og.png` | Картинка предпросмотра ссылки 1200×630 |
+| `robots.txt` | Разрешает индексацию и указывает на `sitemap.xml` |
+| `sitemap.xml` | Единственная страница сайта с каноническим URL |
 | `vendor/three.min.js` | three.js r147, UMD (см. `vendor/README.md`) |
+| `.github/workflows/pages.yml` | Деплой `main` → GitHub Pages с cache-busting |
+
+## Доступность
+
+- «Skip to content» — первая ссылка в табуляции, ведёт на `<main id="main">`.
+- Мобильное меню на `visibility: hidden`, поэтому закрытые ссылки не ловят фокус.
+- Иконка бургера, язык и фильтры подписаны через `data-i18n-aria` и
+  `data-i18n-aria-label` в разметке; ключи лежат в `I18N.*.a11y`.
+- `aria-pressed` у чипов-фильтров, счётчик проектов дублируется в `aria-live`.
+- Полоса с ядром помечена `aria-hidden` и не читается скринридерами.
+- Без JS страница остаётся читаемой: контент в разметке, меню раскрыто, декоративные
+  слои (`no-gl`) скрыты. Тексты подменяются скриптом, но в разметке лежит русский вариант.
 
 ## 3D-сцена
 
@@ -116,19 +131,33 @@ python3 -m http.server 4173
 
 ## Что заменить перед публикацией
 
-- Контакты в `I18N.*.contactsList`: сейчас плейсхолдеры `@arcnosixa`,
-  `github.com/arcnosixa`, `hello@arcnosixa.dev`.
-- Ссылки на проекты в `links`: у Ciel и ESEP стоят живые сайты, у OSINT Portal —
-  публичный репозиторий. У TradingAgents репозиторий приватный, поэтому ссылка пустая:
-  вместо неё карточка показывает имя ключа.
-- Счётчики в `index.html` (`data-count`) — подставь свои цифры.
-- `<title>`, `description` и og-теги в `index.html`.
-- Ссылки GitHub/Telegram в hero и футере.
+- Ссылки на проекты в `PROJECTS.links`: у Ciel и ESEP стоят живые сайты, у OSINT Portal —
+  публичный репозиторий. У TradingAgents репозиторий приватный, поэтому `links: []` и
+  вместо ссылки карточка показывает имя ключа. Пустые `links` — не ошибка, а заглушка.
+- Счётчики в `index.html` (`data-count`) — подставь свои цифры. Сейчас стоят `4`
+  проекта в портфолио, `4` года коммерческой разработки, `2` языка интерфейса и `3`
+  платформы (web, mobile, desktop).
+- Число проектов дублируется в hero (`data-count` рядом со счётчиком) и в
+  `I18N.*.workStatus` собирается из списка, поэтому руками его править не нужно.
+- Ссылка `https://arcnosixa.dev/` в `canonical`, `og:url` и `hreflang` в `index.html`
+  заменяется на фактический домен, если он не совпадает с `arcnosixta.github.io`.
+
+Проверено и готово: контакты `t.me/arcnosixta` и `github.com/arcnosixta`,
+`title`/`description`/`og` в обоих языках, `og.png`, `robots.txt`, `sitemap.xml`,
+`404.html`.
+
+## SEO
+
+В `<head>` уже стоят `canonical`, `description`, Open Graph, Twitter Card и
+JSON-LD (`Person`). Русский вариант в разметке, английский подставляет
+`applyStaticText()` из `I18N.en.meta.*` — поэтому после переключения языка
+`document.title`, `description` и `og:title`/`og:description` меняются вместе с
+интерфейсом. Сам `og:url` и `canonical` статичны: язык не меняет адрес страницы.
 
 ## Деплой
 
-Папка статическая: подойдут Vercel, Netlify, GitHub Pages, Cloudflare Pages. Загрузи
-содержимое `portfolio/` как корень сайта — сборка не требуется.
+Папка статическая: подойдут Vercel, Netlify, GitHub Pages, Cloudflare Pages.
+Загрузи содержимое репозитория как корень сайта — сборка не требуется.
 
 Для GitHub Pages в репозитории уже есть `.github/workflows/pages.yml`: после пуша в
 `main` статика публикуется как сайт. Перед загрузкой workflow подставляет в ссылки на

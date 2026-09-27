@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#0b0d0d" />
+    <meta name="robots" content="noindex" />
+    <meta name="color-scheme" content="dark" />
+    <title>Страница не найдена — Arcnosixa</title>
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230b0d0d'/%3E%3Cpath d='M9 22 16 9l7 13' stroke='%23d8f26c' stroke-width='2.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M12.5 18.5h7' stroke='%23d8f26c' stroke-width='2.5' stroke-linecap='round'/%3E%3C/svg%3E"
+    />
+    <link rel="stylesheet" href="./styles.css" />
+    <style>
+      .nf {
+        display: grid;
+        min-height: 100dvh;
+        place-content: center;
+        justify-items: start;
+        gap: 18px;
+        padding: 48px clamp(16px, 4vw, 40px);
+        max-width: 720px;
+        margin: 0 auto;
+      }
+
+      .nf-code {
+        font-size: clamp(72px, 18vw, 168px);
+        font-weight: 800;
+        line-height: 0.9;
+        letter-spacing: -0.05em;
+        color: var(--lime);
+      }
+
+      .nf h1 {
+        font-size: clamp(24px, 4.4vw, 40px);
+        font-weight: 800;
+        letter-spacing: -0.035em;
+      }
+
+      .nf p {
+        max-width: 56ch;
+        font-size: clamp(15px, 1.7vw, 18px);
+        color: var(--paper-muted);
+      }
+
+      .nf-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-top: 10px;
+      }
+    </style>
+  </head>
+  <body>
+    <main class="nf">
+      <span class="nf-code mono">404</span>
+      <h1>Такой страницы нет</h1>
+      <p>
+        Похоже, адрес набран с опечаткой или страница переехала. Вернись на главную —
+        там все разделы: навыки, проекты, путь и контакты.
+      </p>
+      <div class="nf-actions">
+        <a class="btn btn-primary" href="./">На главную</a>
+        <a class="btn btn-ghost" href="./#work">Смотреть проекты</a>
+      </div>
+    </main>
+  </body>
+</html>
