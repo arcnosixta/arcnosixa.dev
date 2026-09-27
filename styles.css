@@ -23,8 +23,8 @@
   --line: rgb(var(--ch-paper) / 0.1);
   --line-bright: rgb(var(--ch-paper) / 0.22);
   --lime: rgb(var(--ch-lime));
-  --lime-hi: var(--lime-hi);
-  --lime-pale: var(--lime-pale);
+  --lime-hi: #e4f88c;
+  --lime-pale: #f3f7c9;
   --lime-ink: rgb(var(--ch-lime));
   --lime-soft: rgb(var(--ch-lime) / 0.14);
   --orange: rgb(var(--ch-orange));
