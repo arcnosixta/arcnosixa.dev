@@ -193,70 +193,72 @@
       </noscript>
 
       <section class="hero" id="home">
-        <div class="hero-glow" aria-hidden="true"></div>
-        <div class="hero-grid" aria-hidden="true"></div>
-        <canvas class="hero-canvas" id="hero-canvas" aria-hidden="true"></canvas>
-        <div class="cursor-glow" id="cursorGlow" aria-hidden="true"></div>
+        <div class="hero-stage">
+          <div class="hero-glow" aria-hidden="true"></div>
+          <div class="hero-grid" aria-hidden="true"></div>
+          <canvas class="hero-canvas" id="hero-canvas" aria-hidden="true"></canvas>
+          <div class="cursor-glow" id="cursorGlow" aria-hidden="true"></div>
 
-        <div class="hero-inner">
-          <p class="eyebrow reveal">
-            <span class="dot" aria-hidden="true"></span>
-            <span data-i18n="hero.status">Открыт к проектам и стажировкам</span>
-          </p>
+          <div class="hero-inner">
+            <p class="eyebrow reveal">
+              <span class="dot" aria-hidden="true"></span>
+              <span data-i18n="hero.status">Открыт к проектам и стажировкам</span>
+            </p>
 
-          <h1 class="hero-title reveal" data-delay="1">
-            <span data-i18n="hero.hi">Привет, я</span>
-            <span class="accent">Arcnosixa</span>
-          </h1>
+            <h1 class="hero-title reveal" data-delay="1">
+              <span data-i18n="hero.hi">Привет, я</span>
+              <span class="accent">Arcnosixa</span>
+            </h1>
 
-          <p class="hero-role reveal" data-delay="2">
-            <span class="mono" data-i18n="hero.roleLabel">Роль:</span>
-            <span class="typed" id="typed"></span>
-          </p>
+            <p class="hero-role reveal" data-delay="2">
+              <span class="mono" data-i18n="hero.roleLabel">Роль:</span>
+              <span class="typed" id="typed"></span>
+            </p>
 
-          <p class="hero-lead reveal" data-delay="3" data-i18n="hero.lead">
-            Делаю интерфейсы, которые не стыдно показать: React-приложения, локальные
-            инструменты для работы с ИИ-агентами и мобильные продукты с упором на
-            производительность и детали.
-          </p>
+            <p class="hero-lead reveal" data-delay="3" data-i18n="hero.lead">
+              Делаю интерфейсы, которые не стыдно показать: React-приложения, локальные
+              инструменты для работы с ИИ-агентами и мобильные продукты с упором на
+              производительность и детали.
+            </p>
 
-          <div class="hero-actions reveal" data-delay="4">
-            <a class="btn btn-primary" href="#work" data-i18n="hero.ctaWork">Смотреть проекты</a>
-            <a class="btn btn-ghost" href="#contact" data-i18n="hero.ctaContact">Написать мне</a>
-            <a class="btn btn-ghost" href="https://github.com/arcnosixta" target="_blank" rel="noreferrer">
-              <span>GitHub</span>
-              <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true">
-                <path
-                  d="M7 17 17 7M9 7h8v8"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="1.8"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                />
-              </svg>
-            </a>
+            <div class="hero-actions reveal" data-delay="4">
+              <a class="btn btn-primary" href="#work" data-i18n="hero.ctaWork">Смотреть проекты</a>
+              <a class="btn btn-ghost" href="#contact" data-i18n="hero.ctaContact">Написать мне</a>
+              <a class="btn btn-ghost" href="https://github.com/arcnosixta" target="_blank" rel="noreferrer">
+                <span>GitHub</span>
+                <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true">
+                  <path
+                    d="M7 17 17 7M9 7h8v8"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.8"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                </svg>
+              </a>
+            </div>
+
+            <div class="hero-cards reveal" data-delay="5">
+              <article class="mini-card">
+                <span class="mini-label" data-i18n="hero.nowLabel">Сейчас</span>
+                <p data-i18n="hero.now">Полирую Ciel: локальный мост к OpenCode, SSE-стримы и аккуратная типографика</p>
+              </article>
+              <article class="mini-card">
+                <span class="mini-label" data-i18n="hero.stackLabel">Стек</span>
+                <p class="mono" data-i18n="hero.stack">React 19 · Vite · TypeScript · Node · Flutter · Supabase</p>
+              </article>
+              <article class="mini-card">
+                <span class="mini-label" data-i18n="hero.focusLabel">Фокус</span>
+                <p data-i18n="hero.focus">Продуктовый фронтенд, локальные сервисы, интеграции ИИ-агентов</p>
+              </article>
+            </div>
           </div>
 
-          <div class="hero-cards reveal" data-delay="5">
-            <article class="mini-card">
-              <span class="mini-label" data-i18n="hero.nowLabel">Сейчас</span>
-              <p data-i18n="hero.now">Полирую Ciel: локальный мост к OpenCode, SSE-стримы и аккуратная типографика</p>
-            </article>
-            <article class="mini-card">
-              <span class="mini-label" data-i18n="hero.stackLabel">Стек</span>
-              <p class="mono" data-i18n="hero.stack">React 19 · Vite · TypeScript · Node · Flutter · Supabase</p>
-            </article>
-            <article class="mini-card">
-              <span class="mini-label" data-i18n="hero.focusLabel">Фокус</span>
-              <p data-i18n="hero.focus">Продуктовый фронтенд, локальные сервисы, интеграции ИИ-агентов</p>
-            </article>
+          <div class="hero-scroll" aria-hidden="true">
+            <span class="mono" data-i18n="hero.scroll">скролл</span>
+            <span class="line"></span>
           </div>
-        </div>
-
-        <div class="hero-scroll" aria-hidden="true">
-          <span class="mono" data-i18n="hero.scroll">скролл</span>
-          <span class="line"></span>
         </div>
       </section>
 

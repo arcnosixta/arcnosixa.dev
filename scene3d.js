@@ -1,9 +1,14 @@
 /**
- * Hero 3D: процедурные модели на three.js.
+ * Hero 3D: процедурная сборка компьютера на three.js.
  *
  * Скрипт грузится синхронно, но сама библиотека подтягивается лениво уже после
  * первого рендера — если WebGL недоступен или пользователь просил меньше
  * движения, страница остаётся ровно такой же, как без этого файла.
+ *
+ * Механика: секция 01 вдвое выше экрана, внутри липкая сцена. Прогресс прокрутки
+ * по «лишней» высоте сцены собирает комплектующие по порядку (корпус → плата →
+ * кулер → память → БП → видеокарта → вентиляторы → панели), а прокрутка вверх
+ * разбирает их тем же путём назад. Вентиляторы раскручиваются по мере сборки.
  */
 (function () {
   "use strict";
@@ -11,6 +16,7 @@
   const canvas = document.getElementById("hero-canvas");
   const hero = document.getElementById("home");
   if (!canvas || !hero) return;
+  const stage = hero.querySelector(".hero-stage") || hero;
 
   const motionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
   const finePointer = window.matchMedia("(pointer: fine)");
@@ -19,42 +25,62 @@
   const COMPACT = 940;
 
   /* Сцена рисуется поверх страницы с прозрачным фоном, поэтому палитра зависит
-     от темы: в светлой аддитивное смешение и белые точки гаснут, а тёмное ядро
-     превращается в тёмное пятно. Роли материалов перекрашиваются на лету. */
+     от темы: в светлой аддитивное смешение и белые точки гаснут, а тёмные
+     пластики превращаются в тёмные пятна. Роли материалов перекрашиваются на лету. */
   const PALETTE = {
     dark: {
-      solid: 0x1a211c,
-      solidEmissive: 0x1d2a12,
-      solidEmissiveIntensity: 1,
-      edges: 0xd8f26c,
-      edgesOpacity: 0.85,
-      shell: 0xa8c9ff,
-      shellOpacity: 0.26,
-      ringA: 0xd8f26c,
-      ringB: 0xa8c9ff,
-      sat: [0xd8f26c, 0xefeee7, 0xa8c9ff],
-      satEmissive: 0.18,
+      body: 0x161d18,
+      bodyEmissive: 0x1d2a12,
+      bodyEmissiveIntensity: 1,
+      bodyEdge: 0xd8f26c,
+      bodyEdgeOpacity: 0.82,
+      board: 0x1e2a20,
+      boardEdge: 0x8fb03c,
+      chip: 0x9db8e8,
+      chipEdge: 0xa8c9ff,
+      chipEmissive: 0x1d3f6b,
+      chipEmissiveIntensity: 0.6,
+      ram: 0x22304a,
+      ramEdge: 0x7ba0dd,
+      psu: 0x191f1b,
+      psuEdge: 0x606d5d,
+      fan: 0x27322a,
+      panel: 0xa8c9ff,
+      panelEdge: 0xa8c9ff,
+      panelEdgeOpacity: 0.3,
+      panelOpacity: 0.09,
+      led: 0xd8f26c,
       dust: 0xefeee7,
       dustOpacity: 0.5,
       ambient: 0x2b3527,
-      ambientIntensity: 1.6,
+      ambientIntensity: 1.7,
       key: 0xd8f26c,
-      keyIntensity: 1.5,
+      keyIntensity: 1.6,
       fill: 0xa8c9ff,
-      fillIntensity: 0.9,
+      fillIntensity: 1,
     },
     light: {
-      solid: 0xe9ebe0,
-      solidEmissive: 0x6f8a1c,
-      solidEmissiveIntensity: 0.16,
-      edges: 0x5c7410,
-      edgesOpacity: 0.9,
-      shell: 0x2b5ba8,
-      shellOpacity: 0.3,
-      ringA: 0x6d8a15,
-      ringB: 0x2b5ba8,
-      sat: [0x5c7410, 0x2a2d24, 0x2b5ba8],
-      satEmissive: 0.08,
+      body: 0xdfe2d5,
+      bodyEmissive: 0x6f8a1c,
+      bodyEmissiveIntensity: 0.14,
+      bodyEdge: 0x5c7410,
+      bodyEdgeOpacity: 0.85,
+      board: 0xcdd3bd,
+      boardEdge: 0x55690c,
+      chip: 0x33507f,
+      chipEdge: 0x2b5ba8,
+      chipEmissive: 0x2b5ba8,
+      chipEmissiveIntensity: 0.16,
+      ram: 0xc3ccdd,
+      ramEdge: 0x2b5ba8,
+      psu: 0xe3e6da,
+      psuEdge: 0x6b7566,
+      fan: 0xd2d7c6,
+      panel: 0x2b5ba8,
+      panelEdge: 0x2b5ba8,
+      panelEdgeOpacity: 0.26,
+      panelOpacity: 0.08,
+      led: 0x6d8a15,
       dust: 0x4f554b,
       dustOpacity: 0.38,
       ambient: 0xf4f6ec,
@@ -66,6 +92,27 @@
     },
   };
 
+  /* Роли материалов. Ссылка вида "fill:board" красится в PALETTE[BOARD] и т.д. */
+  const FILLS = {
+    body: "body",
+    board: "board",
+    chip: "chip",
+    ram: "ram",
+    psu: "psu",
+    fan: "fan",
+  };
+  const EDGES = {
+    body: "bodyEdge",
+    board: "boardEdge",
+    chip: "chipEdge",
+    ram: "ramEdge",
+    psu: "psuEdge",
+    fan: "bodyEdge",
+  };
+
+  const C1 = 1.70158;
+  const C3 = C1 + 1;
+
   let reduced = motionQuery.matches;
   let THREE = null;
   let lights = null;
@@ -73,10 +120,11 @@
   let scene = null;
   let camera = null;
   let rig = null;
-  let core = null;
-  let shell = null;
+  let chassis = null;
   let dust = null;
-  let satellites = [];
+  let led = null;
+  let parts = [];
+  let fans = [];
   let clock = null;
   let frameId = 0;
   let running = false;
@@ -95,6 +143,16 @@
     return Math.min(Math.max(value, min), max);
   }
 
+  function mix(a, b, t) {
+    return a + (b - a) * t;
+  }
+
+  /** Пружинящая кривая: деталь с лёгким перелётом и остановкой на месте. */
+  function easeOutBack(t) {
+    const k = t - 1;
+    return 1 + C3 * k * k * k + C1 * k * k;
+  }
+
   function loadLib() {
     if (reduced || !window.WebGLRenderingContext) {
       degrade();
@@ -111,88 +169,181 @@
     document.head.appendChild(script);
   }
 
-  function makeCore(THREE) {
+  /**
+   * Плоская деталь в общем языке сцены: тонированный короб + рёбра-обводка.
+   * kind — ключ роли, из него paint() берёт цвета темы.
+   */
+  function slab(THREE, w, h, d, kind, opts) {
+    const o = opts || {};
     const group = new THREE.Group();
-    const geometry = new THREE.IcosahedronGeometry(1.2, 1);
+    const geometry = new THREE.BoxGeometry(w, h, d);
 
-    const solid = new THREE.Mesh(
-      geometry,
-      new THREE.MeshStandardMaterial({
+    if (!o.shell) {
+      const params = {
         flatShading: true,
-        metalness: 0.72,
-        roughness: 0.34,
-      }),
-    );
-    solid.material.userData.role = "solid";
-    group.add(solid);
+        metalness: o.metal === undefined ? 0.55 : o.metal,
+        roughness: o.rough === undefined ? 0.44 : o.rough,
+      };
+      // Боковая панель — единственная полупрозрачная деталь: сквозь неё должно
+      // быть видно собранное железо.
+      if (kind === "panel") {
+        params.transparent = true;
+        params.opacity = 0.1;
+        params.depthWrite = false;
+        params.metalness = 0.2;
+        params.roughness = 0.18;
+      }
+      const solid = new THREE.Mesh(geometry, new THREE.MeshStandardMaterial(params));
+      solid.material.userData.role = `fill:${kind}`;
+      group.add(solid);
+    }
 
-    const edges = new THREE.LineSegments(
-      new THREE.EdgesGeometry(geometry, 1),
-      new THREE.LineBasicMaterial({ transparent: true }),
-    );
-    edges.material.userData.role = "edges";
-    group.add(edges);
-    group.userData.edges = edges;
+    if (o.edges !== false) {
+      const edges = new THREE.LineSegments(
+        new THREE.EdgesGeometry(geometry),
+        new THREE.LineBasicMaterial({ transparent: true }),
+      );
+      edges.material.userData.role = `edge:${kind}`;
+      group.add(edges);
+    }
 
     return group;
   }
 
-  function makeShell(THREE) {
-    const shell = new THREE.LineSegments(
-      new THREE.EdgesGeometry(new THREE.IcosahedronGeometry(1.78, 1), 1),
-      new THREE.LineBasicMaterial({ transparent: true }),
-    );
-    shell.material.userData.role = "shell";
-    return shell;
-  }
-
-  function makeRings(THREE) {
+  /** Решётка радиатора: пачка тонких рёбер, читается как кулер. */
+  function heatsink(THREE, width, height, fins, depth) {
     const group = new THREE.Group();
-    const specs = [
-      { radius: 2.16, tube: 0.007, opacity: 0.55, tilt: 1.24, spin: 0.22 },
-      { radius: 2.62, tube: 0.005, opacity: 0.34, tilt: -0.72, spin: -0.15 },
-    ];
-    specs.forEach((spec, index) => {
-      const ring = new THREE.Mesh(
-        new THREE.TorusGeometry(spec.radius, spec.tube, 6, 160),
-        new THREE.MeshBasicMaterial({
-          transparent: true,
-          opacity: spec.opacity,
-          depthWrite: false,
-        }),
-      );
-      ring.material.userData.role = `ring${index}`;
-      ring.rotation.x = spec.tilt;
-      ring.userData.spin = spec.spin;
-      group.add(ring);
-    });
+    for (let i = 0; i < fins; i += 1) {
+      const fin = slab(THREE, width, height / fins - 0.012, depth, "body", {
+        edges: false,
+        metal: 0.78,
+        rough: 0.3,
+      });
+      fin.position.y = -height / 2 + (height / fins) * (i + 0.5);
+      group.add(fin);
+    }
     return group;
   }
 
-  function makeSatellites(THREE) {
-    const geometry = new THREE.OctahedronGeometry(0.1, 0);
-    const specs = [
-      { radius: 1.62, speed: 0.55, phase: 0.4, y: 0.42 },
-      { radius: 2.34, speed: -0.34, phase: 2.6, y: -0.58 },
-      { radius: 2.86, speed: 0.22, phase: 4.4, y: 0.24 },
-    ];
-    return specs.map((spec, index) => {
-      const mesh = new THREE.Mesh(
-        geometry,
-        new THREE.MeshStandardMaterial({
-          flatShading: true,
-          metalness: 0.4,
-          roughness: 0.3,
-        }),
-      );
-      mesh.material.userData.role = `sat${index}`;
-      mesh.userData = spec;
-      return mesh;
+  /** Вентилятор: обод, ступица и лопасти, которые крутятся при сборке.
+   *  dir задаёт направление: приток и выдув в реальном корпусе вращаются вразнобой. */
+  function fan(THREE, radius, dir) {
+    const group = new THREE.Group();
+    const rim = new THREE.Mesh(
+      new THREE.TorusGeometry(radius, radius * 0.09, 6, 28),
+      new THREE.MeshStandardMaterial({ flatShading: true, metalness: 0.5, roughness: 0.4 }),
+    );
+    rim.material.userData.role = "fill:fan";
+    group.add(rim);
+
+    const hub = slab(THREE, radius * 0.34, radius * 0.34, radius * 0.22, "fan", {
+      edges: false,
     });
+    group.add(hub);
+
+    const blades = new THREE.Group();
+    for (let i = 0; i < 5; i += 1) {
+      const blade = slab(THREE, radius * 0.82, radius * 0.2, radius * 0.06, "fan", {
+        edges: false,
+        metal: 0.35,
+        rough: 0.6,
+      });
+      const a = (i / 5) * Math.PI * 2;
+      blade.position.set(Math.cos(a) * radius * 0.52, Math.sin(a) * radius * 0.52, 0);
+      blade.rotation.z = a;
+      blades.add(blade);
+    }
+    group.add(blades);
+    blades.userData.dir = dir === undefined ? 1 : dir;
+    group.userData.blades = blades;
+    return group;
+  }
+
+  function makeChassis(THREE) {
+    const edges = new THREE.LineSegments(
+      new THREE.EdgesGeometry(new THREE.BoxGeometry(2.12, 2.52, 1.82)),
+      new THREE.LineBasicMaterial({ transparent: true }),
+    );
+    edges.material.userData.role = "edge:body";
+    return edges;
+  }
+
+  function makeBoard(THREE) {
+    const group = slab(THREE, 1.5, 1.52, 0.07, "board", { metal: 0.24, rough: 0.62 });
+
+    // Слоты памяти и разъёмы PCIe — читаемые признаки платы.
+    for (let i = 0; i < 4; i += 1) {
+      const slot = slab(THREE, 0.028, 0.66, 0.02, "board", { edges: false, metal: 0.1 });
+      slot.position.set(-0.62 + i * 0.075, 0.1, 0.05);
+      group.add(slot);
+    }
+    const pcie = slab(THREE, 1.18, 0.05, 0.02, "board", { edges: false, metal: 0.1 });
+    pcie.position.set(0.06, -0.12, 0.05);
+    group.add(pcie);
+
+    const led = new THREE.Mesh(
+      new THREE.BoxGeometry(0.9, 0.02, 0.02),
+      new THREE.MeshBasicMaterial({ transparent: true, opacity: 0 }),
+    );
+    led.material.userData.role = "led";
+    led.position.set(0.1, 0.72, 0.05);
+    group.add(led);
+    group.userData.led = led;
+    return group;
+  }
+
+  function makeCpu(THREE) {
+    const group = new THREE.Group();
+    const socket = slab(THREE, 0.34, 0.34, 0.08, "chip", { metal: 0.3, rough: 0.5 });
+    socket.position.z = 0.04;
+    group.add(socket);
+
+    const cooler = heatsink(THREE, 0.38, 0.34, 6, 0.22);
+    cooler.position.z = 0.2;
+    group.add(cooler);
+
+    // Трубка теплотвода даёт кулеру узнаваемый силуэт.
+    const pipe = slab(THREE, 0.05, 0.05, 0.3, "chip", { metal: 0.8, rough: 0.24 });
+    pipe.position.set(0.13, 0.13, 0.16);
+    group.add(pipe);
+    return group;
+  }
+
+  function makeRam(THREE) {
+    const group = new THREE.Group();
+    for (let i = 0; i < 4; i += 1) {
+      const stick = slab(THREE, 0.045, 0.62, 0.15, "ram", { metal: 0.2, rough: 0.55 });
+      stick.position.set((i - 1.5) * 0.075, 0, 0.08);
+      group.add(stick);
+    }
+    return group;
+  }
+
+  function makeGpu(THREE) {
+    const group = new THREE.Group();
+    const body = slab(THREE, 1.34, 0.24, 0.5, "body", { metal: 0.5, rough: 0.4 });
+    group.add(body);
+    const shroud = slab(THREE, 1.1, 0.1, 0.44, "chip", { metal: 0.6, rough: 0.3 });
+    shroud.position.set(-0.04, 0.12, 0.02);
+    group.add(shroud);
+    for (let i = 0; i < 2; i += 1) {
+      const wheel = fan(THREE, 0.15, i ? 1 : -1);
+      wheel.position.set(0.34 - i * 0.44, 0, 0.26);
+      group.add(wheel);
+    }
+    return group;
+  }
+
+  function makePsu(THREE) {
+    const group = slab(THREE, 0.78, 0.52, 0.66, "psu", { metal: 0.42, rough: 0.5 });
+    const vent = slab(THREE, 0.5, 0.34, 0.02, "psu", { edges: false, metal: 0.1 });
+    vent.position.z = 0.34;
+    group.add(vent);
+    return group;
   }
 
   function makeDust(THREE) {
-    const count = window.innerWidth < COMPACT ? 420 : 900;
+    const count = window.innerWidth < COMPACT ? 380 : 820;
     const positions = new Float32Array(count * 3);
     for (let i = 0; i < count; i += 1) {
       const radius = 3.1 + Math.random() * 4.4;
@@ -215,72 +366,19 @@
     );
   }
 
-  function sceneTheme() {
-    return document.documentElement.dataset.theme === "light" ? "light" : "dark";
-  }
-
-  /** Перекрашивает все материалы сцены под текущую тему. */
-  function paint() {
-    if (!THREE || !rig) return;
-    const pal = PALETTE[sceneTheme()];
-
-    rig.traverse((node) => {
-      const material = node.material;
-      if (!material) return;
-      const role = material.userData && material.userData.role;
-      switch (role) {
-        case "solid":
-          material.color.setHex(pal.solid);
-          material.emissive.setHex(pal.solidEmissive);
-          material.emissiveIntensity = pal.solidEmissiveIntensity;
-          break;
-        case "edges":
-          material.color.setHex(pal.edges);
-          material.opacity = pal.edgesOpacity;
-          break;
-        case "shell":
-          material.color.setHex(pal.shell);
-          material.opacity = pal.shellOpacity;
-          break;
-        case "ring0":
-          material.color.setHex(pal.ringA);
-          break;
-        case "ring1":
-          material.color.setHex(pal.ringB);
-          break;
-        case "sat0":
-        case "sat1":
-        case "sat2": {
-          const index = Number(role.slice(3));
-          material.color.setHex(pal.sat[index]);
-          material.emissive.setHex(pal.sat[index]);
-          material.emissiveIntensity = pal.satEmissive;
-          break;
-        }
-        default:
-          break;
-      }
-      material.needsUpdate = true;
-    });
-
-    if (dust) {
-      const material = dust.material;
-      material.color.setHex(pal.dust);
-      material.opacity = pal.dustOpacity;
-      // Аддитивное смешение на светлом фоне выбеливает точки в ноль.
-      material.blending =
-        sceneTheme() === "light" ? THREE.NormalBlending : THREE.AdditiveBlending;
-      material.needsUpdate = true;
-    }
-
-    if (lights) {
-      lights.ambient.color.setHex(pal.ambient);
-      lights.ambient.intensity = pal.ambientIntensity;
-      lights.key.color.setHex(pal.key);
-      lights.key.intensity = pal.keyIntensity;
-      lights.fill.color.setHex(pal.fill);
-      lights.fill.intensity = pal.fillIntensity;
-    }
+  /**
+   * Описание порядка сборки. home — место детали в корпусе, out — откуда она
+   * прилетает, seat/span — на каком отрезке прогресса деталь встаёт на место.
+   */
+  function blueprint() {
+    return [
+      { name: "board", build: makeBoard, home: [0, 0.04, -0.62], out: [-2.1, 0.2, -1.1], seat: 0.06, span: 0.22 },
+      { name: "cpu", build: makeCpu, home: [0.08, 0.44, -0.53], out: [1.9, 1.2, 1.1], seat: 0.24, span: 0.2 },
+      { name: "ram", build: makeRam, home: [-0.6, 0.06, -0.5], out: [-1.7, -1.1, 1.0], seat: 0.34, span: 0.18 },
+      { name: "psu", build: makePsu, home: [-0.44, -0.94, -0.3], out: [-1.6, -1.9, -0.8], seat: 0.44, span: 0.18 },
+      { name: "gpu", build: makeGpu, home: [0.04, -0.16, 0.16], out: [2.3, 0.6, 1.4], seat: 0.54, span: 0.2 },
+      { name: "panel", build: (T) => slab(T, 2.02, 2.42, 0.03, "panel", { edges: false }), home: [0, 0, 0.9], out: [0.4, 0, 2.6], seat: 0.8, span: 0.18 },
+    ];
   }
 
   function build() {
@@ -305,50 +403,182 @@
     renderer.setClearAlpha(0);
     scene = new THREE.Scene();
     camera = new THREE.PerspectiveCamera(38, 1, 0.1, 100);
-    camera.position.set(0, 0.25, 6.4);
+    camera.position.set(0, 0.25, 6.9);
     camera.lookAt(0, 0, 0);
     clock = new THREE.Clock();
 
     const ambient = new THREE.AmbientLight(0xffffff, 1);
-    const key = new THREE.PointLight(0xffffff, 1, 14);
+    const key = new THREE.PointLight(0xffffff, 1, 16);
     key.position.set(2.4, 2.6, 3.2);
-    const fill = new THREE.PointLight(0xffffff, 1, 14);
+    const fill = new THREE.PointLight(0xffffff, 1, 16);
     fill.position.set(-3, -2.2, 2.4);
     scene.add(ambient, key, fill);
     lights = { ambient, key, fill };
 
     rig = new THREE.Group();
-    core = makeCore(THREE);
-    shell = makeShell(THREE);
-    const rings = makeRings(THREE);
+    chassis = makeChassis(THREE);
     dust = makeDust(THREE);
-    satellites = makeSatellites(THREE);
 
-    rig.add(core, shell, rings);
-    satellites.forEach((mesh) => rig.add(mesh));
+    parts = blueprint().map((spec) => {
+      const mesh = spec.build(THREE);
+      mesh.userData = {
+        name: spec.name,
+        home: new THREE.Vector3().fromArray(spec.home),
+        out: new THREE.Vector3().fromArray(spec.out),
+        seat: spec.seat,
+        span: spec.span,
+        seated: 0,
+      };
+      mesh.traverse((node) => {
+        if (node.userData && node.userData.blades) fans.push(node.userData.blades);
+        if (node.userData && node.userData.led) led = node.userData.led;
+      });
+      rig.add(mesh);
+      return mesh;
+    });
+
+    // Три вентилятора: передний приток, задний выдув, верхний обдув.
+    [
+      { at: [0.72, 0.74, 0.52], out: [1.5, 1.3, 1.4], dir: 1 },
+      { at: [0.66, -0.42, -0.5], out: [1.4, -1.2, -1.4], dir: -1 },
+      { at: [-0.2, 1.12, 0.1], out: [-0.6, 2.0, 0.8], dir: 1 },
+    ].forEach((spec) => {
+      const wheel = fan(THREE, 0.32, spec.dir);
+      // userData дополняется, а не заменяется: в ней уже живёт blades.
+      wheel.userData.name = "fan";
+      wheel.userData.home = new THREE.Vector3().fromArray(spec.at);
+      wheel.userData.out = new THREE.Vector3().fromArray(spec.out);
+      wheel.userData.seat = 0.66;
+      wheel.userData.span = 0.2;
+      wheel.userData.seated = 0;
+      fans.push(wheel.userData.blades);
+      rig.add(wheel);
+      parts.push(wheel);
+    });
+
     scene.add(rig, dust);
-
-    if (reduced) shell.visible = false;
+    rig.add(chassis);
 
     paint();
+    applyAssembly(0);
     bind();
     layout();
     document.documentElement.classList.add("gl-ready");
+    exposeProbe();
     sync();
+  }
+
+  function sceneTheme() {
+    return document.documentElement.dataset.theme === "light" ? "light" : "dark";
+  }
+
+  /** Перекрашивает все материалы сцены под текущую тему. */
+  function paint() {
+    if (!THREE || !rig) return;
+    const pal = PALETTE[sceneTheme()];
+
+    const walk = (root) => {
+      root.traverse((node) => {
+        const material = node.material;
+        if (!material) return;
+        const role = material.userData && material.userData.role;
+        if (!role) return;
+
+        if (role.startsWith("fill:")) {
+          const kind = role.slice(5);
+          if (kind === "panel") {
+            material.color.setHex(pal.panel);
+            material.opacity = pal.panelOpacity;
+          } else {
+            const key = FILLS[kind] || kind;
+            if (pal[key] === undefined) return;
+            material.color.setHex(pal[key]);
+            if (material.emissive) {
+              if (kind === "chip") {
+                material.emissive.setHex(pal.chipEmissive);
+                material.emissiveIntensity = pal.chipEmissiveIntensity;
+              } else {
+                material.emissive.setHex(pal.bodyEmissive);
+                material.emissiveIntensity = pal.bodyEmissiveIntensity;
+              }
+            }
+          }
+        } else if (role.startsWith("edge:")) {
+          const kind = role.slice(5);
+          if (kind === "panel") {
+            material.color.setHex(pal.panelEdge);
+            material.opacity = pal.panelEdgeOpacity;
+          } else {
+            const key = EDGES[kind] || "bodyEdge";
+            material.color.setHex(pal[key]);
+            material.opacity = pal.bodyEdgeOpacity;
+          }
+        } else if (role === "led") {
+          material.color.setHex(pal.led);
+        }
+        material.needsUpdate = true;
+      });
+    };
+
+    walk(rig);
+    walk(chassis);
+
+    if (dust) {
+      const material = dust.material;
+      material.color.setHex(pal.dust);
+      material.opacity = pal.dustOpacity;
+      // Аддитивное смешение на светлом фоне выбеливает точки в ноль.
+      material.blending =
+        sceneTheme() === "light" ? THREE.NormalBlending : THREE.AdditiveBlending;
+      material.needsUpdate = true;
+    }
+
+    if (lights) {
+      lights.ambient.color.setHex(pal.ambient);
+      lights.ambient.intensity = pal.ambientIntensity;
+      lights.key.color.setHex(pal.key);
+      lights.key.intensity = pal.keyIntensity;
+      lights.fill.color.setHex(pal.fill);
+      lights.fill.intensity = pal.fillIntensity;
+    }
+  }
+
+  /** Ставит каждую деталь между её «п exploded» и местом в корпусе. */
+  function applyAssembly(p) {
+    parts.forEach((mesh) => {
+      const { home, out, seat, span } = mesh.userData;
+      const t = clamp((p - seat) / span, 0, 1);
+      const e = easeOutBack(t);
+      mesh.userData.seated = t;
+      mesh.position.set(
+        mix(out.x, home.x, e),
+        mix(out.y, home.y, e),
+        mix(out.z, home.z, e),
+      );
+      // Лёгкий разворот в полёте, чтобы деталь не вставала строго с места.
+      mesh.rotation.set((1 - e) * 0.42, (1 - e) * -0.34, (1 - e) * 0.2);
+    });
+
+    // Корпус проявляется первым и оседает на габарит.
+    const ct = easeOutBack(clamp(p / 0.16, 0, 1));
+    const scale = mix(1.16, 1, ct);
+    chassis.scale.setScalar(scale);
+    chassis.material.opacity = clamp(ct, 0, 1) * 0.9;
+
+    if (led) led.material.opacity = clamp((p - 0.86) / 0.14, 0, 1) * 0.85;
   }
 
   function layout() {
     if (!renderer) return;
-    const width = hero.clientWidth;
-    const height = hero.clientHeight;
+    const width = stage.clientWidth;
+    const height = stage.clientHeight;
     const compact = width < COMPACT;
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, compact ? 1.35 : 1.75));
     renderer.setSize(width, height, false);
     camera.aspect = width / height;
     camera.updateProjectionMatrix();
-    rig.scale.setScalar(compact ? 0.86 : 0.95);
-    rig.position.set(compact ? 0.1 : Math.min(width / 820, 2.15), compact ? 1.05 : 0.32, 0);
-    if (shell) shell.visible = !reduced;
+    rig.scale.setScalar(compact ? 0.82 : 0.92);
+    rig.position.set(compact ? 0 : Math.min(width / 900, 2.3), compact ? 0.7 : 0.2, 0);
   }
 
   function frame() {
@@ -359,38 +589,23 @@
     look.x += (look.tx - look.x) * 0.055;
     look.y += (look.ty - look.y) * 0.055;
 
-    rig.rotation.y += 0.0024 + spin.vy;
-    rig.rotation.x = clamp(rig.rotation.x + spin.vx, -0.55, 0.55);
+    rig.rotation.y += 0.0021 + spin.vy;
+    rig.rotation.x = clamp(rig.rotation.x + spin.vx, -0.5, 0.5);
     spin.vx *= 0.93;
     spin.vy *= 0.93;
 
-    core.rotation.y -= dt * 0.16;
-    core.rotation.x += dt * 0.07;
-    core.userData.edges.rotation.copy(core.rotation);
-
-    if (shell) {
-      shell.rotation.y -= dt * 0.13;
-      shell.rotation.x += dt * 0.05;
-    }
-
-    rig.children.forEach((child) => {
-      if (child.userData && child.userData.spin) child.rotation.z += dt * child.userData.spin;
-    });
-
-    satellites.forEach((mesh) => {
-      const { radius, speed, phase, y } = mesh.userData;
-      const angle = time * speed + phase;
-      mesh.position.set(Math.cos(angle) * radius, y + Math.sin(angle * 1.7) * 0.12, Math.sin(angle) * radius * 0.72);
-      mesh.rotation.x += dt * 0.6;
-      mesh.rotation.y += dt * 0.8;
+    // Вентиляторы раскручиваются по мере того, как сборка приближается к концу.
+    const power = clamp((scrollP - 0.7) / 0.3, 0, 1);
+    fans.forEach((blades) => {
+      blades.rotation.z += dt * (0.4 + power * 7.5) * (blades.userData.dir || 1);
     });
 
     dust.rotation.y += dt * 0.014;
 
-    camera.position.x = look.x * 0.55;
-    camera.position.y = 0.25 - look.y * 0.4;
-    camera.position.z = 6.4 + scrollP * 1.5;
-    camera.lookAt(rig.position.x * 0.55, 0, 0);
+    camera.position.x = look.x * 0.5;
+    camera.position.y = 0.25 - look.y * 0.36;
+    camera.position.z = 6.9 + scrollP * 0.5;
+    camera.lookAt(rig.position.x * 0.5, 0, 0);
 
     renderer.render(scene, camera);
   }
@@ -427,23 +642,27 @@
     spin.dragging = true;
     spin.px = event.clientX;
     spin.py = event.clientY;
-    hero.classList.add("is-grabbing");
+    stage.classList.add("is-grabbing");
   }
 
   function onPointerUp() {
     spin.dragging = false;
-    hero.classList.remove("is-grabbing");
+    stage.classList.remove("is-grabbing");
   }
 
+  /**
+   * Прогресс идёт по «лишней» высоте секции: липкая сцена неподвижна, поэтому
+   * 0 — это верх героя, 1 — момент, когда сцена отлипает и уезжает вверх.
+   */
   function onScroll() {
-    if (!hero) return;
-    const span = hero.offsetHeight || 1;
-    scrollP = clamp(window.scrollY / span, 0, 1);
+    const span = Math.max(hero.offsetHeight - stage.offsetHeight, 1);
+    scrollP = clamp(-hero.getBoundingClientRect().top / span, 0, 1);
+    applyAssembly(scrollP);
   }
 
   function bind() {
     window.addEventListener("pointermove", onPointerMove, { passive: true });
-    hero.addEventListener("pointerdown", onPointerDown, { passive: true });
+    stage.addEventListener("pointerdown", onPointerDown, { passive: true });
     window.addEventListener("pointerup", onPointerUp, { passive: true });
     window.addEventListener("pointercancel", onPointerUp, { passive: true });
     window.addEventListener("scroll", onScroll, { passive: true });
@@ -452,18 +671,18 @@
     document.addEventListener("visibilitychange", sync);
 
     if ("IntersectionObserver" in window) {
+      // Наблюдаем сцену, а не секцию: как только она отлипла, цикл можно глушить.
       new IntersectionObserver(
         (entries) => {
           inView = entries[0].isIntersecting;
           sync();
         },
         { threshold: 0 },
-      ).observe(hero);
+      ).observe(stage);
     }
 
     const onMotionChange = () => {
       reduced = motionQuery.matches;
-      if (shell) shell.visible = !reduced;
       sync();
     };
     if (typeof motionQuery.addEventListener === "function") {
@@ -476,6 +695,20 @@
     });
 
     onScroll();
+  }
+
+  /** Точка входа для проверочного прогона: включается только ?pcdebug. */
+  function exposeProbe() {
+    if (!new URLSearchParams(window.location.search).has("pcdebug")) return;
+    window.__heroPC = {
+      progress: () => scrollP,
+      parts: () =>
+        parts.map((mesh) => ({
+          name: mesh.userData.name,
+          seated: +mesh.userData.seated.toFixed(3),
+          pos: mesh.position.toArray().map((v) => +v.toFixed(3)),
+        })),
+    };
   }
 
   function start() {

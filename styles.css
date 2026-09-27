@@ -339,9 +339,18 @@ main:focus-visible {
   transform: translateY(-3.25px) rotate(-45deg);
 }
 
+/* Секция 01 — высокая прокручиваемая обёртка, внутри липкая сцена. overflow
+   обязателен на .hero-stage, а не на .hero: overflow:hidden на .hero сделал бы
+   его прокручиваемым контейнером и сломал бы position:sticky. */
 .hero {
   position: relative;
-  min-height: 100svh;
+  min-height: 200svh;
+}
+
+.hero-stage {
+  position: sticky;
+  top: 0;
+  height: 100svh;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -415,8 +424,16 @@ main:focus-visible {
   display: none;
 }
 
-.hero.is-grabbing {
+.hero.is-grabbing,
+.hero-stage.is-grabbing {
   cursor: grabbing;
+}
+
+/* Текст героя гаснет по ходу сборки. Когда он скрыт, ссылки и кнопки не должны
+   оставаться в дереве доступности и перехватывать указатель по невидимым зонам. */
+.hero.is-assembled .hero-inner {
+  pointer-events: none;
+  visibility: hidden;
 }
 
 .cursor-glow {
@@ -2007,6 +2024,13 @@ body.is-swapping .footer {
     animation-duration: 0.001ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.001ms !important;
+  }
+
+  /* Без длинной прокрутки, которая двигала бы сборку: секция 01 схлопывается
+     в один экран. Сцена остаётся липкой — при равных высотах она не сдвигается,
+     а position:relative нужен, чтобы overflow:hidden обрезал .hero-glow. */
+  .hero {
+    min-height: 100svh;
   }
 
   .reveal {
