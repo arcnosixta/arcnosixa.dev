@@ -23,8 +23,10 @@
 
   let live = null;
 
-  function attach(host) {
+  function attach(host, copy) {
     if (live) live.destroy();
+
+    const labels = copy || {};
 
     const band = document.createElement("div");
     band.className = "core";
@@ -34,9 +36,11 @@
     canvas.className = "core-canvas";
     const meta = document.createElement("div");
     meta.className = "core-meta mono";
-    meta.innerHTML =
-      '<i class="core-dot"></i><b class="core-state">idle</b><span class="core-hint">wheel ↑ charge · ↓ release</span>';
-    band.appendChild(canvas, meta);
+    meta.innerHTML = `<i class="core-dot"></i><b class="core-state">${
+      labels.idle || "idle"
+    }</b><span class="core-hint"></span>`;
+    meta.querySelector(".core-hint").textContent = labels.hint || "";
+    band.append(canvas, meta);
 
     const ctx = canvas.getContext && canvas.getContext("2d");
     if (!ctx) return band;
@@ -83,7 +87,8 @@
 
     function paint() {
       const name = state();
-      if (stateNode.textContent !== name) stateNode.textContent = name;
+      const label = labels[name] || name;
+      if (stateNode.textContent !== label) stateNode.textContent = label;
       if (band.dataset.state !== name) band.dataset.state = name;
 
       const mag = Math.min(1, Math.abs(energy));
@@ -91,9 +96,10 @@
       const cx = w / 2;
       const cy = h / 2 - 10;
       const R = Math.min(w * 0.26, h * 0.4);
-      if (R < 8) return;
 
       ctx.clearRect(0, 0, w, h);
+      if (R < 8) return;
+
       const spread = 0.78 + energy * 0.42;
       const scale = 0.98 + energy * 0.26;
 
@@ -237,27 +243,30 @@
     const ro = new ResizeObserver(resize);
     ro.observe(band);
 
-    const io = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting) {
-          if (!reduced && !raf) {
-            last = performance.now();
-            raf = requestAnimationFrame(frame);
+    let io = null;
+    if ("IntersectionObserver" in window) {
+      io = new IntersectionObserver(
+        (entries) => {
+          if (entries[0].isIntersecting) {
+            if (!reduced && !raf) {
+              last = performance.now();
+              raf = requestAnimationFrame(frame);
+            }
+          } else if (raf) {
+            cancelAnimationFrame(raf);
+            raf = 0;
           }
-        } else if (raf) {
-          cancelAnimationFrame(raf);
-          raf = 0;
-        }
-      },
-      { rootMargin: "140px" },
-    );
-    io.observe(band);
+        },
+        { rootMargin: "140px" },
+      );
+      io.observe(band);
+    }
 
     const instance = {
       destroy() {
         abort.abort();
         ro.disconnect();
-        io.disconnect();
+        if (io) io.disconnect();
         if (raf) cancelAnimationFrame(raf);
         raf = 0;
         if (live === instance) live = null;
@@ -265,6 +274,10 @@
     };
     live = instance;
 
+    if (!io && !reduced) {
+      last = performance.now();
+      raf = requestAnimationFrame(frame);
+    }
     requestAnimationFrame(resize);
     return band;
   }

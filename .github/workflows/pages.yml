@@ -29,8 +29,8 @@ jobs:
       - name: Stamp asset version
         run: |
           VERSION="${GITHUB_SHA::7}"
-          sed -i -E "s/(\?v=)[0-9a-zA-Z]+/\1${VERSION}/g" index.html
-          grep -o '?v=[0-9a-zA-Z]*' index.html | sort -u
+          sed -i -E "s/(\?v=)[0-9a-zA-Z]+/\1${VERSION}/g" index.html 404.html
+          grep -o '?v=[0-9a-zA-Z]*' index.html 404.html | sort -u
 
       - name: Upload site
         uses: actions/upload-pages-artifact@v3

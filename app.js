@@ -66,6 +66,10 @@ const I18N = {
     "work.collapse": "Свернуть",
     "work.labHint": "экспериментов",
     "work.labPath": "~/lab",
+    "core.idle": "покой",
+    "core.charge": "заряд",
+    "core.release": "разряд",
+    "core.hint": "колесо ↑ заряд · ↓ разряд",
     "skills.note.frontend": "Компонентный подход, состояние, анимации, доступность",
     "skills.note.backend": "Локальные API, SSE-стримы, безопасность, без лишних абстракций",
     "skills.note.mobile": "Кроссплатформенные приложения, Supabase, криптография на клиенте",
@@ -247,6 +251,10 @@ const I18N = {
     "work.collapse": "Collapse",
     "work.labHint": "experiments",
     "work.labPath": "~/lab",
+    "core.idle": "idle",
+    "core.charge": "charge",
+    "core.release": "release",
+    "core.hint": "wheel ↑ charge · ↓ release",
     "skills.note.frontend": "Component thinking, state, animation, accessibility",
     "skills.note.backend": "Local APIs, SSE streams, security, no needless abstractions",
     "skills.note.mobile": "Cross-platform apps, Supabase, client-side crypto",
@@ -863,7 +871,16 @@ function renderProjects() {
   status.setAttribute("aria-live", "polite");
   host.appendChild(status);
 
-  if (window.CoreBand) host.appendChild(window.CoreBand.attach(host));
+  if (window.CoreBand) {
+    host.appendChild(
+      window.CoreBand.attach(host, {
+        idle: t("core.idle"),
+        charge: t("core.charge"),
+        release: t("core.release"),
+        hint: t("core.hint"),
+      }),
+    );
+  }
 
   const grid = el("div", "work-grid");
   list.forEach((project, index) => {
@@ -931,6 +948,14 @@ function placeThumb(filters) {
   const active = filters.querySelector('.filter[aria-pressed="true"]');
   const thumb = filters.querySelector(".filter-thumb");
   if (!active || !thumb) return;
+  const rows = new Set(
+    [...filters.querySelectorAll(".filter")].map((chip) => Math.round(chip.getBoundingClientRect().top)),
+  );
+  if (rows.size > 1) {
+    filters.classList.add("is-stacked");
+    return;
+  }
+  filters.classList.remove("is-stacked");
   thumb.style.width = `${active.offsetWidth}px`;
   thumb.style.transform = `translateX(${active.offsetLeft - 5}px)`;
 }
@@ -1028,10 +1053,13 @@ function setLang(next) {
   });
 }
 
+let typingRun = 0;
+
 function startTyping() {
   const node = document.getElementById("typed");
   const words = I18N[lang].typed;
   if (!node) return;
+  const run = (typingRun += 1);
   let word = 0;
   let char = 0;
   let erasing = false;
@@ -1042,6 +1070,7 @@ function startTyping() {
   }
 
   const tick = () => {
+    if (run !== typingRun) return;
     const current = words[word];
     char += erasing ? -1 : 1;
     node.textContent = current.slice(0, char);
@@ -1068,6 +1097,7 @@ function bindReveal() {
   const items = document.querySelectorAll(".reveal:not(.is-in)");
   if (reduced || !("IntersectionObserver" in window)) {
     items.forEach((item) => item.classList.add("is-in"));
+    animateCounters();
     return;
   }
   revealObserver = new IntersectionObserver(
@@ -1097,19 +1127,22 @@ document.addEventListener("click", (event) => {
 });
 
 function animateCounters() {
+  const projectStat = document.querySelector('[data-stat="projects"] .stat-value');
+  if (projectStat) projectStat.dataset.count = String(PROJECTS.length);
   document.querySelectorAll(".stat-value").forEach((node) => {
     if (node.dataset.done) return;
     node.dataset.done = "1";
     const target = Number(node.dataset.count || 0);
+    const suffix = node.dataset.countSuffix || "";
     if (reduced) {
-      node.textContent = String(target);
+      node.textContent = `${target}${suffix}`;
       return;
     }
     const started = performance.now();
     const step = (now) => {
       const progress = Math.min((now - started) / 1100, 1);
       const eased = 1 - Math.pow(1 - progress, 3);
-      node.textContent = String(Math.round(target * eased));
+      node.textContent = `${Math.round(target * eased)}${suffix}`;
       if (progress < 1) requestAnimationFrame(step);
     };
     requestAnimationFrame(step);
@@ -1155,12 +1188,18 @@ window.addEventListener(
   { passive: true },
 );
 
+function refreshThumb() {
+  const filters = document.querySelector(".filters");
+  if (filters) placeThumb(filters);
+}
+
 window.addEventListener("resize", () => {
   setActiveNav();
   if (window.innerWidth > 940) closeMenu();
-  const filters = document.querySelector(".filters");
-  if (filters) placeThumb(filters);
+  refreshThumb();
 });
+
+document.fonts?.ready.then(refreshThumb);
 
 function closeMenu() {
   nav.classList.remove("is-open");

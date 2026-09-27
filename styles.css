@@ -682,11 +682,6 @@ main:focus-visible {
   letter-spacing: -0.04em;
 }
 
-.stat-value::after {
-  content: "+";
-  color: var(--lime);
-}
-
 .stat-label {
   display: block;
   margin-top: 8px;
@@ -842,8 +837,25 @@ main:focus-visible {
   border-radius: 999px;
   background: var(--lime);
   box-shadow: 0 8px 22px rgba(216, 242, 108, 0.24);
-  transition: transform 0.5s var(--ease-out), width 0.5s var(--ease-out);
+  transition: transform 0.5s var(--ease-out), width 0.5s var(--ease-out),
+    opacity 0.3s var(--ease-out);
   will-change: transform, width;
+}
+
+/* чипы переносятся на вторую строку — одна скользящая плашка невозможна,
+   активный чип подсвечивается сам */
+.filters.is-stacked {
+  border-radius: 20px;
+}
+
+.filters.is-stacked .filter-thumb {
+  opacity: 0;
+}
+
+.filters.is-stacked .filter[aria-pressed="true"] {
+  background: var(--lime);
+  color: var(--ink-deep);
+  box-shadow: 0 8px 22px rgba(216, 242, 108, 0.24);
 }
 
 .work-count {
@@ -1262,7 +1274,7 @@ main:focus-visible {
   font-size: 10px;
   letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: var(--muted);
+  color: var(--paper-faint);
   pointer-events: none;
 }
 
@@ -1277,12 +1289,18 @@ main:focus-visible {
 
 .core-state {
   min-width: 7ch;
-  color: var(--fg);
+  color: var(--paper);
   font-weight: 500;
 }
 
 .core-hint {
   color: rgba(239, 238, 231, 0.28);
+}
+
+@media (max-width: 560px) {
+  .core-hint {
+    display: none;
+  }
 }
 
 .core[data-state="charge"] .core-dot {
