@@ -1,22 +1,67 @@
 :root {
   color-scheme: dark;
-  --ink: #101211;
-  --ink-deep: #0b0d0d;
-  --ink-soft: #171b19;
-  --paper: #efeee7;
+
+  /* Каналы: из них собираются все остальные цвета. Меняешь только их —
+     вся страница, включая полупрозрачные слои, следует за темой. */
+  --ch-paper: 239 238 231;
+  --ch-ink: 11 13 13;
+  --ch-ink-2: 16 18 17;
+  --ch-surface: 23 27 25;
+  --ch-recess: 8 10 9;
+  --ch-shadow: 0 0 0;
+  --ch-lime: 216 242 108;
+  --ch-orange: 244 154 112;
+  --ch-blue: 168 201 255;
+  --ch-core: 139 147 167;
+
+  --ink: rgb(var(--ch-ink));
+  --ink-deep: rgb(var(--ch-ink));
+  --ink-soft: rgb(var(--ch-surface));
+  --paper: rgb(var(--ch-paper));
   --paper-muted: #b7b9ad;
-  --paper-faint: #7c8278;
-  --line: rgba(239, 238, 231, 0.1);
-  --line-bright: rgba(239, 238, 231, 0.22);
-  --lime: #d8f26c;
-  --orange: #f49a70;
-  --blue: #a8c9ff;
-  --glass: rgba(20, 24, 22, 0.66);
+  --paper-faint: #8a9083;
+  --line: rgb(var(--ch-paper) / 0.1);
+  --line-bright: rgb(var(--ch-paper) / 0.22);
+  --lime: rgb(var(--ch-lime));
+  --lime-hi: var(--lime-hi);
+  --lime-pale: var(--lime-pale);
+  --lime-ink: rgb(var(--ch-lime));
+  --lime-soft: rgb(var(--ch-lime) / 0.14);
+  --orange: rgb(var(--ch-orange));
+  --blue: rgb(var(--ch-blue));
+  --blue-ink: rgb(var(--ch-blue));
+  --on-accent: #0b0d0d;
+  --glass: rgb(var(--ch-surface) / 0.66);
+  --glass-heavy: rgb(var(--ch-ink-2) / 0.95);
   --radius: 18px;
   --radius-sm: 12px;
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
-  --shadow: 0 30px 90px rgba(0, 0, 0, 0.4);
+  --shadow: 0 30px 90px rgb(var(--ch-shadow) / 0.4);
   --wrap: 1180px;
+}
+
+[data-theme="light"] {
+  color-scheme: light;
+
+  --ch-paper: 17 19 15;
+  --ch-ink: 246 246 240;
+  --ch-ink-2: 255 255 255;
+  --ch-surface: 255 255 255;
+  --ch-recess: 232 233 224;
+  --ch-shadow: 26 28 21;
+
+  --paper-muted: #4f554b;
+  --paper-faint: #5f6559;
+  --line: rgb(var(--ch-paper) / 0.13);
+  --line-bright: rgb(var(--ch-paper) / 0.28);
+  --lime-ink: #55690c;
+  --blue-ink: #2b5ba8;
+  --lime-hi: #cbe763;
+  --lime-pale: #6d8a15;
+  --lime-soft: rgb(154 190 30 / 0.18);
+  --glass: rgb(255 255 255 / 0.72);
+  --glass-heavy: rgb(255 255 255 / 0.96);
+  --shadow: 0 24px 60px rgb(var(--ch-shadow) / 0.12);
 }
 
 * {
@@ -81,10 +126,8 @@ svg {
 .mono {
   font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
   letter-spacing: -0.01em;
-}
-
-:focus-visible {
-  outline: 2px solid var(--lime);
+}:focus-visible{
+  outline: 2px solid var(--lime-ink);
   outline-offset: 3px;
   border-radius: 6px;
 }
@@ -102,7 +145,7 @@ main:focus-visible {
   padding: 10px 16px;
   border-radius: 10px;
   background: var(--lime);
-  color: var(--ink-deep);
+  color: var(--on-accent);
   font-size: 14px;
   font-weight: 600;
   transition: top 0.2s var(--ease-out);
@@ -159,16 +202,14 @@ main:focus-visible {
   gap: 10px;
   font-weight: 700;
   letter-spacing: -0.02em;
-}
-
-.brand-mark {
+}.brand-mark{
   display: grid;
   place-items: center;
   width: 30px;
   height: 30px;
   border-radius: 9px;
   background: var(--lime);
-  color: var(--ink-deep);
+  color: var(--on-accent);
   font-size: 15px;
   font-weight: 800;
 }
@@ -184,7 +225,7 @@ main:focus-visible {
   padding: 4px;
   border: 1px solid var(--line);
   border-radius: 999px;
-  background: rgba(12, 14, 13, 0.5);
+  background: rgb(var(--ch-recess) / 0.5);
 }
 
 .nav a {
@@ -218,7 +259,7 @@ main:focus-visible {
   padding: 3px;
   border: 1px solid var(--line);
   border-radius: 999px;
-  background: rgba(12, 14, 13, 0.5);
+  background: rgb(var(--ch-recess) / 0.5);
   font-family: "JetBrains Mono", monospace;
   font-size: 11.5px;
   letter-spacing: 0.04em;
@@ -233,7 +274,41 @@ main:focus-visible {
 
 .lang-item.is-on {
   background: var(--lime);
-  color: var(--ink-deep);
+  color: var(--on-accent);
+}
+
+.theme-toggle {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 0;
+  color: var(--paper-muted);
+  transition: color 0.25s var(--ease-out), border-color 0.25s var(--ease-out),
+    background 0.25s var(--ease-out);
+}
+
+.theme-toggle:hover {
+  color: var(--lime-ink);
+  border-color: var(--line-bright);
+}
+
+.theme-icon {
+  grid-area: 1 / 1;
+  transition: opacity 0.25s var(--ease-out), transform 0.35s var(--ease-out);
+}
+
+.theme-icon-moon,
+[data-theme="light"] .theme-icon-sun {
+  opacity: 0;
+  transform: rotate(-60deg) scale(0.6);
+}
+
+[data-theme="light"] .theme-icon-moon {
+  opacity: 1;
+  transform: none;
 }
 
 .burger {
@@ -281,7 +356,7 @@ main:focus-visible {
   width: min(920px, 96vw);
   aspect-ratio: 1;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(216, 242, 108, 0.16), transparent 62%);
+  background: radial-gradient(circle, rgb(var(--ch-lime) / 0.16), transparent 62%);
   filter: blur(12px);
   pointer-events: none;
   animation: float 18s ease-in-out infinite;
@@ -354,8 +429,8 @@ main:focus-visible {
   border-radius: 50%;
   background: radial-gradient(
     circle,
-    rgba(216, 242, 108, 0.13),
-    rgba(168, 201, 255, 0.05) 45%,
+    rgb(var(--ch-lime) / 0.13),
+    rgb(var(--ch-blue) / 0.05) 45%,
     transparent 70%
   );
   mix-blend-mode: screen;
@@ -378,7 +453,7 @@ main:focus-visible {
   padding: 7px 14px 7px 11px;
   border: 1px solid var(--line);
   border-radius: 999px;
-  background: rgba(12, 14, 13, 0.55);
+  background: rgb(var(--ch-recess) / 0.55);
   color: var(--paper-muted);
   font-size: 12.5px;
   font-weight: 500;
@@ -419,11 +494,9 @@ main:focus-visible {
   font-weight: 800;
   line-height: 0.94;
   letter-spacing: -0.045em;
-}
-
-.hero-title .accent {
+}.hero-title .accent{
   display: block;
-  background: linear-gradient(100deg, var(--lime), #f3f7c9 45%, var(--blue));
+  background: linear-gradient(100deg, var(--lime-ink), var(--lime-pale) 45%, var(--blue-ink));
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -505,25 +578,21 @@ main:focus-visible {
 
 .btn:active {
   transform: translate3d(var(--mx), calc(var(--my) - 1px), 0) scale(0.97);
-}
-
-.btn-primary {
+}.btn-primary{
   background: var(--lime);
-  color: var(--ink-deep);
+  color: var(--on-accent);
 }
 
 .btn-primary:hover {
-  background: #e4f88c;
+  background: var(--lime-hi);
 }
 
 .btn-ghost {
   border-color: var(--line-bright);
   color: var(--paper);
-}
-
-.btn-ghost:hover {
-  border-color: var(--lime);
-  color: var(--lime);
+}.btn-ghost:hover{
+  border-color: var(--lime-ink);
+  color: var(--lime-ink);
 }
 
 .hero-cards {
@@ -537,19 +606,17 @@ main:focus-visible {
   padding: 18px 18px 20px;
   border: 1px solid var(--line);
   border-radius: var(--radius-sm);
-  background: linear-gradient(180deg, rgba(23, 27, 25, 0.9), rgba(13, 15, 14, 0.6));
+  background: linear-gradient(180deg, rgb(var(--ch-surface) / 0.9), rgb(var(--ch-ink) / 0.6));
   transition: border-color 0.3s var(--ease-out), transform 0.3s var(--ease-out);
 }
 
 .mini-card:hover {
   border-color: var(--line-bright);
   --lift: -3px;
-}
-
-.mini-label {
+}.mini-label{
   display: block;
   margin-bottom: 9px;
-  color: var(--lime);
+  color: var(--lime-ink);
   font-family: "JetBrains Mono", monospace;
   font-size: 10.5px;
   text-transform: uppercase;
@@ -617,10 +684,8 @@ main:focus-visible {
   align-items: baseline;
   gap: 16px;
   margin-bottom: 42px;
-}
-
-.section-index {
-  color: var(--lime);
+}.section-index{
+  color: var(--lime-ink);
   font-size: 12px;
   letter-spacing: 0.16em;
 }
@@ -665,13 +730,13 @@ main:focus-visible {
   padding: 20px 18px;
   border: 1px solid var(--line);
   border-radius: var(--radius-sm);
-  background: rgba(16, 18, 17, 0.6);
+  background: rgb(var(--ch-ink-2) / 0.6);
   transition: border-color 0.3s var(--ease-out), background 0.3s var(--ease-out);
 }
 
 .stat:hover {
   border-color: var(--line-bright);
-  background: rgba(23, 27, 25, 0.8);
+  background: rgb(var(--ch-surface) / 0.8);
   --lift: -3px;
 }
 
@@ -700,7 +765,7 @@ main:focus-visible {
   padding: 24px;
   border: 1px solid var(--line);
   border-radius: var(--radius);
-  background: linear-gradient(180deg, rgba(23, 27, 25, 0.86), rgba(11, 13, 13, 0.66));
+  background: linear-gradient(180deg, rgb(var(--ch-surface) / 0.86), rgb(var(--ch-ink) / 0.66));
   transition: border-color 0.35s var(--ease-out), transform 0.35s var(--ease-out);
 }
 
@@ -713,17 +778,15 @@ main:focus-visible {
   display: flex;
   align-items: center;
   gap: 12px;
-}
-
-.skill-icon {
+}.skill-icon{
   display: grid;
   place-items: center;
   width: 34px;
   height: 34px;
   flex: none;
   border-radius: 10px;
-  background: var(--lime-soft, rgba(216, 242, 108, 0.14));
-  color: var(--lime);
+  background: var(--lime-soft);
+  color: var(--lime-ink);
   font-family: "JetBrains Mono", monospace;
   font-size: 11px;
   font-weight: 500;
@@ -758,11 +821,9 @@ main:focus-visible {
   font-family: "JetBrains Mono", monospace;
   font-size: 11.5px;
   transition: border-color 0.25s var(--ease-out), color 0.25s var(--ease-out);
-}
-
-.tag:hover {
-  border-color: var(--lime);
-  color: var(--lime);
+}.tag:hover{
+  border-color: var(--lime-ink);
+  color: var(--lime-ink);
 }
 
 /* ================= Projects: toolbar ================= */
@@ -795,8 +856,8 @@ main:focus-visible {
   padding: 5px;
   border: 1px solid var(--line);
   border-radius: 999px;
-  background: rgba(9, 11, 10, 0.6);
-  box-shadow: inset 0 1px 0 rgba(239, 238, 231, 0.04);
+  background: rgb(var(--ch-recess) / 0.6);
+  box-shadow: inset 0 1px 0 rgb(var(--ch-paper) / 0.04);
 }
 
 .filter {
@@ -817,15 +878,11 @@ main:focus-visible {
 
 .filter:hover {
   color: var(--paper);
-}
-
-.filter:focus-visible {
-  outline: 2px solid var(--lime);
+}.filter:focus-visible{
+  outline: 2px solid var(--lime-ink);
   outline-offset: 3px;
-}
-
-.filter[aria-pressed="true"] {
-  color: var(--ink-deep);
+}.filter[aria-pressed="true"]{
+  color: var(--on-accent);
 }
 
 .filter-thumb {
@@ -836,7 +893,7 @@ main:focus-visible {
   height: calc(100% - 10px);
   border-radius: 999px;
   background: var(--lime);
-  box-shadow: 0 8px 22px rgba(216, 242, 108, 0.24);
+  box-shadow: 0 8px 22px rgb(var(--ch-lime) / 0.24);
   transition: transform 0.5s var(--ease-out), width 0.5s var(--ease-out),
     opacity 0.3s var(--ease-out);
   will-change: transform, width;
@@ -850,12 +907,10 @@ main:focus-visible {
 
 .filters.is-stacked .filter-thumb {
   opacity: 0;
-}
-
-.filters.is-stacked .filter[aria-pressed="true"] {
+}.filters.is-stacked .filter[aria-pressed="true"]{
   background: var(--lime);
-  color: var(--ink-deep);
-  box-shadow: 0 8px 22px rgba(216, 242, 108, 0.24);
+  color: var(--on-accent);
+  box-shadow: 0 8px 22px rgb(var(--ch-lime) / 0.24);
 }
 
 .work-count {
@@ -900,7 +955,7 @@ main:focus-visible {
       color-mix(in srgb, var(--accent) 10%, transparent),
       transparent 62%
     ),
-    linear-gradient(180deg, rgba(25, 30, 27, 0.9), rgba(11, 13, 13, 0.66));
+    linear-gradient(180deg, rgb(var(--ch-surface) / 0.9), rgb(var(--ch-ink) / 0.66));
 }
 
 .project.is-filtered {
@@ -916,9 +971,119 @@ main:focus-visible {
   padding: var(--pad);
   border: 1px solid var(--line);
   border-radius: var(--radius);
-  background: linear-gradient(180deg, rgba(23, 27, 25, 0.82), rgba(11, 13, 13, 0.6));
+  background: linear-gradient(180deg, rgb(var(--ch-surface) / 0.82), rgb(var(--ch-ink) / 0.6));
   overflow: hidden;
-  transition: border-color 0.4s var(--ease-out), background 0.55s var(--ease-out);
+  transition: border-color 0.4s var(--ease-out), background 0.55s var(--ease-out),
+    transform 0.45s var(--ease-out);
+}
+
+/* Обложка рисуется из токенов карточки, поэтому меняет цвет вместе с темой. */
+.project-cover {
+  position: relative;
+  margin: calc(var(--pad) * -1) calc(var(--pad) * -1) 2px;
+  height: clamp(88px, 12vw, 124px);
+  overflow: hidden;
+  background: radial-gradient(120% 150% at 12% 0%, color-mix(in srgb, var(--accent) 16%, transparent), transparent 62%),
+    linear-gradient(180deg, rgb(var(--ch-recess) / 0.55), rgb(var(--ch-ink) / 0.35));
+  border-bottom: 1px solid var(--line);
+}
+
+.project-cover svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  transform: scale(1);
+  transition: clip-path 0.85s var(--ease-out), transform 0.6s var(--ease-out);
+  transition-delay: calc(var(--i, 0) * 90ms);
+}
+
+/* Прячем только пока карточка ждёт reveal: без JS или без .reveal
+   содержимое обязано остаться видимым. */
+.project.reveal:not(.is-in) .project-cover svg {
+  clip-path: inset(0 100% 0 0);
+}
+
+.project-cover .cover-lines {
+  fill: none;
+  stroke: var(--accent-ink);
+  stroke-width: 1;
+  opacity: 0.3;
+}
+
+.project-cover .cover-stroke {
+  fill: none;
+  stroke: var(--accent-ink);
+  stroke-width: 1.25;
+  opacity: 0.55;
+}
+
+.project-cover .cover-fill {
+  fill: var(--accent);
+  stroke: none;
+  opacity: 0.75;
+}
+
+/* Мотив оживает при наведении и при раскрытии карточки. */
+.project-cover .cover-lines {
+  transition: opacity 0.5s var(--ease-out), transform 0.7s var(--ease-out);
+}
+
+.project:hover .project-cover .cover-lines,
+.project.is-open .project-cover .cover-lines {
+  opacity: 0.5;
+  transform: translateX(6px);
+}
+
+.project:hover .project-cover .cover-fill,
+.project.is-open .project-cover .cover-fill {
+  opacity: 0.95;
+}
+
+.project:hover .project-cover svg {
+  transform: scale(1.03);
+}
+
+.project-stack {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.project-stack li {
+  padding: 4px 9px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  color: var(--paper-faint);
+  font-family: "JetBrains Mono", monospace;
+  font-size: 10.5px;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  opacity: 1;
+  translate: none;
+  transition: opacity 0.4s var(--ease-out), translate 0.4s var(--ease-out),
+    color 0.3s var(--ease-out), border-color 0.3s var(--ease-out),
+    background 0.3s var(--ease-out);
+  transition-delay: calc(260ms + var(--j, 0) * 45ms);
+}
+
+/* Каскад появления тегов отвязан от появления карточки, поэтому
+   скрываем их только пока карточка реально ждёт reveal. */
+.project.reveal:not(.is-in) .project-stack li {
+  opacity: 0;
+  translate: 0 6px;
+}
+
+.project:hover .project-stack li,
+.project.is-open .project-stack li {
+  border-color: color-mix(in srgb, var(--accent-ink) 30%, transparent);
+}
+
+.project.is-open .project-stack li {
+  color: var(--paper-muted);
+  background: color-mix(in srgb, var(--accent-ink) 7%, transparent);
 }
 
 .project:hover {
@@ -951,7 +1116,7 @@ main:focus-visible {
   z-index: 2;
   width: 48%;
   height: 100%;
-  background: linear-gradient(100deg, transparent, rgba(239, 238, 231, 0.07), transparent);
+  background: linear-gradient(100deg, transparent, rgb(var(--ch-paper) / 0.07), transparent);
   opacity: 0;
   pointer-events: none;
   transform: skewX(-16deg);
@@ -980,10 +1145,8 @@ main:focus-visible {
   flex-wrap: wrap;
   align-items: center;
   gap: 9px;
-}
-
-.project-num {
-  color: var(--accent);
+}.project-num{
+  color: var(--accent-ink);
   font-size: 10.5px;
   letter-spacing: 0.16em;
 }
@@ -1011,7 +1174,7 @@ main:focus-visible {
 
 .chip-featured {
   background: var(--lime);
-  color: var(--ink-deep);
+  color: var(--on-accent);
 }
 
 .project-toggle {
@@ -1022,7 +1185,7 @@ main:focus-visible {
   padding: 6px 10px 6px 12px;
   border: 1px solid var(--line);
   border-radius: 999px;
-  background: rgba(239, 238, 231, 0.03);
+  background: rgb(var(--ch-paper) / 0.03);
   color: var(--paper-faint);
   font-family: "JetBrains Mono", monospace;
   font-size: 10.5px;
@@ -1036,11 +1199,9 @@ main:focus-visible {
 .project-toggle:hover {
   color: var(--paper);
   border-color: var(--line-bright);
-  background: rgba(239, 238, 231, 0.06);
-}
-
-.project-toggle:focus-visible {
-  outline: 2px solid var(--accent, var(--lime));
+  background: rgb(var(--ch-paper) / 0.06);
+}.project-toggle:focus-visible{
+  outline: 2px solid var(--accent-ink, var(--lime-ink));
   outline-offset: 3px;
 }
 
@@ -1048,10 +1209,8 @@ main:focus-visible {
   width: 12px;
   height: 12px;
   transition: transform 0.45s var(--ease-out);
-}
-
-.project.is-open .project-toggle {
-  color: var(--accent);
+}.project.is-open .project-toggle{
+  color: var(--accent-ink);
   border-color: color-mix(in srgb, var(--accent) 40%, transparent);
 }
 
@@ -1203,11 +1362,9 @@ main:focus-visible {
   transform: translate3d(var(--mx), var(--my), 0);
   transition: border-color 0.25s var(--ease-out), color 0.25s var(--ease-out),
     transform 0.35s var(--ease-out);
-}
-
-.link:hover {
-  border-color: var(--lime);
-  color: var(--lime);
+}.link:hover{
+  border-color: var(--lime-ink);
+  color: var(--lime-ink);
   transform: translate3d(var(--mx), calc(var(--my) - 2px), 0);
 }
 
@@ -1219,9 +1376,7 @@ main:focus-visible {
   font-size: 12px;
   font-weight: 400;
   cursor: default;
-}
-
-.link-ghost:hover {
+}.link-ghost:hover{
   border-color: var(--line);
   color: var(--paper-faint);
   --mx: 0px;
@@ -1282,8 +1437,8 @@ main:focus-visible {
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: #8b93a7;
-  box-shadow: 0 0 0 3px rgba(139, 147, 167, 0.14);
+  background: rgb(var(--ch-core));
+  box-shadow: 0 0 0 3px rgb(var(--ch-core) / 0.14);
   transition: background 0.4s ease, box-shadow 0.4s ease;
 }
 
@@ -1294,7 +1449,7 @@ main:focus-visible {
 }
 
 .core-hint {
-  color: rgba(239, 238, 231, 0.28);
+  color: var(--paper-faint);
 }
 
 @media (max-width: 560px) {
@@ -1305,19 +1460,19 @@ main:focus-visible {
 
 .core[data-state="charge"] .core-dot {
   background: var(--lime);
-  box-shadow: 0 0 0 3px rgba(216, 242, 108, 0.16), 0 0 14px rgba(216, 242, 108, 0.5);
+  box-shadow: 0 0 0 3px rgb(var(--ch-lime) / 0.16), 0 0 14px rgb(var(--ch-lime) / 0.5);
 }
 
 .core[data-state="release"] .core-dot {
   background: var(--orange);
-  box-shadow: 0 0 0 3px rgba(244, 154, 112, 0.16), 0 0 14px rgba(244, 154, 112, 0.5);
+  box-shadow: 0 0 0 3px rgb(var(--ch-orange) / 0.16), 0 0 14px rgb(var(--ch-orange) / 0.5);
 }
 
 .console {
   margin-top: 16px;
   border: 1px solid var(--line);
   border-radius: var(--radius);
-  background: rgba(8, 10, 9, 0.55);
+  background: rgb(var(--ch-recess) / 0.55);
   overflow: hidden;
 }
 
@@ -1327,16 +1482,14 @@ main:focus-visible {
   gap: 10px;
   padding: 11px 18px;
   border-bottom: 1px solid var(--line);
-  background: rgba(239, 238, 231, 0.02);
+  background: rgb(var(--ch-paper) / 0.02);
   color: var(--paper-faint);
   font-family: "JetBrains Mono", monospace;
   font-size: 10.5px;
   text-transform: uppercase;
   letter-spacing: 0.12em;
-}
-
-.console-bar i {
-  color: var(--lime);
+}.console-bar i{
+  color: var(--lime-ink);
   font-style: normal;
 }
 
@@ -1365,11 +1518,9 @@ main:focus-visible {
 
 .console-row:hover {
   padding-left: 26px;
-  background: rgba(239, 238, 231, 0.035);
-}
-
-.console-prompt {
-  color: var(--lime);
+  background: rgb(var(--ch-paper) / 0.035);
+}.console-prompt{
+  color: var(--lime-ink);
   font-family: "JetBrains Mono", monospace;
   font-size: 12px;
 }
@@ -1400,7 +1551,7 @@ main:focus-visible {
 
 .console-row:last-child::after {
   content: "\258c";
-  color: var(--lime);
+  color: var(--lime-ink);
   animation: caret 1.1s steps(2, start) infinite;
 }
 
@@ -1482,8 +1633,8 @@ main:focus-visible {
 }
 
 .tl-item:hover::before {
-  border-color: var(--lime);
-  box-shadow: 0 0 0 4px rgba(216, 242, 108, 0.12);
+  border-color: var(--lime-ink);
+  box-shadow: 0 0 0 4px rgb(var(--ch-lime) / 0.12);
 }
 
 .tl-when {
@@ -1497,12 +1648,10 @@ main:focus-visible {
   font-size: 17px;
   font-weight: 700;
   letter-spacing: -0.02em;
-}
-
-.tl-where {
+}.tl-where{
   display: block;
   margin-top: 3px;
-  color: var(--lime);
+  color: var(--lime-ink);
   font-family: "JetBrains Mono", monospace;
   font-size: 11.5px;
 }
@@ -1518,8 +1667,8 @@ main:focus-visible {
   padding: clamp(24px, 4vw, 48px);
   border: 1px solid var(--line);
   border-radius: calc(var(--radius) + 4px);
-  background: radial-gradient(120% 130% at 0% 0%, rgba(216, 242, 108, 0.1), transparent 55%),
-    linear-gradient(180deg, rgba(23, 27, 25, 0.9), rgba(11, 13, 13, 0.7));
+  background: radial-gradient(120% 130% at 0% 0%, rgb(var(--ch-lime) / 0.1), transparent 55%),
+    linear-gradient(180deg, rgb(var(--ch-surface) / 0.9), rgb(var(--ch-ink) / 0.7));
 }
 
 .contact-lead {
@@ -1543,26 +1692,22 @@ main:focus-visible {
   padding: 15px 17px;
   border: 1px solid var(--line);
   border-radius: var(--radius-sm);
-  background: rgba(10, 12, 11, 0.6);
+  background: rgb(var(--ch-recess) / 0.6);
   transition: border-color 0.3s var(--ease-out), transform 0.3s var(--ease-out),
     background 0.3s var(--ease-out);
-}
-
-.contact-link:hover {
-  border-color: var(--lime);
+}.contact-link:hover{
+  border-color: var(--lime-ink);
   --lift: -3px;
-  background: rgba(16, 20, 18, 0.75);
-}
-
-.contact-icon {
+  background: rgb(var(--ch-surface) / 0.75);
+}.contact-icon{
   display: grid;
   place-items: center;
   width: 36px;
   height: 36px;
   flex: none;
   border-radius: 11px;
-  background: var(--lime-soft, rgba(216, 242, 108, 0.14));
-  color: var(--lime);
+  background: var(--lime-soft);
+  color: var(--lime-ink);
 }
 
 .contact-meta {
@@ -1683,7 +1828,7 @@ main:focus-visible {
   border-radius: inherit;
   background: radial-gradient(
     240px circle at var(--px) var(--py),
-    color-mix(in srgb, var(--accent, #d8f26c) 13%, transparent),
+    color-mix(in srgb, var(--accent-ink, var(--lime-ink)) 13%, transparent),
     transparent 64%
   );
   opacity: 0;
@@ -1693,7 +1838,7 @@ main:focus-visible {
 
 .tiltable:hover {
   scale: 1.014;
-  box-shadow: 0 28px 64px rgba(0, 0, 0, 0.42);
+  box-shadow: 0 28px 64px rgb(var(--ch-shadow) / 0.42);
 }
 
 .tiltable:hover::after {
@@ -1719,9 +1864,7 @@ main:focus-visible {
   opacity: 1;
   translate: none;
   rotate: none;
-}
-
-.hero-title .accent {
+}.hero-title .accent{
   opacity: 0;
   translate: 0 0.55em;
   transition: opacity 0.7s var(--ease-out), translate 0.95s var(--ease-out);
@@ -1757,8 +1900,8 @@ main:focus-visible {
   height: calc(100% - 16px);
   transform-origin: top;
   transform: scaleY(var(--tl));
-  background: linear-gradient(180deg, var(--lime), rgba(216, 242, 108, 0.12));
-  box-shadow: 0 0 14px rgba(216, 242, 108, 0.4);
+  background: linear-gradient(180deg, var(--lime), rgb(var(--ch-lime) / 0.12));
+  box-shadow: 0 0 14px rgb(var(--ch-lime) / 0.4);
   transition: transform 0.3s linear;
 }
 
@@ -1784,7 +1927,7 @@ body.is-swapping .footer {
     margin: 0;
     padding: 10px;
     border-radius: var(--radius);
-    background: var(--glass-heavy, rgba(16, 18, 17, 0.95));
+    background: var(--glass-heavy);
     backdrop-filter: blur(18px);
     -webkit-backdrop-filter: blur(18px);
     opacity: 0;
@@ -1810,8 +1953,8 @@ body.is-swapping .footer {
   }
 
   .nav a.is-active {
-    background: var(--lime-soft, rgba(216, 242, 108, 0.14));
-    color: var(--lime);
+    background: var(--lime-soft);
+    color: var(--lime-ink);
   }
 
   .burger {
@@ -1874,10 +2017,7 @@ body.is-swapping .footer {
   .hero-canvas,
   .cursor-glow {
     display: none;
-  }
-
-  .hero-title .char,
-  .hero-title .accent {
+  }.hero-title .char, .hero-title .accent{
     opacity: 1;
     translate: none;
     rotate: none;
@@ -1933,10 +2073,7 @@ body.is-swapping .footer {
   .hero-inner {
     translate: none;
     opacity: 1;
-  }
-
-  .hero-title .char,
-  .hero-title .accent {
+  }.hero-title .char, .hero-title .accent{
     opacity: 1;
     translate: none;
     rotate: none;
@@ -1971,6 +2108,7 @@ body.is-swapping .footer {
   .work-bar,
   .project-toggle,
   .project::before,
+  .project-cover,
   .console-row::after {
     display: none;
   }
@@ -1986,5 +2124,39 @@ body.is-swapping .footer {
   .project-detail-text > * {
     opacity: 1;
     translate: none;
+  }
+
+  /* На белой бумаге светлый лайм и бледный серый нечитаемы, поэтому
+     мелкие акцентные подписи печатаются обычным чёрным. */
+  .project-num,
+  .project.is-open .project-toggle,
+  .project-stack li,
+  .project.is-open .project-stack li,
+  .project-metrics li,
+  .project-metrics b,
+  .project-tagline,
+  .chip,
+  .tag,
+  .mini-label,
+  .section-index,
+  .tl-where,
+  .skill-icon,
+  .console-bar i,
+  .console-prompt,
+  .console-tag,
+  .console-note,
+  .contact-icon,
+  .link,
+  .link-ghost {
+    color: #111 !important;
+    background: none;
+    border-color: #ddd;
+  }
+
+  .chip-featured,
+  .lang-item.is-on,
+  .filter-thumb {
+    background: #eee !important;
+    color: #111 !important;
   }
 }

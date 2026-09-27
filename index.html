@@ -10,16 +10,21 @@
     />
     <meta name="color-scheme" content="dark" />
     <meta name="author" content="Arcnosixa" />
-    <link rel="canonical" href="https://arcnosixta.github.io/arcnosixa.dev/" />
+    <link rel="canonical" href="https://arcnosixa.dev/" />
+    <link rel="alternate" hreflang="ru" href="https://arcnosixa.dev/" />
+    <link rel="alternate" hreflang="en" href="https://arcnosixa.dev/" />
+    <link rel="alternate" hreflang="x-default" href="https://arcnosixa.dev/" />
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="Arcnosixa" />
-    <meta property="og:url" content="https://arcnosixta.github.io/arcnosixa.dev/" />
+    <meta property="og:url" content="https://arcnosixa.dev/" />
+    <meta property="og:locale" content="ru_RU" />
+    <meta property="og:locale:alternate" content="en_US" />
     <meta property="og:title" content="Arcnosixa — frontend / React" />
     <meta
       property="og:description"
       content="Портфолио frontend-разработчика: React, локальные сервисы, Flutter и Telegram Mini Apps."
     />
-    <meta property="og:image" content="https://arcnosixta.github.io/arcnosixa.dev/og.png" />
+    <meta property="og:image" content="https://arcnosixa.dev/og.png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
     <meta property="og:image:alt" content="Arcnosixa — frontend / React" />
@@ -29,7 +34,7 @@
       name="twitter:description"
       content="Портфолио frontend-разработчика: React, локальные сервисы, Flutter и Telegram Mini Apps."
     />
-    <meta name="twitter:image" content="https://arcnosixta.github.io/arcnosixa.dev/og.png" />
+    <meta name="twitter:image" content="https://arcnosixa.dev/og.png" />
     <title>Arcnosixa — frontend / React</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -38,6 +43,20 @@
       rel="stylesheet"
     />
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230b0d0d'/%3E%3Cpath d='M9 22 16 9l7 13' stroke='%23d8f26c' stroke-width='2.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M12.5 18.5h7' stroke='%23d8f26c' stroke-width='2.5' stroke-linecap='round'/%3E%3C/svg%3E" />
+    <script>
+      // Тема применяется до первой отрисовки, иначе при перезагрузке мигает.
+      (function () {
+        try {
+          var saved = localStorage.getItem("arc-theme");
+          var theme =
+            saved ||
+            (window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark");
+          document.documentElement.dataset.theme = theme;
+        } catch (e) {
+          document.documentElement.dataset.theme = "dark";
+        }
+      })();
+    </script>
     <link rel="stylesheet" href="styles.css?v=4" />
     <noscript>
       <style>
@@ -84,7 +103,7 @@
         "@context": "https://schema.org",
         "@type": "Person",
         "name": "Arcnosixa",
-        "url": "https://arcnosixta.github.io/arcnosixa.dev/",
+        "url": "https://arcnosixa.dev/",
         "jobTitle": "Frontend Developer",
         "knowsLanguage": ["ru", "en"],
         "sameAs": [
@@ -114,6 +133,30 @@
       </nav>
 
       <div class="topbar-actions">
+        <button
+          class="theme-toggle"
+          id="themeToggle"
+          type="button"
+          aria-label="Switch theme"
+          data-i18n-aria="a11y.theme"
+        >
+          <svg class="theme-icon theme-icon-sun" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+            <circle cx="12" cy="12" r="4.2" fill="none" stroke="currentColor" stroke-width="1.7" />
+            <g stroke="currentColor" stroke-width="1.7" stroke-linecap="round">
+              <path d="M12 2.4v2.4M12 19.2v2.4M2.4 12h2.4M19.2 12h2.4" />
+              <path d="M5.2 5.2 6.9 6.9M17.1 17.1l1.7 1.7M18.8 5.2l-1.7 1.7M6.9 17.1l-1.7 1.7" />
+            </g>
+          </svg>
+          <svg class="theme-icon theme-icon-moon" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+            <path
+              d="M20 14.2A8.4 8.4 0 0 1 9.8 4a8.4 8.4 0 1 0 10.2 10.2Z"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.7"
+              stroke-linejoin="round"
+            />
+          </svg>
+        </button>
         <button
           class="lang"
           id="langToggle"

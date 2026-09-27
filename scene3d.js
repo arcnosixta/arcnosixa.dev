@@ -16,12 +16,59 @@
   const finePointer = window.matchMedia("(pointer: fine)");
   const LIB = "vendor/three.min.js";
 
-  const LIME = 0xd8f26c;
-  const BLUE = 0xa8c9ff;
-  const PAPER = 0xefeee7;
   const COMPACT = 940;
 
+  /* Сцена рисуется поверх страницы с прозрачным фоном, поэтому палитра зависит
+     от темы: в светлой аддитивное смешение и белые точки гаснут, а тёмное ядро
+     превращается в тёмное пятно. Роли материалов перекрашиваются на лету. */
+  const PALETTE = {
+    dark: {
+      solid: 0x1a211c,
+      solidEmissive: 0x1d2a12,
+      solidEmissiveIntensity: 1,
+      edges: 0xd8f26c,
+      edgesOpacity: 0.85,
+      shell: 0xa8c9ff,
+      shellOpacity: 0.26,
+      ringA: 0xd8f26c,
+      ringB: 0xa8c9ff,
+      sat: [0xd8f26c, 0xefeee7, 0xa8c9ff],
+      satEmissive: 0.18,
+      dust: 0xefeee7,
+      dustOpacity: 0.5,
+      ambient: 0x2b3527,
+      ambientIntensity: 1.6,
+      key: 0xd8f26c,
+      keyIntensity: 1.5,
+      fill: 0xa8c9ff,
+      fillIntensity: 0.9,
+    },
+    light: {
+      solid: 0xe9ebe0,
+      solidEmissive: 0x6f8a1c,
+      solidEmissiveIntensity: 0.16,
+      edges: 0x5c7410,
+      edgesOpacity: 0.9,
+      shell: 0x2b5ba8,
+      shellOpacity: 0.3,
+      ringA: 0x6d8a15,
+      ringB: 0x2b5ba8,
+      sat: [0x5c7410, 0x2a2d24, 0x2b5ba8],
+      satEmissive: 0.08,
+      dust: 0x4f554b,
+      dustOpacity: 0.38,
+      ambient: 0xf4f6ec,
+      ambientIntensity: 2.2,
+      key: 0xfff6dd,
+      keyIntensity: 1.9,
+      fill: 0xd3e2ff,
+      fillIntensity: 1.1,
+    },
+  };
+
   let reduced = motionQuery.matches;
+  let THREE = null;
+  let lights = null;
   let renderer = null;
   let scene = null;
   let camera = null;
@@ -71,24 +118,19 @@
     const solid = new THREE.Mesh(
       geometry,
       new THREE.MeshStandardMaterial({
-        color: 0x1a211c,
         flatShading: true,
         metalness: 0.72,
         roughness: 0.34,
-        emissive: 0x1d2a12,
-        emissiveIntensity: 1,
       }),
     );
+    solid.material.userData.role = "solid";
     group.add(solid);
 
     const edges = new THREE.LineSegments(
       new THREE.EdgesGeometry(geometry, 1),
-      new THREE.LineBasicMaterial({
-        color: LIME,
-        transparent: true,
-        opacity: 0.85,
-      }),
+      new THREE.LineBasicMaterial({ transparent: true }),
     );
+    edges.material.userData.role = "edges";
     group.add(edges);
     group.userData.edges = edges;
 
@@ -96,32 +138,30 @@
   }
 
   function makeShell(THREE) {
-    return new THREE.LineSegments(
+    const shell = new THREE.LineSegments(
       new THREE.EdgesGeometry(new THREE.IcosahedronGeometry(1.78, 1), 1),
-      new THREE.LineBasicMaterial({
-        color: BLUE,
-        transparent: true,
-        opacity: 0.26,
-      }),
+      new THREE.LineBasicMaterial({ transparent: true }),
     );
+    shell.material.userData.role = "shell";
+    return shell;
   }
 
   function makeRings(THREE) {
     const group = new THREE.Group();
     const specs = [
-      { radius: 2.16, tube: 0.007, color: LIME, opacity: 0.55, tilt: 1.24, spin: 0.22 },
-      { radius: 2.62, tube: 0.005, color: BLUE, opacity: 0.34, tilt: -0.72, spin: -0.15 },
+      { radius: 2.16, tube: 0.007, opacity: 0.55, tilt: 1.24, spin: 0.22 },
+      { radius: 2.62, tube: 0.005, opacity: 0.34, tilt: -0.72, spin: -0.15 },
     ];
-    specs.forEach((spec) => {
+    specs.forEach((spec, index) => {
       const ring = new THREE.Mesh(
         new THREE.TorusGeometry(spec.radius, spec.tube, 6, 160),
         new THREE.MeshBasicMaterial({
-          color: spec.color,
           transparent: true,
           opacity: spec.opacity,
           depthWrite: false,
         }),
       );
+      ring.material.userData.role = `ring${index}`;
       ring.rotation.x = spec.tilt;
       ring.userData.spin = spec.spin;
       group.add(ring);
@@ -132,22 +172,20 @@
   function makeSatellites(THREE) {
     const geometry = new THREE.OctahedronGeometry(0.1, 0);
     const specs = [
-      { radius: 1.62, speed: 0.55, phase: 0.4, y: 0.42, color: LIME },
-      { radius: 2.34, speed: -0.34, phase: 2.6, y: -0.58, color: PAPER },
-      { radius: 2.86, speed: 0.22, phase: 4.4, y: 0.24, color: BLUE },
+      { radius: 1.62, speed: 0.55, phase: 0.4, y: 0.42 },
+      { radius: 2.34, speed: -0.34, phase: 2.6, y: -0.58 },
+      { radius: 2.86, speed: 0.22, phase: 4.4, y: 0.24 },
     ];
-    return specs.map((spec) => {
+    return specs.map((spec, index) => {
       const mesh = new THREE.Mesh(
         geometry,
         new THREE.MeshStandardMaterial({
-          color: spec.color,
           flatShading: true,
           metalness: 0.4,
           roughness: 0.3,
-          emissive: spec.color,
-          emissiveIntensity: 0.18,
         }),
       );
+      mesh.material.userData.role = `sat${index}`;
       mesh.userData = spec;
       return mesh;
     });
@@ -169,19 +207,84 @@
     return new THREE.Points(
       geometry,
       new THREE.PointsMaterial({
-        color: PAPER,
         size: 0.032,
         sizeAttenuation: true,
         transparent: true,
-        opacity: 0.5,
         depthWrite: false,
-        blending: THREE.AdditiveBlending,
       }),
     );
   }
 
+  function sceneTheme() {
+    return document.documentElement.dataset.theme === "light" ? "light" : "dark";
+  }
+
+  /** Перекрашивает все материалы сцены под текущую тему. */
+  function paint() {
+    if (!THREE || !rig) return;
+    const pal = PALETTE[sceneTheme()];
+
+    rig.traverse((node) => {
+      const material = node.material;
+      if (!material) return;
+      const role = material.userData && material.userData.role;
+      switch (role) {
+        case "solid":
+          material.color.setHex(pal.solid);
+          material.emissive.setHex(pal.solidEmissive);
+          material.emissiveIntensity = pal.solidEmissiveIntensity;
+          break;
+        case "edges":
+          material.color.setHex(pal.edges);
+          material.opacity = pal.edgesOpacity;
+          break;
+        case "shell":
+          material.color.setHex(pal.shell);
+          material.opacity = pal.shellOpacity;
+          break;
+        case "ring0":
+          material.color.setHex(pal.ringA);
+          break;
+        case "ring1":
+          material.color.setHex(pal.ringB);
+          break;
+        case "sat0":
+        case "sat1":
+        case "sat2": {
+          const index = Number(role.slice(3));
+          material.color.setHex(pal.sat[index]);
+          material.emissive.setHex(pal.sat[index]);
+          material.emissiveIntensity = pal.satEmissive;
+          break;
+        }
+        default:
+          break;
+      }
+      material.needsUpdate = true;
+    });
+
+    if (dust) {
+      const material = dust.material;
+      material.color.setHex(pal.dust);
+      material.opacity = pal.dustOpacity;
+      // Аддитивное смешение на светлом фоне выбеливает точки в ноль.
+      material.blending =
+        sceneTheme() === "light" ? THREE.NormalBlending : THREE.AdditiveBlending;
+      material.needsUpdate = true;
+    }
+
+    if (lights) {
+      lights.ambient.color.setHex(pal.ambient);
+      lights.ambient.intensity = pal.ambientIntensity;
+      lights.key.color.setHex(pal.key);
+      lights.key.intensity = pal.keyIntensity;
+      lights.fill.color.setHex(pal.fill);
+      lights.fill.intensity = pal.fillIntensity;
+    }
+  }
+
   function build() {
-    const THREE = window.THREE;
+    THREE = window.THREE;
     try {
       renderer = new THREE.WebGLRenderer({
         canvas,
@@ -206,13 +309,13 @@
     camera.lookAt(0, 0, 0);
     clock = new THREE.Clock();
 
-    scene.add(new THREE.AmbientLight(0x2b3527, 1.6));
-    const key = new THREE.PointLight(LIME, 1.5, 14);
+    const ambient = new THREE.AmbientLight(0xffffff, 1);
+    const key = new THREE.PointLight(0xffffff, 1, 14);
     key.position.set(2.4, 2.6, 3.2);
-    scene.add(key);
-    const fill = new THREE.PointLight(BLUE, 0.9, 14);
+    const fill = new THREE.PointLight(0xffffff, 1, 14);
     fill.position.set(-3, -2.2, 2.4);
-    scene.add(fill);
+    scene.add(ambient, key, fill);
+    lights = { ambient, key, fill };
 
     rig = new THREE.Group();
     core = makeCore(THREE);
@@ -227,6 +330,7 @@
 
     if (reduced) shell.visible = false;
 
+    paint();
     bind();
     layout();
     document.documentElement.classList.add("gl-ready");
@@ -344,6 +448,7 @@
     window.addEventListener("pointercancel", onPointerUp, { passive: true });
     window.addEventListener("scroll", onScroll, { passive: true });
     window.addEventListener("resize", layout);
+    window.addEventListener("themechange", paint);
     document.addEventListener("visibilitychange", sync);
 
     if ("IntersectionObserver" in window) {

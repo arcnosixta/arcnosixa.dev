@@ -4,9 +4,13 @@ const I18N = {
     "a11y.nav": "Основная навигация",
     "a11y.lang": "Переключить язык",
     "a11y.menu": "Меню",
+    "a11y.theme": "Переключить тему",
+    "a11y.themeLight": "Включить светлую тему",
+    "a11y.themeDark": "Включить тёмную тему",
     "meta.title": "Arcnosixa — frontend / React",
     "meta.description":
       "Arcnosixa — frontend-разработчик: React, дизайн-системы, локальные сервисы и мобильные приложения. Портфолио и избранные проекты.",
+    "meta.locale": "ru_RU",
     "nav.about": "Обо мне",
     "nav.skills": "Навыки",
     "nav.work": "Проекты",
@@ -190,9 +194,13 @@ const I18N = {
     "a11y.nav": "Primary navigation",
     "a11y.lang": "Switch language",
     "a11y.menu": "Menu",
+    "a11y.theme": "Switch theme",
+    "a11y.themeLight": "Switch to the light theme",
+    "a11y.themeDark": "Switch to the dark theme",
     "meta.title": "Arcnosixa — frontend / React",
     "meta.description":
       "Arcnosixa — frontend developer: React, design systems, local services and mobile apps. Portfolio and selected projects.",
+    "meta.locale": "en_US",
     "nav.about": "About",
     "nav.skills": "Skills",
     "nav.work": "Work",
@@ -381,8 +389,10 @@ const I18N = {
 const PROJECTS = [
   {
     key: "ciel",
+    stack: ["React 19", "Vite", "Node", "SSE", "i18n"],
     featured: true,
     accent: "#d8f26c",
+    accentInk: "#5c7410",
     year: "2026",
     title: "Ciel",
     titleEn: "Ciel",
@@ -414,7 +424,9 @@ const PROJECTS = [
   },
   {
     key: "esep-web",
+    stack: ["Flutter", "Cloudflare", "Supabase", "RLS", "REST"],
     accent: "#f49a70",
+    accentInk: "#a8481a",
     year: "2025—2026",
     title: "ESEP",
     titleEn: "ESEP",
@@ -446,7 +458,9 @@ const PROJECTS = [
   },
   {
     key: "osint-portal",
+    stack: ["Next.js", "TypeScript", "Tailwind", "Three.js", "GSAP"],
     accent: "#a8c9ff",
+    accentInk: "#2b5ba8",
     year: "2026",
     title: "OSINT Portal",
     titleEn: "OSINT Portal",
@@ -478,7 +492,9 @@ const PROJECTS = [
   },
   {
     key: "tradingagents",
+    stack: ["FastAPI", "Jinja2", "SSE", "Docker", "LLM"],
     accent: "#c9a8ff",
+    accentInk: "#6b3fbe",
     year: "2026",
     title: "TradingAgents",
     titleEn: "TradingAgents",
@@ -735,6 +751,136 @@ function setProjectOpen(card, open) {
   openProject = open ? key : null;
 }
 
+/**
+ * Обложка проекта — процедурный SVG-мотив вместо картинки: у сайта нет
+ * растровых ассетов, а мотив должен оставаться резким на любом экране.
+ * Каждый проект получает свой рисунок и детерминированное зерно по ключу,
+ * поэтому обложка не меняется при перерисовке.
+ */
+const COVER_W = 320;
+const COVER_H = 120;
+
+/** Детерминированный ГПСЧ: одинаковый ключ — одинаковая обложка. */
+function seeded(key) {
+  let h = 2166136261;
+  for (let i = 0; i < key.length; i += 1) {
+    h ^= key.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return function next() {
+    h += 0x6d2b79f5;
+    let t = h;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+function svgEl(name, attrs) {
+  const node = document.createElementNS("http://www.w3.org/2000/svg", name);
+  for (const [key, value] of Object.entries(attrs)) node.setAttribute(key, String(value));
+  return node;
+}
+
+/* Мотивы. Каждый возвращает строку разметки; цвета наследуются из CSS,
+   поэтому обложка следует за темой и акцентом проекта. */
+const COVER_MOTIFS = {
+  // Горизонт с нарастающим шагом — слои рабочего пространства.
+  horizon(rand) {
+    const lines = [];
+    for (let i = 0; i < 7; i += 1) {
+      const y = 26 + i * i * 1.6 + i * 6;
+      const inset = 12 + rand() * 26;
+      lines.push(
+        `<line x1="${inset.toFixed(1)}" y1="${y.toFixed(1)}" x2="${(COVER_W - inset).toFixed(1)}" y2="${y.toFixed(1)}" />`,
+      );
+    }
+    const cx = 60 + rand() * 30;
+    return `<g class="cover-lines">${lines.join("")}</g>
+      <circle class="cover-fill" cx="${cx.toFixed(1)}" cy="42" r="17" />
+      <circle class="cover-stroke" cx="${cx.toFixed(1)}" cy="42" r="27" />`;
+  },
+  // Сетка окон — одна кодовая база на несколько платформ.
+  windows(rand) {
+    const cells = [];
+    const cols = 3;
+    const rows = 2;
+    const w = 84;
+    const h = 34;
+    for (let r = 0; r < rows; r += 1) {
+      for (let c = 0; c < cols; c += 1) {
+        const x = 18 + c * (w + 12);
+        const y = 26 + r * (h + 14);
+        const active = rand() > 0.62;
+        cells.push(
+          `<rect class="${active ? "cover-fill" : "cover-stroke"}" x="${x}" y="${y}" width="${w}" height="${h}" rx="7" />`,
+        );
+      }
+    }
+    return `<g class="cover-lines">${cells.join("")}</g>`;
+  },
+  // Граф сущностей: узлы и связи.
+  graph(rand) {
+    const nodes = [];
+    for (let i = 0; i < 11; i += 1) {
+      nodes.push({
+        x: 20 + rand() * (COVER_W - 40),
+        y: 20 + rand() * (COVER_H - 40),
+        r: 2.4 + rand() * 2.6,
+      });
+    }
+    const edges = [];
+    for (let i = 1; i < nodes.length; i += 1) {
+      const a = nodes[i];
+      const b = nodes[Math.floor(rand() * i)];
+      edges.push(
+        `<line x1="${a.x.toFixed(1)}" y1="${a.y.toFixed(1)}" x2="${b.x.toFixed(1)}" y2="${b.y.toFixed(1)}" />`,
+      );
+    }
+    const dots = nodes
+      .map(
+        (n) =>
+          `<circle class="${n.r > 4 ? "cover-fill" : "cover-stroke"}" cx="${n.x.toFixed(1)}" cy="${n.y.toFixed(1)}" r="${n.r.toFixed(1)}" />`,
+      )
+      .join("");
+    return `<g class="cover-lines">${edges.join("")}</g><g>${dots}</g>`;
+  },
+  // Слоистые волны — агенты спорят между собой.
+  waves(rand) {
+    const paths = [];
+    for (let band = 0; band < 4; band += 1) {
+      const base = 30 + band * 20;
+      const amp = 7 + rand() * 7;
+      const phase = rand() * Math.PI * 2;
+      let d = `M 0 ${base.toFixed(1)}`;
+      for (let x = 0; x <= COVER_W; x += 16) {
+        const y = base + Math.sin(phase + x / 26 + band) * amp;
+        d += ` L ${x} ${y.toFixed(1)}`;
+      }
+      paths.push(
+        `<path class="${band === 1 ? "cover-fill" : "cover-stroke"}" d="${d}" />`,
+      );
+    }
+    return `<g class="cover-lines">${paths.join("")}</g>`;
+  },
+};
+
+const COVER_BY_KEY = {
+  ciel: "horizon",
+  "esep-web": "windows",
+  "osint-portal": "graph",
+  tradingagents: "waves",
+};
+
+function projectCover(project) {
+  const figure = el("figure", "project-cover");
+  figure.setAttribute("aria-hidden", "true");
+  const rand = seeded(project.key);
+  const motif = COVER_MOTIFS[COVER_BY_KEY[project.key] || "horizon"];
+  figure.innerHTML = `<svg viewBox="0 0 ${COVER_W} ${COVER_H}" preserveAspectRatio="xMidYMid slice">${motif(rand)}</svg>`;
+  return figure;
+}
+
 function projectCard(project, index) {
   const card = el("article", "project reveal");
   card.dataset.key = project.key;
@@ -745,6 +891,8 @@ function projectCard(project, index) {
   const detailId = `work-detail-${project.key}`;
   card.setAttribute("aria-labelledby", `work-title-${project.key}`);
   card.appendChild(el("span", "project-rail"));
+
+  card.appendChild(projectCover(project));
 
   const top = el("div", "project-top");
   top.appendChild(el("span", "project-num mono", String(index + 1).padStart(2, "0")));
@@ -766,6 +914,16 @@ function projectCard(project, index) {
   card.appendChild(top);
 
   card.appendChild(el("p", "project-tagline", pick(project, "tagline")));
+
+  if (project.stack && project.stack.length) {
+    const stack = el("ul", "project-stack");
+    project.stack.forEach((item, position) => {
+      const node = el("li", null, item);
+      node.style.setProperty("--j", String(position));
+      stack.appendChild(node);
+    });
+    card.appendChild(stack);
+  }
 
   if (project.metrics.length) {
     const metrics = el("ul", "project-metrics");
@@ -1017,6 +1175,7 @@ function applyStaticText() {
   syncMeta("name", "description", description);
   syncMeta("property", "og:title", title);
   syncMeta("property", "og:description", description);
+  syncMeta("property", "og:locale", t("meta.locale"));
   document.documentElement.lang = lang;
   document.querySelectorAll("[data-lang-label]").forEach((node) => {
     node.classList.toggle("is-on", node.dataset.langLabel === lang);
@@ -1034,6 +1193,7 @@ function renderAll() {
   renderProjects();
   renderTimeline();
   renderContacts();
+  paintProjectAccents();
   bindReveal();
   setActiveNav();
   document.dispatchEvent(new CustomEvent("portfolio:render"));
@@ -1048,6 +1208,7 @@ function setLang(next) {
   }
   document.body.classList.add("is-swapping");
   renderAll();
+  syncThemeToggle();
   window.requestAnimationFrame(() => {
     window.requestAnimationFrame(() => document.body.classList.remove("is-swapping"));
   });
@@ -1219,6 +1380,73 @@ langToggle.addEventListener("click", () => {
   setLang(lang === "ru" ? "en" : "ru");
   startTyping();
 });
+
+/* Тема: выбор сохраняется, без выбора берётся системная. Значение на <html>
+   ставит inline-скрипт в <head>, здесь только синхронизируем интерфейс. */
+const THEME_KEY = "arc-theme";
+const themeToggle = document.getElementById("themeToggle");
+const themeColor = document.querySelector('meta[name="theme-color"]');
+const THEME_COLORS = { dark: "#0b0d0d", light: "#f6f6f0" };
+
+function currentTheme() {
+  return document.documentElement.dataset.theme === "light" ? "light" : "dark";
+}
+
+function syncThemeToggle() {
+  if (!themeToggle) return;
+  const light = currentTheme() === "light";
+  themeToggle.setAttribute("aria-pressed", String(light));
+  themeToggle.title = light ? t("a11y.themeDark") : t("a11y.themeLight");
+  paintProjectAccents();
+}
+
+/* Яркий акцент читается на тёмном фоне и проваливается на светлом, поэтому
+   мелкий текст и обводки берут отдельный, затемнённый вариант. */
+function paintProjectAccents() {
+  const light = currentTheme() === "light";
+  document.querySelectorAll(".project").forEach((card) => {
+    const project = PROJECTS.find((item) => item.key === card.dataset.key);
+    if (project) {
+      card.style.setProperty("--accent-ink", light ? project.accentInk : project.accent);
+    }
+  });
+}
+
+function applyTheme(theme) {
+  const next = theme === "light" ? "light" : "dark";
+  document.documentElement.dataset.theme = next;
+  if (themeColor) themeColor.setAttribute("content", THEME_COLORS[next]);
+  syncThemeToggle();
+  window.dispatchEvent(new CustomEvent("themechange", { detail: { theme: next } }));
+  return next;
+}
+
+if (themeToggle) {
+  themeToggle.addEventListener("click", () => {
+    const next = applyTheme(currentTheme() === "light" ? "dark" : "light");
+    try {
+      localStorage.setItem(THEME_KEY, next);
+    } catch (error) {
+      void error;
+    }
+  });
+}
+
+// Пока пользователь не выбрал тему сам, сайт следует за системной.
+const systemLight = window.matchMedia("(prefers-color-scheme: light)");
+const onSystemTheme = (event) => {
+  let saved = null;
+  try {
+    saved = localStorage.getItem(THEME_KEY);
+  } catch (error) {
+    void error;
+  }
+  if (!saved) applyTheme(event.matches ? "light" : "dark");
+};
+if (systemLight.addEventListener) systemLight.addEventListener("change", onSystemTheme);
+else if (systemLight.addListener) systemLight.addListener(onSystemTheme);
+
+applyTheme(currentTheme());
 
 document.addEventListener("keydown", (event) => {
   if (event.key === "Escape") closeMenu();
