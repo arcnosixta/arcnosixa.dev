@@ -1,14 +1,26 @@
 /**
  * Hero 3D: процедурная сборка компьютера на three.js.
  *
- * Скрипт грузится синхронно, но сама библиотека подтягивается лениво уже после
- * первого рендера — если WebGL недоступен или пользователь просил меньше
- * движения, страница остаётся ровно такой же, как без этого файла.
+ * Библиотека подтягивается лениво уже после первого рендера. Если WebGL
+ * недоступен или пользователь просил меньше движения, страница остаётся ровно
+ * такой же, как без этого файла.
+ *
+ * Геометрия строится в миллиметрах по реальным размерам комплектующих, и уже
+ * готовая сборка масштабируется в единицы сцены:
+ *
+ *   материнка ATX   305 x 244 x 1.6 мм, окно I/O 158.75 x 44.45 мм,
+ *                   шаг слотов расширения 20.32 мм, 7 отсеков
+ *   БП ATX         140 x 86 x 150 мм, вентилятор 120 мм, разъёмный модуль
+ *   кулер NH-D15   башни 45 мм, 6 теплотрубок, 24 ребра,
+ *                   вентиляторы 140 мм спереди и 120 мм между башнями
+ *   память         DIMM 133.35 x 31.25 x 1.27 мм, 4 модуля
+ *   видеокарта     304 x 137 x 61 мм, 3 слота, 2 осевых вентилятора
+ *   корпус         450 x 460 x 214 мм, 3 x 120 мм спереди, 1 x 120 мм сзади
  *
  * Механика: секция 01 вдвое выше экрана, внутри липкая сцена. Прогресс прокрутки
- * по «лишней» высоте сцены собирает комплектующие по порядку (корпус → плата →
- * кулер → память → БП → видеокарта → вентиляторы → панели), а прокрутка вверх
- * разбирает их тем же путём назад. Вентиляторы раскручиваются по мере сборки.
+ * по «лишней» высоте сцены собирает систему по порядку (корпус → БП → плата →
+ * процессор → кулер → память → видеокарта → вентиляторы → провода → панели), а
+ * прокрутка вверх разбирает её тем же путём назад.
  */
 (function () {
   "use strict";
@@ -21,136 +33,1549 @@
   const motionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
   const finePointer = window.matchMedia("(pointer: fine)");
   const LIB = "vendor/three.min.js";
-
+  const interactive = "a, button, input, textarea, select, [role='button']";
   const COMPACT = 940;
 
-  /* Сцена рисуется поверх страницы с прозрачным фоном, поэтому палитра зависит
-     от темы: в светлой аддитивное смешение и белые точки гаснут, а тёмные
-     пластики превращаются в тёмные пятна. Роли материалов перекрашиваются на лету. */
-  const PALETTE = {
+  const MM = 0.0024;
+
+  const CASE = { d: 450, h: 460, w: 214 };
+  const MID_X = -225;
+  const FRONT_X = 225;
+  const MID_Z = CASE.w / 2;
+  const BOARD_Z = 7.2;
+
+  const SURFACES = {
+    shell:  { dark: [0x17191d, 0.40, 0.55], light: [0xeceef0, 0.42, 0.30] },
+    frame:  { dark: [0x101216, 0.52, 0.72], light: [0xdbdde1, 0.50, 0.60] },
+    steel:  { dark: [0x8d939a, 0.30, 1.00], light: [0xbcc1c6, 0.28, 1.00] },
+    alu:    { dark: [0x767c84, 0.34, 1.00], light: [0xa9afb6, 0.32, 1.00] },
+    copper: { dark: [0xc07a46, 0.26, 1.00], light: [0xc07a46, 0.26, 1.00] },
+    gold:   { dark: [0xd6b052, 0.30, 1.00], light: [0xd6b052, 0.30, 1.00] },
+    plastic:{ dark: [0x1a1d21, 0.46, 0.05], light: [0xf1f2f4, 0.44, 0.05] },
+    black:  { dark: [0x0c0e11, 0.54, 0.10], light: [0x191b1f, 0.54, 0.10] },
+    rubber: { dark: [0x0a0b0c, 0.92, 0.00], light: [0x0a0b0c, 0.92, 0.00] },
+    ram:    { dark: [0x23272e, 0.40, 0.55], light: [0x2a2e36, 0.40, 0.55] },
+    pcb:    { dark: [0x0a1a13, 0.56, 0.10], light: [0x0a1a13, 0.56, 0.10] },
+    slot:   { dark: [0x0d1014, 0.62, 0.05], light: [0x0d1014, 0.62, 0.05] },
+    glass:  { dark: [0x9fc4e2, 0.06, 0.00], light: [0xcadfee, 0.06, 0.00] },
+  };
+
+  const GLOWS = {
+    led: { dark: 0xd8f26c, light: 0x8fb01c },
+    rgb: { dark: 0x7fd0ff, light: 0x4f9ad4 },
+  };
+
+  const LIGHTS = {
     dark: {
-      body: 0x161d18,
-      bodyEmissive: 0x1d2a12,
-      bodyEmissiveIntensity: 1,
-      bodyEdge: 0xd8f26c,
-      bodyEdgeOpacity: 0.82,
-      board: 0x1e2a20,
-      boardEdge: 0x8fb03c,
-      chip: 0x9db8e8,
-      chipEdge: 0xa8c9ff,
-      chipEmissive: 0x1d3f6b,
-      chipEmissiveIntensity: 0.6,
-      ram: 0x22304a,
-      ramEdge: 0x7ba0dd,
-      psu: 0x191f1b,
-      psuEdge: 0x606d5d,
-      fan: 0x27322a,
-      panel: 0xa8c9ff,
-      panelEdge: 0xa8c9ff,
-      panelEdgeOpacity: 0.3,
-      panelOpacity: 0.09,
-      led: 0xd8f26c,
-      dust: 0xefeee7,
-      dustOpacity: 0.5,
-      ambient: 0x2b3527,
-      ambientIntensity: 1.7,
-      key: 0xd8f26c,
-      keyIntensity: 1.6,
-      fill: 0xa8c9ff,
-      fillIntensity: 1,
+      key: [0xf4f7ff, 2.6, -420, 520, 700],
+      rim: [0x8fd4ff, 2.4, 620, 240, -420],
+      fill: [0xd8f26c, 1.0, 300, -360, 420],
+      inner: [0xd8f26c, 1.6, -40, 250, 150],
+      env: 0.55,
+      exposure: 1.0,
+      dust: [0xefeede, 0.34],
     },
     light: {
-      body: 0xdfe2d5,
-      bodyEmissive: 0x6f8a1c,
-      bodyEmissiveIntensity: 0.14,
-      bodyEdge: 0x5c7410,
-      bodyEdgeOpacity: 0.85,
-      board: 0xcdd3bd,
-      boardEdge: 0x55690c,
-      chip: 0x33507f,
-      chipEdge: 0x2b5ba8,
-      chipEmissive: 0x2b5ba8,
-      chipEmissiveIntensity: 0.16,
-      ram: 0xc3ccdd,
-      ramEdge: 0x2b5ba8,
-      psu: 0xe3e6da,
-      psuEdge: 0x6b7566,
-      fan: 0xd2d7c6,
-      panel: 0x2b5ba8,
-      panelEdge: 0x2b5ba8,
-      panelEdgeOpacity: 0.26,
-      panelOpacity: 0.08,
-      led: 0x6d8a15,
-      dust: 0x4f554b,
-      dustOpacity: 0.38,
-      ambient: 0xf4f6ec,
-      ambientIntensity: 2.2,
-      key: 0xfff6dd,
-      keyIntensity: 1.9,
-      fill: 0xd3e2ff,
-      fillIntensity: 1.1,
+      key: [0xfff8ec, 2.7, -420, 560, 700],
+      rim: [0xd6e6ff, 1.7, 620, 260, -380],
+      fill: [0xffffff, 0.9, 300, -300, 460],
+      inner: [0x9ec22a, 0.7, -40, 250, 150],
+      env: 0.95,
+      exposure: 1.05,
+      dust: [0x6a7060, 0.2],
     },
   };
 
-  /* Роли материалов. Ссылка вида "fill:board" красится в PALETTE[BOARD] и т.д. */
-  const FILLS = {
-    body: "body",
-    board: "board",
-    chip: "chip",
-    ram: "ram",
-    psu: "psu",
-    fan: "fan",
-  };
-  const EDGES = {
-    body: "bodyEdge",
-    board: "boardEdge",
-    chip: "chipEdge",
-    ram: "ramEdge",
-    psu: "psuEdge",
-    fan: "bodyEdge",
+  const SEATS = [
+    ["case", 0.0, 0.1], ["psu", 0.08, 0.11], ["board", 0.17, 0.12],
+    ["cpu", 0.26, 0.09], ["cooler", 0.31, 0.15], ["ram", 0.42, 0.13],
+    ["gpu", 0.52, 0.14], ["fanFront", 0.62, 0.12], ["fanBack", 0.7, 0.1],
+    ["fanTop", 0.74, 0.1], ["cables", 0.78, 0.1], ["panels", 0.85, 0.15],
+  ];
+
+  const OUT = {
+    case: [0, 330, 0],
+    psu: [0, -330, 0],
+    board: [-420, 70, 0],
+    cpu: [0, 330, 70],
+    cooler: [0, 440, 0],
+    ram: [330, 0, 150],
+    gpu: [470, -90, 0],
+    fanFront: [370, 0, 0],
+    fanBack: [-370, 0, 0],
+    fanTop: [0, 370, 0],
+    cables: [0, 0, 330],
+    panels: [0, 0, 450],
   };
 
   const C1 = 1.70158;
-  const C3 = C1 + 1;
 
   let reduced = motionQuery.matches;
   let THREE = null;
-  let lights = null;
   let renderer = null;
   let scene = null;
   let camera = null;
   let rig = null;
-  let chassis = null;
+  let world = null;
   let dust = null;
-  let led = null;
-  let parts = [];
+  let envRT = null;
+  let lights = null;
+  let mats = {};
   let fans = [];
-  let clock = null;
-  let frameId = 0;
-  let running = false;
-  let inView = true;
+  let parts = [];
+  let leds = [];
+  let spin = { vx: 0, vy: 0, drag: false, px: 0, py: 0 };
+  let look = { x: 0, y: 0, tx: 0, ty: 0 };
   let scrollP = 0;
+  let inView = true;
+  let running = false;
+  let lastT = 0;
+  let raf = 0;
 
-  const look = { x: 0, y: 0, tx: 0, ty: 0 };
-  const spin = { vx: 0, vy: 0, dragging: false, px: 0, py: 0 };
-  const interactive = "a, button, input, textarea, select, [role='button']";
+  function clamp(v, a, b) {
+    return v < a ? a : v > b ? b : v;
+  }
+
+  function easeOutBack(t) {
+    const c = t - 1;
+    return 1 + c * c * c + c * c * C1;
+  }
+
+  function rng(seed) {
+    let s = seed;
+    return function next() {
+      s = (s * 1103515245 + 12345) & 0x7fffffff;
+      return s / 0x7fffffff;
+    };
+  }
+
+  function themeName() {
+    return document.documentElement.dataset.theme === "light" ? "light" : "dark";
+  }
+
+  function pcbMap() {
+    const c = document.createElement("canvas");
+    c.width = 640;
+    c.height = 512;
+    const g = c.getContext("2d");
+    const rand = rng(20260927);
+
+    g.fillStyle = "#0b1b14";
+    g.fillRect(0, 0, c.width, c.height);
+    for (let i = 0; i < 220; i += 1) {
+      g.fillStyle = "rgba(255,255,255," + (rand() * 0.012).toFixed(3) + ")";
+      g.fillRect(rand() * c.width, rand() * c.height, 30, 30);
+    }
+
+    g.lineCap = "square";
+    g.lineJoin = "miter";
+    for (let i = 0; i < 150; i += 1) {
+      const wide = rand() < 0.12;
+      g.lineWidth = wide ? 3.2 : 1.4;
+      g.strokeStyle = wide ? "rgba(126,208,150,0.34)" : "rgba(112,186,136,0.2)";
+      let x = rand() * c.width;
+      let y = rand() * c.height;
+      g.beginPath();
+      g.moveTo(x, y);
+      const steps = 2 + Math.floor(rand() * 4);
+      for (let s = 0; s < steps; s += 1) {
+        const len = 12 + rand() * 90;
+        const turn = rand();
+        if (turn < 0.4) x += len;
+        else if (turn < 0.8) y += len;
+        else {
+          x += len * 0.7;
+          y += len * 0.7;
+        }
+        g.lineTo(x, y);
+      }
+      g.stroke();
+    }
+
+    for (let i = 0; i < 320; i += 1) {
+      g.fillStyle = "rgba(190,222,150,0.3)";
+      g.beginPath();
+      g.arc(rand() * c.width, rand() * c.height, rand() * 1.6 + 0.7, 0, Math.PI * 2);
+      g.fill();
+    }
+    for (let i = 0; i < 26; i += 1) {
+      const x = rand() * c.width;
+      const y = rand() * c.height;
+      g.strokeStyle = "rgba(196,226,158,0.34)";
+      g.lineWidth = 1.1;
+      g.strokeRect(x, y, 5 + rand() * 16, 4 + rand() * 4);
+    }
+
+    g.fillStyle = "rgba(232,240,232,0.4)";
+    for (let i = 0; i < 70; i += 1) {
+      g.fillRect(rand() * c.width, rand() * c.height, 8 + rand() * 26, 1.6);
+    }
+    for (let i = 0; i < 12; i += 1) {
+      g.font = "9px monospace";
+      g.fillStyle = "rgba(232,240,232,0.3)";
+      g.fillText("C" + (100 + Math.floor(rand() * 800)), rand() * c.width, rand() * c.height);
+    }
+
+    const t = new THREE.CanvasTexture(c);
+    t.encoding = THREE.sRGBEncoding;
+    t.anisotropy = 4;
+    return t;
+  }
+
+  function perfMap(cell) {
+    const c = document.createElement("canvas");
+    c.width = cell * 8;
+    c.height = cell * 8;
+    const g = c.getContext("2d");
+    g.fillStyle = "#000";
+    g.fillRect(0, 0, c.width, c.height);
+    g.fillStyle = "#fff";
+    const step = cell * 2;
+    for (let y = step / 2; y < c.height + step; y += step) {
+      for (let x = step / 2; x < c.width + step; x += step) {
+        const off = (Math.round(y / step) % 2) * step * 0.5;
+        g.beginPath();
+        g.arc(x + off, y, cell * 0.85, 0, Math.PI * 2);
+        g.fill();
+      }
+    }
+    const t = new THREE.CanvasTexture(c);
+    t.wrapS = THREE.RepeatWrapping;
+    t.wrapT = THREE.RepeatWrapping;
+    return t;
+  }
+
+  function labelMap() {
+    const c = document.createElement("canvas");
+    c.width = 512;
+    c.height = 256;
+    const g = c.getContext("2d");
+    g.fillStyle = "#101216";
+    g.fillRect(0, 0, 512, 256);
+    g.strokeStyle = "#c9a227";
+    g.lineWidth = 6;
+    g.strokeRect(12, 12, 488, 232);
+    g.fillStyle = "#e8e4d6";
+    g.font = "bold 58px monospace";
+    g.fillText("850W", 36, 92);
+    g.font = "bold 40px monospace";
+    g.fillText("GOLD", 36, 150);
+    g.font = "22px monospace";
+    g.fillStyle = "#9aa0a6";
+    g.fillText("80+ PLUS", 36, 200);
+    g.fillText("DC 12V 70A", 300, 200);
+    const t = new THREE.CanvasTexture(c);
+    t.encoding = THREE.sRGBEncoding;
+    return t;
+  }
+
+  function makeEnv() {
+    const c = document.createElement("canvas");
+    c.width = 128;
+    c.height = 64;
+    const g = c.getContext("2d");
+    const grad = g.createLinearGradient(0, 0, 0, 64);
+    grad.addColorStop(0, "#20242c");
+    grad.addColorStop(0.45, "#4a515c");
+    grad.addColorStop(0.62, "#8e97a3");
+    grad.addColorStop(1, "#0c0e11");
+    g.fillStyle = grad;
+    g.fillRect(0, 0, 128, 64);
+    g.fillStyle = "rgba(255,255,255,0.85)";
+    g.beginPath();
+    g.ellipse(30, 16, 22, 11, 0, 0, Math.PI * 2);
+    g.fill();
+    g.fillStyle = "rgba(200,220,255,0.5)";
+    g.beginPath();
+    g.ellipse(96, 20, 18, 9, 0, 0, Math.PI * 2);
+    g.fill();
+    const tex = new THREE.CanvasTexture(c);
+    tex.mapping = THREE.EquirectangularReflectionMapping;
+    tex.encoding = THREE.sRGBEncoding;
+    const pmrem = new THREE.PMREMGenerator(renderer);
+    const rt = pmrem.fromEquirectangular(tex);
+    pmrem.dispose();
+    tex.dispose();
+    return rt;
+  }
+
+  function normalizeUV(geo, w, h) {
+    const pos = geo.attributes.position;
+    const uv = geo.attributes.uv;
+    for (let i = 0; i < pos.count; i += 1) {
+      uv.setXY(i, (pos.getX(i) + w / 2) / w, (pos.getY(i) + h / 2) / h);
+    }
+    uv.needsUpdate = true;
+  }
+
+  function shapeOf(w, h, r) {
+    const shape = new THREE.Shape();
+    const x = -w / 2;
+    const y = -h / 2;
+    const rr = Math.min(r === undefined ? 3 : r, w / 2, h / 2);
+    shape.moveTo(x + rr, y);
+    shape.lineTo(x + w - rr, y);
+    shape.quadraticCurveTo(x + w, y, x + w, y + rr);
+    shape.lineTo(x + w, y + h - rr);
+    shape.quadraticCurveTo(x + w, y + h, x + w - rr, y + h);
+    shape.lineTo(x + rr, y + h);
+    shape.quadraticCurveTo(x, y + h, x, y + h - rr);
+    shape.lineTo(x, y + rr);
+    shape.quadraticCurveTo(x, y, x + rr, y);
+    return shape;
+  }
+
+  function extrude(shape, d, opt) {
+    const o = opt || {};
+    const bev = o.bevel === undefined ? 0.5 : o.bevel;
+    const geo = new THREE.ExtrudeGeometry(shape, {
+      depth: d,
+      bevelEnabled: bev > 0,
+      bevelSize: bev,
+      bevelThickness: bev,
+      bevelSegments: 1,
+      curveSegments: o.seg || 6,
+    });
+    geo.translate(0, 0, -d / 2);
+    if (o.uv) normalizeUV(geo, o.w, o.h);
+    return geo;
+  }
+
+  /* X = w, Y = h, толщина по Z. */
+  function plate(w, h, t, mat, opt) {
+    const o = opt || {};
+    const geo = extrude(shapeOf(w, h, o.r), t, {
+      bevel: o.bevel,
+      seg: o.seg,
+      uv: o.uv,
+      w: w,
+      h: h,
+    });
+    return new THREE.Mesh(geo, mat);
+  }
+
+  /* Нормаль по X: Z = depth, Y = height, толщина по X. */
+  function plateSide(depth, height, t, mat, opt) {
+    const m = plate(depth, height, t, mat, opt);
+    m.rotation.y = Math.PI / 2;
+    return m;
+  }
+
+  /* Нормаль по Y: X = len, Z = width, толщина по Y. */
+  function plateFlat(len, width, t, mat, opt) {
+    const m = plate(len, width, t, mat, opt);
+    m.rotation.x = -Math.PI / 2;
+    return m;
+  }
+
+  function plateHoles(w, h, t, holes, mat, opt) {
+    const o = opt || {};
+    const shape = shapeOf(w, h, o.r === undefined ? 8 : o.r);
+    holes.forEach((hl) => {
+      const path = new THREE.Path();
+      path.absarc(hl[0], hl[1], hl[2], 0, Math.PI * 2, true);
+      shape.holes.push(path);
+    });
+    const geo = extrude(shape, t, {
+      bevel: o.bevel,
+      seg: 22,
+      uv: o.uv,
+      w: w,
+      h: h,
+    });
+    return new THREE.Mesh(geo, mat);
+  }
+
+  function box(w, h, d, mat) {
+    return new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
+  }
+
+  function cyl(r, h, mat, seg) {
+    return new THREE.Mesh(new THREE.CylinderGeometry(r, r, h, seg || 20), mat);
+  }
+
+  function cylAxis(r, len, mat, axis, seg) {
+    const m = cyl(r, len, mat, seg);
+    if (axis === "x") m.rotation.z = Math.PI / 2;
+    else if (axis === "z") m.rotation.x = Math.PI / 2;
+    return m;
+  }
+
+  function tube(pts, r, mat) {
+    const curve = new THREE.CatmullRomCurve3(
+      pts.map((p) => new THREE.Vector3(p[0], p[1], p[2]))
+    );
+    return new THREE.Mesh(
+      new THREE.TubeGeometry(curve, Math.max(28, pts.length * 12), r, 8, false),
+      mat
+    );
+  }
+
+  function makeGroup(name) {
+    const seat = SEATS.find((s) => s[0] === name);
+    const g = new THREE.Group();
+    g.name = name;
+    g.userData = {
+      name: name,
+      home: new THREE.Vector3(0, 0, 0),
+      out: new THREE.Vector3().fromArray(OUT[name]),
+      seat: seat[1],
+      span: seat[2],
+      seated: 0,
+    };
+    return g;
+  }
+
+  /* Габариты детали в миллиметрах в её собственной системе координат.
+     Мировая AABB искажается поворотом сцены, поэтому матрица меша
+     приводится к системе координат самой группы. */
+  function partBox(mesh) {
+    const b = new THREE.Box3();
+    mesh.updateWorldMatrix(true, true);
+    const inv = new THREE.Matrix4().copy(mesh.matrixWorld).invert();
+    const m = new THREE.Matrix4();
+    mesh.traverse((o) => {
+      if (!o.isMesh) return;
+      o.geometry.computeBoundingBox();
+      b.union(o.geometry.boundingBox.clone().applyMatrix4(m.multiplyMatrices(inv, o.matrixWorld)));
+    });
+    return b;
+  }
+
+  /* Кадрирование: во что на экране попадает готовая сборка. NDC-бокс должен
+     лежать в -1..1 по обеим осям, иначе модель обрезается краем кадра. */
+  function frameBounds() {
+    const b = new THREE.Box3().setFromObject(rig);
+    const pts = [];
+    for (let i = 0; i < 8; i += 1) {
+      pts.push(new THREE.Vector3(
+        i & 1 ? b.max.x : b.min.x,
+        i & 2 ? b.max.y : b.min.y,
+        i & 4 ? b.max.z : b.min.z
+      ));
+    }
+    let x0 = 9, y0 = 9, x1 = -9, y1 = -9;
+    pts.forEach((p) => {
+      const q = p.clone().project(camera);
+      x0 = Math.min(x0, q.x);
+      x1 = Math.max(x1, q.x);
+      y0 = Math.min(y0, q.y);
+      y1 = Math.max(y1, q.y);
+    });
+    return {
+      ndc: [x0, y0, x1, y1].map((v) => +v.toFixed(3)),
+      canvas: [canvas.width, canvas.height],
+      css: [canvas.clientWidth, canvas.clientHeight],
+      stage: [stage.clientWidth, stage.clientHeight],
+      camZ: +camera.position.z.toFixed(3),
+      rig: rig.position.toArray().map((v) => +v.toFixed(3)),
+      dpr: renderer.getPixelRatio(),
+    };
+  }
+
+  function buildMaterials() {
+    const name = themeName();
+    mats = {};
+    Object.keys(SURFACES).forEach((key) => {
+      const p = SURFACES[key][name];
+      const m = new THREE.MeshStandardMaterial({
+        color: new THREE.Color(p[0]),
+        roughness: p[1],
+        metalness: p[2],
+        envMapIntensity: LIGHTS[name].env,
+      });
+      if (key === "glass") {
+        m.transparent = true;
+        m.opacity = 0.15;
+        m.depthWrite = false;
+        m.side = THREE.DoubleSide;
+      }
+      mats[key] = m;
+    });
+
+    const perf = perfMap(9);
+    perf.repeat.set(6, 6);
+    mats.mesh = new THREE.MeshStandardMaterial({
+      color: 0x14161a,
+      roughness: 0.62,
+      metalness: 0.45,
+      alphaMap: perf,
+      transparent: true,
+      depthWrite: true,
+      side: THREE.DoubleSide,
+    });
+
+    mats.pcbFace = new THREE.MeshStandardMaterial({
+      color: 0xffffff,
+      map: pcbMap(),
+      roughness: 0.58,
+      metalness: 0.08,
+    });
+
+    mats.label = new THREE.MeshStandardMaterial({
+      map: labelMap(),
+      roughness: 0.72,
+      metalness: 0,
+    });
+
+    mats.rgb = new THREE.MeshStandardMaterial({
+      color: 0x101216,
+      emissive: new THREE.Color(GLOWS.rgb[name]),
+      emissiveIntensity: 1.8,
+      roughness: 0.4,
+      metalness: 0,
+    });
+
+    mats.led = new THREE.MeshBasicMaterial({ color: GLOWS.led[name] });
+  }
+
+  function paint() {
+    if (!renderer) return;
+    const name = themeName();
+    const l = LIGHTS[name];
+    const env = l.env;
+
+    Object.keys(SURFACES).forEach((key) => {
+      const p = SURFACES[key][name];
+      const m = mats[key];
+      if (!m) return;
+      m.color.setHex(p[0]);
+      m.roughness = p[1];
+      m.metalness = p[2];
+      m.envMapIntensity = env;
+      m.needsUpdate = true;
+    });
+    if (mats.mesh) mats.mesh.envMapIntensity = env;
+    if (mats.rgb) {
+      mats.rgb.emissive.setHex(GLOWS.rgb[name]);
+      mats.rgb.emissiveIntensity = 0.15 + clamp((scrollP - 0.84) / 0.14, 0, 1) * 2.4;
+    }
+    if (mats.led) mats.led.color.setHex(GLOWS.led[name]);
+
+    if (lights) {
+      lights.key.color.setHex(l.key[0]);
+      lights.key.intensity = l.key[1];
+      lights.key.position.set(l.key[2] * MM, l.key[3] * MM, l.key[4] * MM);
+      lights.rim.color.setHex(l.rim[0]);
+      lights.rim.intensity = l.rim[1];
+      lights.rim.position.set(l.rim[2] * MM, l.rim[3] * MM, l.rim[4] * MM);
+      lights.fill.color.setHex(l.fill[0]);
+      lights.fill.intensity = l.fill[1];
+      lights.fill.position.set(l.fill[2] * MM, l.fill[3] * MM, l.fill[4] * MM);
+      lights.inner.color.setHex(l.inner[0]);
+      lights.inner.intensity = l.inner[1] * 0.0016;
+      lights.inner.position.set(l.inner[2] * MM, l.inner[3] * MM, l.inner[4] * MM);
+    }
+    if (dust) {
+      dust.material.color.setHex(l.dust[0]);
+      dust.material.opacity = l.dust[1];
+    }
+    renderer.toneMappingExposure = l.exposure;
+  }
+
+  function fanMesh(size, dir) {
+    const g = new THREE.Group();
+    const r = size / 2;
+    const thick = 25;
+    const bore = size * 0.44;
+
+    const frame = plateHoles(size, size, thick, [[0, 0, bore]], mats.black, {
+      r: 7,
+      bevel: 0.8,
+    });
+    g.add(frame);
+
+    const cr = size * 0.43;
+    for (let i = 0; i < 4; i += 1) {
+      const s = cyl(2.6, thick + 1, mats.rubber, 10);
+      s.rotation.x = Math.PI / 2;
+      s.position.set(i < 2 ? -cr : cr, i % 2 ? -cr : cr, 0);
+      g.add(s);
+    }
+
+    const blades = new THREE.Group();
+    const bs = new THREE.Shape();
+    const r0 = r * 0.2;
+    const r1 = r * 0.62;
+    const r2 = bore;
+    bs.moveTo(r0, -r * 0.1);
+    bs.quadraticCurveTo(r1, -r * 0.34, r2, -r * 0.2);
+    bs.quadraticCurveTo(r2 * 1.02, r * 0.05, r2 * 0.86, r * 0.16);
+    bs.quadraticCurveTo(r1, r * 0.3, r0, r * 0.16);
+    bs.lineTo(r0, -r * 0.1);
+    const bladeGeo = new THREE.ExtrudeGeometry(bs, {
+      depth: 1.4,
+      bevelEnabled: false,
+      curveSegments: 6,
+    });
+    const count = 7;
+    for (let i = 0; i < count; i += 1) {
+      const b = new THREE.Mesh(bladeGeo, mats.plastic);
+      b.rotation.x = 0.42 + (i % 2) * 0.05;
+      b.position.z = -thick * 0.2;
+      const holder = new THREE.Group();
+      holder.add(b);
+      holder.rotation.z = (i / count) * Math.PI * 2 * (dir >= 0 ? 1 : -1);
+      blades.add(holder);
+    }
+    const hub = cyl(r * 0.34, thick * 0.6, mats.plastic, 20);
+    hub.rotation.x = Math.PI / 2;
+    g.add(hub);
+    const cap = cyl(r * 0.28, 1.2, mats.black, 20);
+    cap.rotation.x = Math.PI / 2;
+    cap.position.z = thick * 0.28;
+    g.add(cap);
+    g.add(blades);
+    blades.userData = { dir: dir >= 0 ? 1 : -1, power: 0 };
+
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(bore + 4, 2.6, 6, 40), mats.rgb);
+    ring.position.z = thick * 0.42;
+    g.add(ring);
+
+    fans.push(blades);
+    return g;
+  }
+
+  function buildCase() {
+    const g = makeGroup("case");
+
+    const floor = plateFlat(CASE.d, CASE.w, 2, mats.frame, { r: 4 });
+    floor.position.set(0, 1, MID_Z);
+    g.add(floor);
+
+    const shape = shapeOf(CASE.w, CASE.h, 4);
+    const io = new THREE.Path();
+    io.moveTo(-79.4, 28);
+    io.lineTo(79.4, 28);
+    io.lineTo(79.4, 72);
+    io.lineTo(-79.4, 72);
+    io.closePath();
+    shape.holes.push(io);
+    const backGeo = extrude(shape, 2, { bevel: 0 });
+    const back = new THREE.Mesh(backGeo, mats.frame);
+    back.rotation.y = Math.PI / 2;
+    back.position.set(MID_X + 1, CASE.h / 2, MID_Z);
+    g.add(back);
+
+    for (let i = 0; i < 7; i += 1) {
+      const cover = plateSide(112, 18, 1.4, mats.frame, { r: 1.2, bevel: 0.3 });
+      cover.position.set(MID_X - 0.6, 86 + i * 20.32, MID_Z);
+      g.add(cover);
+    }
+
+    /* Крепёжная площадка под материнскую плату: плата вертикальная, значит и
+       площадка вертикальная — плоскость X-Y, нормаль по Z. */
+    const tray = plate(CASE.d - 6, CASE.h - 6, 1.6, mats.frame, { r: 3 });
+    tray.position.set(0, CASE.h / 2, 3);
+    g.add(tray);
+    [150, 250, 350].forEach((y) => {
+      const grom = plate(92, 26, 3, mats.rubber, { r: 12, bevel: 0.4 });
+      grom.position.set(96, y, 3.2);
+      g.add(grom);
+    });
+
+    const shroudTop = plateFlat(238, 150, 2, mats.shell, { r: 3 });
+    shroudTop.position.set(-106, 100, MID_Z);
+    g.add(shroudTop);
+    const shroudFace = plateSide(150, 100, 2, mats.shell, { r: 3 });
+    shroudFace.position.set(14, 50, MID_Z);
+    g.add(shroudFace);
+    const shroudVent = plateFlat(150, 92, 1.2, mats.mesh, { r: 2, uv: true });
+    shroudVent.position.set(-106, 99, MID_Z);
+    g.add(shroudVent);
+
+    [[-1, -1], [-1, 1], [1, -1], [1, 1]].forEach((p) => {
+      const foot = cyl(11, 7, mats.rubber, 14);
+      foot.position.set(p[0] * (CASE.d / 2 - 40), -3, MID_Z + p[1] * 60);
+      g.add(foot);
+    });
+
+    return g;
+  }
+
+  function buildPsu() {
+    const g = makeGroup("psu");
+    const x0 = MID_X + 3;
+    const y0 = 12;
+    const cy = y0 + 43;
+    const cz = MID_Z;
+
+    const body = plate(140, 86, 150, mats.black, { r: 4, bevel: 1 });
+    body.position.set(x0 + 70, cy, cz);
+    g.add(body);
+
+    const f = fanMesh(120, 1);
+    f.rotation.x = -Math.PI / 2;
+    f.position.set(x0 + 72, y0 + 43, cz);
+    g.add(f);
+    const grill = plateFlat(112, 112, 1.2, mats.mesh, { r: 3, uv: true });
+    grill.position.set(x0 + 72, y0 + 0.4, cz);
+    g.add(grill);
+
+    const back = plateSide(140, 86, 1.6, mats.black, { r: 2, bevel: 0.3 });
+    back.position.set(x0 + 0.8, cy, cz);
+    g.add(back);
+    const iec = plateSide(20, 24, 3, mats.rubber, { r: 2, bevel: 0.3 });
+    iec.position.set(x0 - 1, cy + 20, cz - 50);
+    g.add(iec);
+    const sw = box(3, 11, 7, mats.plastic);
+    sw.position.set(x0 - 1.6, cy + 20, cz - 26);
+    g.add(sw);
+    const backVent = plateSide(56, 56, 1.2, mats.mesh, { r: 2, uv: true });
+    backVent.position.set(x0 + 0.2, cy - 16, cz + 24);
+    g.add(backVent);
+
+    const panel = plateSide(140, 64, 1.4, mats.alu, { r: 2, bevel: 0.3 });
+    panel.position.set(x0 + 140, cy, cz);
+    g.add(panel);
+    for (let r = 0; r < 3; r += 1) {
+      for (let c = 0; c < 5; c += 1) {
+        const sock = box(3.4, 11, 7.5, mats.rubber);
+        sock.position.set(x0 + 141, cy - 22 + r * 22, cz - 52 + c * 26);
+        g.add(sock);
+      }
+    }
+
+    const sticker = new THREE.Mesh(new THREE.PlaneGeometry(96, 48), mats.label);
+    sticker.position.set(x0 + 70, cy + 8, cz + 75.4);
+    g.add(sticker);
+
+    return g;
+  }
+
+  function buildBoard() {
+    const g = makeGroup("board");
+    const W = 305;
+    const H = 244;
+    const cx = MID_X + W / 2;
+    const cy = 62 + H / 2;
+    const z = BOARD_Z;
+
+    const pcb = plate(W, H, 1.6, mats.pcbFace, { r: 3, bevel: 0.3, uv: true });
+    pcb.position.set(cx, cy, z);
+    g.add(pcb);
+
+    const holes = [
+      [-13.5, -112], [-13.5, 112], [-8, 6], [70, 112], [70, -112],
+      [140, 112], [140, -20], [140, -112], [208, 84],
+    ];
+    holes.forEach((h) => {
+      const post = cyl(3.4, 6, mats.gold, 10);
+      post.rotation.x = Math.PI / 2;
+      post.position.set(cx + h[0], cy + h[1], 3.6);
+      g.add(post);
+    });
+
+    const shield = plateSide(158, 44, 2, mats.steel, { r: 1, bevel: 0.3 });
+    shield.position.set(MID_X - 3, 280, MID_Z);
+    g.add(shield);
+    for (let i = 0; i < 4; i += 1) {
+      const usb = plateSide(12, 14, 2.4, mats.black, { r: 0.6, bevel: 0.2 });
+      usb.position.set(MID_X - 2, 268, 34 + i * 16);
+      g.add(usb);
+    }
+    const rj45 = plateSide(16, 16, 2.4, mats.alu, { r: 0.8, bevel: 0.2 });
+    rj45.position.set(MID_X - 2, 274, 100);
+    g.add(rj45);
+    const hdmi = plateSide(15, 6, 2.4, mats.black, { r: 0.6, bevel: 0.2 });
+    hdmi.position.set(MID_X - 2, 266, 122);
+    g.add(hdmi);
+    for (let i = 0; i < 2; i += 1) {
+      const jack = cylAxis(3, 4, mats.black, "x", 10);
+      jack.position.set(MID_X - 2, 292, 132 + i * 12);
+      g.add(jack);
+    }
+
+    const vrm = plate(150, 26, 14, mats.alu, { r: 2, bevel: 0.6 });
+    vrm.position.set(cx - 40, cy + 94, z + 8);
+    g.add(vrm);
+    for (let i = 0; i < 14; i += 1) {
+      const fin = box(2.6, 20, 15, mats.steel);
+      fin.position.set(cx - 108 + i * 10.4, cy + 94, z + 8);
+      g.add(fin);
+    }
+    const vrm2 = plate(54, 22, 12, mats.alu, { r: 2, bevel: 0.6 });
+    vrm2.position.set(cx - 116, cy + 84, z + 7);
+    g.add(vrm2);
+    const vrm3 = plate(46, 20, 11, mats.alu, { r: 2, bevel: 0.6 });
+    vrm3.position.set(cx - 118, cy - 64, z + 6.5);
+    g.add(vrm3);
+
+    const chipset = plate(46, 46, 6, mats.steel, { r: 4, bevel: 0.8 });
+    chipset.position.set(cx + 14, cy - 32, z + 4);
+    g.add(chipset);
+
+    const socket = plate(51, 45, 2.5, mats.slot, { r: 1.5, bevel: 0.3 });
+    socket.position.set(-107, 202, z + 1.6);
+    g.add(socket);
+
+    const m2 = plate(80, 22, 3.4, mats.alu, { r: 2, bevel: 0.4 });
+    m2.position.set(cx - 56, cy - 98, z + 2.6);
+    g.add(m2);
+
+    [188, 197.5, 207, 216.5].forEach((y) => {
+      const slot = plate(133, 8, 7, mats.slot, { r: 0.8, bevel: 0.2 });
+      slot.position.set(-8, y, z + 4);
+      g.add(slot);
+    });
+
+    [72, 51.7, 31.4].forEach((y, i) => {
+      const slot = plate(89, 7, 11, mats.slot, { r: 0.8, bevel: 0.2 });
+      slot.position.set(-172, y, z + 6);
+      g.add(slot);
+      if (i === 0) {
+        const shroud = plate(89, 11, 3, mats.steel, { r: 0.8, bevel: 0.2 });
+        shroud.position.set(-172, y + 2, z + 12);
+        g.add(shroud);
+      }
+    });
+
+    const atx24 = plate(13, 52, 12, mats.slot, { r: 1, bevel: 0.3 });
+    atx24.position.set(72, 152, z + 6);
+    g.add(atx24);
+    const eps = plate(26, 14, 12, mats.slot, { r: 1, bevel: 0.3 });
+    eps.position.set(-170, 296, z + 6);
+    g.add(eps);
+
+    const rand = rng(77);
+    for (let i = 0; i < 22; i += 1) {
+      const cap = cyl(4.5, 11, i % 3 ? mats.black : mats.alu, 12);
+      cap.rotation.x = Math.PI / 2;
+      cap.position.set(
+        cx - 126 + (i % 2) * 12 + Math.floor(rand() * 6) * 14,
+        cy - 6 + Math.floor(i / 2) * 13,
+        z + 6
+      );
+      g.add(cap);
+    }
+
+    for (let i = 0; i < 18; i += 1) {
+      const chip = box(6 + rand() * 8, 5 + rand() * 4, 2, mats.black);
+      chip.position.set(cx - 138 + rand() * 250, cy - 108 + rand() * 86, z + 2);
+      g.add(chip);
+    }
+
+    const led = new THREE.Mesh(new THREE.SphereGeometry(2.2, 10, 8), mats.led);
+    led.position.set(64, 232, z + 3);
+    g.add(led);
+    leds.push(led);
+
+    const strip = plate(240, 3, 1.6, mats.rgb, { r: 1, bevel: 0.2 });
+    strip.position.set(cx - 6, cy + 116, z + 1.6);
+    g.add(strip);
+
+    return g;
+  }
+
+  function buildCpu() {
+    const g = makeGroup("cpu");
+    const z = BOARD_Z + 4;
+
+    const frame = plate(45, 40, 3, mats.alu, { r: 1, bevel: 0.3 });
+    frame.position.set(-107, 202, z + 1.5);
+    g.add(frame);
+    const ihs = plate(37, 33, 2.4, mats.steel, { r: 1, bevel: 0.4 });
+    ihs.position.set(-107, 202, z + 4);
+    g.add(ihs);
+    const corner = box(5, 2, 0.6, mats.black);
+    corner.position.set(-104, 186, z + 5.2);
+    g.add(corner);
+    const mark = box(2, 2, 0.4, mats.black);
+    mark.position.set(-118, 190, z + 5.2);
+    g.add(mark);
+
+    return g;
+  }
+
+  function buildCooler() {
+    const g = makeGroup("cooler");
+    const bx = -107;
+    const by = 202;
+    const z0 = BOARD_Z + 8;
+    const stackW = 50;
+    const stackD = 132;
+    const baseY = by + 26;
+    const finPitch = 6.2;
+    const fins = 24;
+    const finZ = z0 + stackD / 2;
+
+    const base = plate(48, 42, 7, mats.copper, { r: 1.5, bevel: 0.5 });
+    base.rotation.x = -Math.PI / 2;
+    base.position.set(bx, by + 27, z0 + 6);
+    g.add(base);
+
+    const topY = baseY + 12 + fins * finPitch;
+    const pipes = [
+      [-58, -40], [-62, -14], [-58, 14], [58, -40], [62, -14], [58, 14],
+    ];
+    /* Трубки идут от основания вверх и расходятся между башнями по X;
+       по Z они почти не отклоняются, иначе уходят сквозь плату. */
+    pipes.forEach((p) => {
+      g.add(tube([
+        [bx, by + 27, z0 + 6],
+        [bx + p[0] * 0.4, by + 60, z0 + 6 + p[1] * 0.1],
+        [bx + p[0] * 0.85, topY - 30, z0 + 6 + p[1] * 0.08],
+        [bx + p[0], topY, z0 + 6 + p[1] * 0.06],
+      ], 3, mats.copper));
+    });
+
+    [[bx - 47, -1], [bx + 37, 1]].forEach((s) => {
+      for (let i = 0; i < fins; i += 1) {
+        const fin = box(stackW, 0.6, stackD, mats.steel);
+        fin.position.set(s[0], baseY + 12 + i * finPitch, finZ);
+        g.add(fin);
+      }
+      [-1, 1].forEach((sd) => {
+        const side = box(1.6, fins * finPitch, stackD, mats.alu);
+        side.position.set(s[0] + sd * (stackW / 2), baseY + 12 + fins * finPitch / 2, finZ);
+        g.add(side);
+      });
+      const cap = box(stackW, 3, stackD, mats.alu);
+      cap.position.set(s[0], topY + 2, finZ);
+      g.add(cap);
+    });
+
+    const centreY = baseY + 12 + fins * finPitch / 2;
+    const centre = fanMesh(120, 1);
+    centre.rotation.y = Math.PI / 2;
+    centre.position.set(bx - 12, centreY, finZ);
+    g.add(centre);
+    const front = fanMesh(140, 1);
+    front.rotation.y = Math.PI / 2;
+    front.position.set(bx - 84, centreY, finZ);
+    g.add(front);
+
+    /* Крестины растяжки вентиляторов лежат в плоскости Y-Z самого вентилятора,
+       поэтому смещение идёт по Z, а не по X. */
+    [bx - 12, bx - 84].forEach((x) => {
+      [-1, 1].forEach((sd) => {
+        const clip = box(3, 96, 3, mats.steel);
+        clip.position.set(x, centreY, finZ + sd * 66);
+        g.add(clip);
+      });
+    });
+
+    return g;
+  }
+
+  function buildRam() {
+    const g = makeGroup("ram");
+    const h = 42;
+
+    [188, 197.5, 207, 216.5].forEach((y) => {
+      const mod = new THREE.Group();
+      mod.add(plateFlat(133.35, 31.25, 1.27, mats.pcb, { r: 1, bevel: 0.2 }));
+      [-1, 1].forEach((sd) => {
+        const spreader = plateFlat(133, 30, 2.2, mats.ram, { r: 2, bevel: 0.4 });
+        spreader.position.set(0, sd * 1.7, 0);
+        mod.add(spreader);
+      });
+      /* Гребень и подсветка стоят у верхнего края модуля, а не за ним:
+         локальная Z модуля — это его высота, край на h/2. */
+      const cap = plateFlat(133, 2.6, 3, mats.ram, { r: 1.5, bevel: 0.4 });
+      cap.position.set(0, 0, h / 2 - 1.5);
+      mod.add(cap);
+      const bar = plateFlat(118, 2, 1.6, mats.rgb, { r: 1, bevel: 0.2 });
+      bar.position.set(0, 0, h / 2 - 4.4);
+      mod.add(bar);
+      const fingers = plateFlat(126, 3, 6, mats.gold, { r: 0.4, bevel: 0.2 });
+      fingers.position.set(0, 0, -h / 2 + 2.6);
+      mod.add(fingers);
+      mod.position.set(-8, y, BOARD_Z + 17);
+      g.add(mod);
+    });
+
+    return g;
+  }
+
+  function buildGpu() {
+    const g = makeGroup("gpu");
+    const L = 304;
+    const H = 137;
+    const W = 61;
+    const x0 = MID_X + 7;
+    const cx = x0 + L / 2;
+    const yBot = 70;
+    const yMid = yBot + H / 2;
+    const z0 = BOARD_Z + 6;
+    const zFace = z0 + W - 3;
+
+    const pcb = plate(L - 8, 104, 1.6, mats.pcbFace, { r: 2, bevel: 0.3, uv: true });
+    pcb.position.set(cx, yBot + 52, z0 + 2);
+    g.add(pcb);
+
+    const fingers = plate(90, 6, 2, mats.gold, { r: 0.5, bevel: 0.2 });
+    fingers.position.set(-173, yBot + 2, z0 + 2);
+    g.add(fingers);
+
+    for (let i = 0; i < 26; i += 1) {
+      const fin = box(1.6, 96, 46, mats.steel);
+      fin.position.set(x0 + 22 + i * 9.4, yBot + 60, z0 + 26);
+      g.add(fin);
+    }
+
+    /* Бэкплейт лежит в плоскости карты (X-Y), как PCB и shroud, а не плашмя. */
+    const backplate = plate(L - 6, 128, 2.4, mats.black, { r: 4, bevel: 0.4 });
+    backplate.position.set(cx, yMid, z0 - 1.6);
+    g.add(backplate);
+
+    const holes = [[-68, 0, 52], [62, 0, 52]];
+    const shroud = plateHoles(L - 6, H + 4, 5, holes, mats.plastic, { r: 8, bevel: 1 });
+    shroud.position.set(cx, yMid, zFace);
+    g.add(shroud);
+
+    [-68, 62].forEach((dx, i) => {
+      const f = fanMesh(104, i ? 1 : -1);
+      f.position.set(cx + dx, yMid, zFace - 12);
+      g.add(f);
+    });
+
+    const endcap = plateSide(40, 118, 6, mats.black, { r: 2, bevel: 0.4 });
+    endcap.position.set(x0 + L - 3, yBot + 62, z0 + 24);
+    g.add(endcap);
+    const endVent = plateSide(26, 70, 4, mats.mesh, { r: 2, uv: true });
+    endVent.position.set(x0 + L - 1, yBot + 62, z0 + 24);
+    g.add(endVent);
+
+    const bracket = plateSide(44, 120, 2.4, mats.steel, { r: 2, bevel: 0.4 });
+    bracket.position.set(x0 - 5, yBot + 70, z0 + 24);
+    g.add(bracket);
+    [[-22, 2], [2, 2], [26, 2]].forEach((o) => {
+      const port = plateSide(14, 9, 3, mats.rubber, { r: 0.8, bevel: 0.2 });
+      port.position.set(x0 - 7, yBot + 70 + o[1], z0 + 24 + o[0]);
+      g.add(port);
+    });
+
+    const power = box(26, 9, 16, mats.black);
+    power.position.set(x0 + 54, yBot + H + 3, z0 + 20);
+    g.add(power);
+
+    const logo = plate(150, 5, 1.6, mats.rgb, { r: 1, bevel: 0.2 });
+    logo.position.set(cx + 10, yBot + H - 10, zFace + 3);
+    g.add(logo);
+
+    return g;
+  }
+
+  function buildFans() {
+    const front = makeGroup("fanFront");
+    [104, 240, 376].forEach((y) => {
+      const f = fanMesh(120, 1);
+      f.rotation.y = Math.PI / 2;
+      f.position.set(FRONT_X - 34, y, MID_Z);
+      front.add(f);
+    });
+    const rear = makeGroup("fanBack");
+    const rf = fanMesh(120, -1);
+    rf.rotation.y = Math.PI / 2;
+    rf.position.set(MID_X + 26, 350, MID_Z);
+    rear.add(rf);
+    const top = makeGroup("fanTop");
+    const tf = fanMesh(120, 1);
+    tf.rotation.x = -Math.PI / 2;
+    tf.position.set(10, CASE.h - 32, MID_Z);
+    top.add(tf);
+    return [front, rear, top];
+  }
+
+  function buildCables() {
+    const g = makeGroup("cables");
+    const x0 = MID_X + 3;
+
+    g.add(tube([
+      [x0 + 130, 34, 92], [-30, 26, 140], [40, 36, 70],
+      [104, 120, 10], [96, 150, 5], [86, 152, 8],
+    ], 5.5, mats.rubber));
+    g.add(tube([
+      [x0 + 130, 34, 54], [-90, 40, 30], [-160, 120, 24],
+      [-170, 250, 22], [-170, 294, 22],
+    ], 4.5, mats.rubber));
+    g.add(tube([
+      [x0 + 130, 34, 36], [-140, 60, 60], [-196, 130, 42],
+      [-176, 186, 32], [-164, 206, 28],
+    ], 5, mats.rubber));
+    g.add(tube([
+      [x0 + 130, 30, 116], [-20, 22, 130], [30, 24, 110], [46, 28, 82],
+    ], 4, mats.rubber));
+    g.add(tube([
+      [x0 + 118, 30, 108], [-40, 24, 140], [20, 22, 120], [46, 30, 96],
+    ], 4, mats.rubber));
+
+    [150, 250, 350].forEach((y) => {
+      const tie = plate(88, 24, 2.4, mats.black, { r: 11, bevel: 0.3 });
+      tie.position.set(96, y, 5);
+      g.add(tie);
+    });
+
+    return g;
+  }
+
+  function buildPanels() {
+    const g = makeGroup("panels");
+
+    const roof = plateFlat(CASE.d, CASE.w, 2, mats.shell, { r: 4 });
+    roof.position.set(0, CASE.h - 1, MID_Z);
+    g.add(roof);
+
+    const front = plateSide(CASE.w, CASE.h - 8, 3, mats.shell, { r: 5 });
+    front.position.set(FRONT_X - 1.5, CASE.h / 2, MID_Z);
+    g.add(front);
+    const frontMesh = plateSide(CASE.w - 30, CASE.h - 70, 1.4, mats.mesh, {
+      r: 4,
+      uv: true,
+    });
+    frontMesh.position.set(FRONT_X - 4, CASE.h / 2 + 6, MID_Z);
+    frontMesh.renderOrder = 2;
+    g.add(frontMesh);
+    [-1, 1].forEach((sd) => {
+      const port = plateSide(12, 8, 5, mats.black, { r: 1, bevel: 0.3 });
+      port.position.set(FRONT_X + 0.5, CASE.h - 22, MID_Z + sd * 26);
+      g.add(port);
+    });
+    const jack = cylAxis(3, 5, mats.black, "x", 10);
+    jack.position.set(FRONT_X + 0.5, CASE.h - 34, MID_Z);
+    g.add(jack);
+
+    /* Боковое стекло стоит вертикально в плоскости X-Y: без поворота пластина
+       уже смотрит нормалью по Z, то есть наружу боковой панели. */
+    const glass = plate(CASE.d - 6, CASE.h - 6, 4, mats.glass, { r: 6, bevel: 0.8 });
+    glass.position.set(0, CASE.h / 2, CASE.w - 2);
+    glass.renderOrder = 1;
+    g.add(glass);
+    [[-1, -1], [-1, 1], [1, -1], [1, 1]].forEach((p) => {
+      const screw = cyl(4, 12, mats.alu, 12);
+      screw.position.set(
+        p[0] * (CASE.d / 2 - 16),
+        p[1] * (CASE.h / 2 - 16) + CASE.h / 2,
+        CASE.w - 4
+      );
+      g.add(screw);
+    });
+
+    return g;
+  }
+
+  function buildDust() {
+    const count = 420;
+    const pos = new Float32Array(count * 3);
+    const rand = rng(4242);
+    for (let i = 0; i < count; i += 1) {
+      pos[i * 3] = (rand() - 0.5) * 900;
+      pos[i * 3 + 1] = (rand() - 0.5) * 900;
+      pos[i * 3 + 2] = (rand() - 0.5) * 620;
+    }
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute("position", new THREE.BufferAttribute(pos, 3));
+    const m = new THREE.PointsMaterial({
+      color: 0xefeede,
+      /* Размер точки шейдер считает в мировых единицах, а не в миллиметрах:
+         2.5 давали бы пятно радиусом в треть экрана на каждой частице. */
+      size: 6 * MM,
+      transparent: true,
+      opacity: 0.3,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending,
+    });
+    return new THREE.Points(geo, m);
+  }
+
+  function build() {
+    scene = new THREE.Scene();
+
+    world = new THREE.Group();
+    world.scale.setScalar(MM);
+    /* Позиция группы задаётся в единицах сцены, а её scale на неё не
+       действует, поэтому центрируем корпус явно в миллиметрах. */
+    world.position.set(0, -CASE.h / 2 * MM, -MID_Z * MM);
+    scene.add(world);
+
+    rig = new THREE.Group();
+    world.add(rig);
+
+    parts = [];
+
+    /* Материалы и окружение готовятся до геометрии: builders берут материалы
+       из mats, иначе meshes получили бы дефолтный белый MeshBasicMaterial
+       и тема перестала бы на них действовать. */
+    envRT = makeEnv();
+    scene.environment = envRT.texture;
+    buildMaterials();
+
+    parts.push(buildCase(), buildPsu(), buildBoard(), buildCpu(), buildCooler());
+    parts.push(buildRam(), buildGpu());
+    parts.push.apply(parts, buildFans());
+    parts.push(buildCables(), buildPanels());
+    parts.forEach((p) => rig.add(p));
+
+    lights = {
+      key: new THREE.DirectionalLight(0xffffff, 2.6),
+      rim: new THREE.DirectionalLight(0xffffff, 2.4),
+      fill: new THREE.DirectionalLight(0xffffff, 1),
+      inner: new THREE.PointLight(0xffffff, 1, 1.7, 2),
+    };
+    scene.add(lights.key, lights.rim, lights.fill, lights.inner);
+
+    dust = buildDust();
+    world.add(dust);
+
+    paint();
+  }
+
+  const BANDS = [
+    [0.34, 0.5, "cooler"], [0.55, 0.68, "gpu"],
+    [0.7, 0.82, "fanFront"], [0.9, 1.01, "panels"],
+  ];
+
+  /* Акцент на собранной детали. Вес — чистая функция прокрутки, поэтому при
+     прокрутке вверх деталь возвращается ровно туда же, откуда пришла. */
+  function focusTarget(p) {
+    for (let i = 0; i < BANDS.length; i += 1) {
+      const b = BANDS[i];
+      if (p >= b[0] && p < b[1]) {
+        const part = parts.filter((m) => m.userData.name === b[2])[0];
+        if (part) {
+          return {
+            part: part,
+            w: clamp((p - b[0]) / 0.05, 0, 1) * clamp((b[1] - p) / 0.05, 0, 1),
+          };
+        }
+      }
+    }
+    return null;
+  }
+
+  function applyAssembly(p) {
+    const band = focusTarget(p);
+    parts.forEach((mesh) => {
+      const d = mesh.userData;
+      const t = clamp((p - d.seat) / d.span, 0, 1);
+      d.seated = t;
+      const e = t <= 0 ? 0 : t >= 1 ? 1 : easeOutBack(t);
+      const bx = d.home.x + d.out.x * (1 - e);
+      const by = d.home.y + d.out.y * (1 - e);
+      const bz = d.home.z + d.out.z * (1 - e);
+      const k = band && mesh === band.part ? band.w : 0;
+      mesh.position.set(
+        bx + (d.home.x - bx) * k,
+        by + (d.home.y + 6 - by) * k,
+        bz + (d.home.z + 24 - bz) * k
+      );
+      mesh.rotation.set(
+        (1 - e) * 0.2 * d.out.z * (1 - k),
+        (1 - e) * 0.2 * d.out.x * (1 - k),
+        (1 - e) * 0.12 * d.out.y * (1 - k) + k * 0.12
+      );
+    });
+  }
+
+  function readScroll() {
+    const span = Math.max(hero.offsetHeight - stage.offsetHeight, 1);
+    scrollP = clamp(-hero.getBoundingClientRect().top / span, 0, 1);
+    applyAssembly(scrollP);
+    const power = clamp((scrollP - 0.72) / 0.26, 0, 1);
+    fans.forEach((b) => {
+      b.userData.power = power;
+    });
+    const glow = clamp((scrollP - 0.84) / 0.14, 0, 1);
+    if (mats.rgb) mats.rgb.emissiveIntensity = 0.15 + glow * 2.4;
+    leds.forEach((l) => {
+      l.scale.setScalar(0.6 + glow * 0.6);
+    });
+  }
+
+  function layout() {
+    const w = stage.clientWidth;
+    const h = stage.clientHeight;
+    if (!w || !h || !renderer) return;
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    renderer.setSize(w, h, false);
+
+    const compact = w <= COMPACT;
+    const fov = compact ? 40 : 32;
+    const tan = Math.tan((fov * Math.PI) / 360);
+    /* Габарит занимает долю кадра: дистанция = половина размера / (доля * tan),
+       иначе модель выходит за края. */
+    const fillH = compact ? 0.66 : 0.78;
+    const fillW = compact ? 0.84 : 0.62;
+    const needH = (CASE.h * MM * 0.5) / (fillH * tan);
+    const needW = (CASE.d * MM * 0.5) / (fillW * tan);
+    const dist = Math.max(2.2, Math.max(needH, needW) * 1.1);
+
+    camera.fov = fov;
+    camera.position.set(0.36, 0.14, dist);
+    camera.lookAt(0, 0, 0);
+
+    const visH = 2 * dist * tan;
+    const visW = visH * (w / h);
+    rig.position.set(compact ? 0 : visW * 0.13, compact ? -visH * 0.17 : -visH * 0.015, 0);
+    camera.updateProjectionMatrix();
+  }
+
+  function frame(t) {
+    raf = 0;
+    const dt = Math.min((t - lastT) / 1000 || 0.016, 0.05);
+    lastT = t;
+
+    look.x += (look.tx - look.x) * 0.055;
+    look.y += (look.ty - look.y) * 0.055;
+
+    rig.rotation.y = clamp(rig.rotation.y + 0.0015 + spin.vy, -0.6, 0.6);
+    rig.rotation.x = clamp(rig.rotation.x + spin.vx, -0.22, 0.22);
+    spin.vx *= 0.93;
+    spin.vy *= 0.93;
+
+    fans.forEach((b) => {
+      b.rotation.z += dt * (0.15 + b.userData.power * 26) * b.userData.dir;
+    });
+
+    dust.rotation.y += dt * 0.012;
+
+    camera.position.x = 0.36 + look.x * 0.16;
+    camera.position.y = 0.14 - look.y * 0.11;
+    camera.lookAt(0, 0, 0);
+
+    renderer.render(scene, camera);
+    raf = requestAnimationFrame(frame);
+  }
+
+  function sync() {
+    const should = !reduced && inView && !document.hidden;
+    if (should && !running) {
+      running = true;
+      lastT = performance.now();
+      raf = requestAnimationFrame(frame);
+    } else if (!should && running) {
+      running = false;
+      if (raf) cancelAnimationFrame(raf);
+      raf = 0;
+    }
+  }
+
+  function onPointerMove(event) {
+    if (spin.drag) return;
+    const r = stage.getBoundingClientRect();
+    look.tx = clamp(((event.clientX - r.left) / r.width - 0.5) * 2, -1, 1);
+    look.ty = clamp(((event.clientY - r.top) / r.height - 0.5) * 2, -1, 1);
+  }
+
+  function onPointerDown(event) {
+    if (reduced || event.target.closest(interactive)) return;
+    spin.drag = true;
+    spin.px = event.clientX;
+    spin.py = event.clientY;
+    stage.classList.add("is-grabbing");
+  }
+
+  function onPointerMoveDrag(event) {
+    if (!spin.drag) return;
+    spin.vy = clamp(spin.vy + (event.clientX - spin.px) * 0.00034, -0.06, 0.06);
+    spin.vx = clamp(spin.vx + (event.clientY - spin.py) * 0.00034, -0.06, 0.06);
+    spin.px = event.clientX;
+    spin.py = event.clientY;
+  }
+
+  function onPointerUp() {
+    if (!spin.drag) return;
+    spin.drag = false;
+    stage.classList.remove("is-grabbing");
+  }
+
+  function onMotionChange() {
+    reduced = motionQuery.matches;
+    if (reduced) {
+      onPointerUp();
+      sync();
+    } else {
+      readScroll();
+      sync();
+    }
+  }
 
   function degrade() {
     document.documentElement.classList.add("no-gl");
   }
 
-  function clamp(value, min, max) {
-    return Math.min(Math.max(value, min), max);
+  function exposeProbe() {
+    if (!new URLSearchParams(window.location.search).has("pcdebug")) return;
+    window.__heroPC = {
+      progress: () => scrollP,
+      /* Скрыть или показать группу детали: так видно, кто именно заливает кадр. */
+      hide: (name, off) => {
+        const part = parts.find((m) => m.userData.name === name);
+        if (!part) return false;
+        part.visible = !off;
+        return true;
+      },
+      /* Какие меши закрывают кадр: сортировка по площади в NDC. Помогает найти
+         плиту или панель, которая заливает собой всю сцену. */
+      largestOnScreen: (limit) => {
+        const out = [];
+        const v = new THREE.Vector3();
+        scene.updateMatrixWorld(true);
+        camera.updateMatrixWorld(true);
+        scene.traverse((o) => {
+          if (!o.isMesh && !o.isPoints) return;
+          const b = new THREE.Box3().setFromObject(o);
+          if (b.isEmpty()) return;
+          let minx = 9e9;
+          let miny = 9e9;
+          let maxx = -9e9;
+          let maxy = -9e9;
+          for (let i = 0; i < 8; i += 1) {
+            v.set(
+              i & 1 ? b.max.x : b.min.x,
+              i & 2 ? b.max.y : b.min.y,
+              i & 4 ? b.max.z : b.min.z,
+            );
+            v.project(camera);
+            minx = Math.min(minx, v.x);
+            maxx = Math.max(maxx, v.x);
+            miny = Math.min(miny, v.y);
+            maxy = Math.max(maxy, v.y);
+          }
+          out.push({
+            type: o.type,
+            geo: o.geometry ? o.geometry.type : "?",
+            part: o.parent && o.parent.userData ? o.parent.userData.name : "",
+            area: +((maxx - minx) * (maxy - miny)).toFixed(3),
+            ndc: [
+              +minx.toFixed(2), +miny.toFixed(2), +maxx.toFixed(2), +maxy.toFixed(2),
+            ],
+            color: o.material && o.material.color
+              ? "#" + o.material.color.getHexString() : "",
+            mm: b.getSize(new THREE.Vector3())
+              .toArray().map((q) => Math.round(q)),
+          });
+        });
+        out.sort((a, b2) => b2.area - a.area);
+        return out.slice(0, limit || 10);
+      },
+      snapshot: () =>
+        new Promise((resolve) => {
+          requestAnimationFrame(() => {
+            renderer.render(scene, camera);
+            resolve(renderer.domElement.toDataURL("image/png"));
+          });
+        }),
+      parts: () =>
+        parts.map((mesh) => ({
+          name: mesh.userData.name,
+          seated: +mesh.userData.seated.toFixed(3),
+          pos: mesh.position.toArray().map((v) => +v.toFixed(2)),
+        })),
+      /* Габариты детали в миллиметрах мирового пространства: размер, центр,
+         а также список мешей — чтобы проверки видели, что геометрия не пустая. */
+      bounds: () =>
+        parts.map((mesh) => {
+          const b = partBox(mesh);
+          const s = b.getSize(new THREE.Vector3());
+          const c = b.getCenter(new THREE.Vector3());
+          let meshes = 0;
+          let tris = 0;
+          mesh.traverse((o) => {
+            if (o.isMesh) {
+              meshes += 1;
+              const g = o.geometry;
+              if (g && g.index) tris += g.index.count / 3;
+              else if (g && g.attributes.position) tris += g.attributes.position.count / 3;
+            }
+          });
+          return {
+            name: mesh.userData.name,
+            size: s.toArray().map((v) => Math.round(v * 10) / 10),
+            center: c.toArray().map((v) => Math.round(v * 10) / 10),
+            meshes: meshes,
+            tris: Math.round(tris),
+          };
+        }),
+      frame: frameBounds,
+
+      /* Крупнейшие меши сцены в миллиметрах: по ним видно, какая деталь
+         раздувает габариты или съедает время рендера. */
+      /* Крупнейшие меши детали в миллиметрах её системы координат: по ним
+         видно, какой именно объект вылезает за габариты. */
+      heavy: (partName, n) => {
+        const part = partName
+          ? parts.filter((m) => m.userData.name === partName)[0]
+          : null;
+        if (!part) return [];
+        part.updateWorldMatrix(true, true);
+        const inv = new THREE.Matrix4().copy(part.matrixWorld).invert();
+        const m = new THREE.Matrix4();
+        const rows = [];
+        part.traverse((o) => {
+          if (!o.isMesh) return;
+          o.geometry.computeBoundingBox();
+          const s = o.geometry.boundingBox
+            .clone()
+            .applyMatrix4(m.multiplyMatrices(inv, o.matrixWorld))
+            .getSize(new THREE.Vector3());
+          const c = o.geometry.boundingBox
+            .clone()
+            .applyMatrix4(m.multiplyMatrices(inv, o.matrixWorld))
+            .getCenter(new THREE.Vector3());
+          rows.push({
+            geo: o.geometry.type,
+            size: s.toArray().map((v) => Math.round(v * 10) / 10),
+            center: c.toArray().map((v) => Math.round(v * 10) / 10),
+            vol: s.x * s.y * s.z,
+          });
+        });
+        rows.sort((a, b) => b.vol - a.vol);
+        return rows.slice(0, n || 10);
+      },
+    };
   }
 
-  function mix(a, b, t) {
-    return a + (b - a) * t;
+  function start() {
+    renderer = new THREE.WebGLRenderer({
+      canvas: canvas,
+      alpha: true,
+      antialias: true,
+      powerPreference: "high-performance",
+    });
+    renderer.setClearColor(0x000000, 0);
+    renderer.outputEncoding = THREE.sRGBEncoding;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1;
+
+    camera = new THREE.PerspectiveCamera(32, 1, 0.1, 40);
+    build();
+    layout();
+    document.documentElement.classList.add("gl-ready");
+    exposeProbe();
+
+    if (reduced) {
+      degrade();
+      return;
+    }
+
+    if (typeof motionQuery.addEventListener === "function") {
+      motionQuery.addEventListener("change", onMotionChange);
+    }
+    if (finePointer.matches) {
+      stage.addEventListener("pointermove", onPointerMove);
+      stage.addEventListener("pointermove", onPointerMoveDrag);
+      stage.addEventListener("pointerdown", onPointerDown);
+      window.addEventListener("pointerup", onPointerUp);
+      window.addEventListener("pointercancel", onPointerUp);
+    }
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", layout);
+    window.addEventListener("themechange", paint);
+    if ("IntersectionObserver" in window) {
+      new IntersectionObserver(function onEntries(entries) {
+        inView = entries[0].isIntersecting;
+        sync();
+      }, { threshold: 0 }).observe(hero);
+    }
+    readScroll();
+    sync();
   }
 
-  /** Пружинящая кривая: деталь с лёгким перелётом и остановкой на месте. */
-  function easeOutBack(t) {
-    const k = t - 1;
-    return 1 + C3 * k * k * k + C1 * k * k;
+  function onScroll() {
+    if (reduced) return;
+    readScroll();
   }
 
   function loadLib() {
@@ -160,562 +1585,26 @@
     }
     const script = document.createElement("script");
     script.src = LIB;
-    script.async = true;
-    script.addEventListener("load", () => {
-      if (window.THREE) build();
-      else degrade();
-    });
-    script.addEventListener("error", degrade);
+    script.onload = function onload() {
+      THREE = window.THREE;
+      if (!THREE || !THREE.WebGLRenderer) {
+        degrade();
+        return;
+      }
+      try {
+        start();
+      } catch (err) {
+        if (window.console) console.error("scene3d:", err);
+        degrade();
+      }
+    };
+    script.onerror = degrade;
     document.head.appendChild(script);
   }
 
-  /**
-   * Плоская деталь в общем языке сцены: тонированный короб + рёбра-обводка.
-   * kind — ключ роли, из него paint() берёт цвета темы.
-   */
-  function slab(THREE, w, h, d, kind, opts) {
-    const o = opts || {};
-    const group = new THREE.Group();
-    const geometry = new THREE.BoxGeometry(w, h, d);
-
-    if (!o.shell) {
-      const params = {
-        flatShading: true,
-        metalness: o.metal === undefined ? 0.55 : o.metal,
-        roughness: o.rough === undefined ? 0.44 : o.rough,
-      };
-      // Боковая панель — единственная полупрозрачная деталь: сквозь неё должно
-      // быть видно собранное железо.
-      if (kind === "panel") {
-        params.transparent = true;
-        params.opacity = 0.1;
-        params.depthWrite = false;
-        params.metalness = 0.2;
-        params.roughness = 0.18;
-      }
-      const solid = new THREE.Mesh(geometry, new THREE.MeshStandardMaterial(params));
-      solid.material.userData.role = `fill:${kind}`;
-      group.add(solid);
-    }
-
-    if (o.edges !== false) {
-      const edges = new THREE.LineSegments(
-        new THREE.EdgesGeometry(geometry),
-        new THREE.LineBasicMaterial({ transparent: true }),
-      );
-      edges.material.userData.role = `edge:${kind}`;
-      group.add(edges);
-    }
-
-    return group;
-  }
-
-  /** Решётка радиатора: пачка тонких рёбер, читается как кулер. */
-  function heatsink(THREE, width, height, fins, depth) {
-    const group = new THREE.Group();
-    for (let i = 0; i < fins; i += 1) {
-      const fin = slab(THREE, width, height / fins - 0.012, depth, "body", {
-        edges: false,
-        metal: 0.78,
-        rough: 0.3,
-      });
-      fin.position.y = -height / 2 + (height / fins) * (i + 0.5);
-      group.add(fin);
-    }
-    return group;
-  }
-
-  /** Вентилятор: обод, ступица и лопасти, которые крутятся при сборке.
-   *  dir задаёт направление: приток и выдув в реальном корпусе вращаются вразнобой. */
-  function fan(THREE, radius, dir) {
-    const group = new THREE.Group();
-    const rim = new THREE.Mesh(
-      new THREE.TorusGeometry(radius, radius * 0.09, 6, 28),
-      new THREE.MeshStandardMaterial({ flatShading: true, metalness: 0.5, roughness: 0.4 }),
-    );
-    rim.material.userData.role = "fill:fan";
-    group.add(rim);
-
-    const hub = slab(THREE, radius * 0.34, radius * 0.34, radius * 0.22, "fan", {
-      edges: false,
-    });
-    group.add(hub);
-
-    const blades = new THREE.Group();
-    for (let i = 0; i < 5; i += 1) {
-      const blade = slab(THREE, radius * 0.82, radius * 0.2, radius * 0.06, "fan", {
-        edges: false,
-        metal: 0.35,
-        rough: 0.6,
-      });
-      const a = (i / 5) * Math.PI * 2;
-      blade.position.set(Math.cos(a) * radius * 0.52, Math.sin(a) * radius * 0.52, 0);
-      blade.rotation.z = a;
-      blades.add(blade);
-    }
-    group.add(blades);
-    blades.userData.dir = dir === undefined ? 1 : dir;
-    group.userData.blades = blades;
-    return group;
-  }
-
-  function makeChassis(THREE) {
-    const edges = new THREE.LineSegments(
-      new THREE.EdgesGeometry(new THREE.BoxGeometry(2.12, 2.52, 1.82)),
-      new THREE.LineBasicMaterial({ transparent: true }),
-    );
-    edges.material.userData.role = "edge:body";
-    return edges;
-  }
-
-  function makeBoard(THREE) {
-    const group = slab(THREE, 1.5, 1.52, 0.07, "board", { metal: 0.24, rough: 0.62 });
-
-    // Слоты памяти и разъёмы PCIe — читаемые признаки платы.
-    for (let i = 0; i < 4; i += 1) {
-      const slot = slab(THREE, 0.028, 0.66, 0.02, "board", { edges: false, metal: 0.1 });
-      slot.position.set(-0.62 + i * 0.075, 0.1, 0.05);
-      group.add(slot);
-    }
-    const pcie = slab(THREE, 1.18, 0.05, 0.02, "board", { edges: false, metal: 0.1 });
-    pcie.position.set(0.06, -0.12, 0.05);
-    group.add(pcie);
-
-    const led = new THREE.Mesh(
-      new THREE.BoxGeometry(0.9, 0.02, 0.02),
-      new THREE.MeshBasicMaterial({ transparent: true, opacity: 0 }),
-    );
-    led.material.userData.role = "led";
-    led.position.set(0.1, 0.72, 0.05);
-    group.add(led);
-    group.userData.led = led;
-    return group;
-  }
-
-  function makeCpu(THREE) {
-    const group = new THREE.Group();
-    const socket = slab(THREE, 0.34, 0.34, 0.08, "chip", { metal: 0.3, rough: 0.5 });
-    socket.position.z = 0.04;
-    group.add(socket);
-
-    const cooler = heatsink(THREE, 0.38, 0.34, 6, 0.22);
-    cooler.position.z = 0.2;
-    group.add(cooler);
-
-    // Трубка теплотвода даёт кулеру узнаваемый силуэт.
-    const pipe = slab(THREE, 0.05, 0.05, 0.3, "chip", { metal: 0.8, rough: 0.24 });
-    pipe.position.set(0.13, 0.13, 0.16);
-    group.add(pipe);
-    return group;
-  }
-
-  function makeRam(THREE) {
-    const group = new THREE.Group();
-    for (let i = 0; i < 4; i += 1) {
-      const stick = slab(THREE, 0.045, 0.62, 0.15, "ram", { metal: 0.2, rough: 0.55 });
-      stick.position.set((i - 1.5) * 0.075, 0, 0.08);
-      group.add(stick);
-    }
-    return group;
-  }
-
-  function makeGpu(THREE) {
-    const group = new THREE.Group();
-    const body = slab(THREE, 1.34, 0.24, 0.5, "body", { metal: 0.5, rough: 0.4 });
-    group.add(body);
-    const shroud = slab(THREE, 1.1, 0.1, 0.44, "chip", { metal: 0.6, rough: 0.3 });
-    shroud.position.set(-0.04, 0.12, 0.02);
-    group.add(shroud);
-    for (let i = 0; i < 2; i += 1) {
-      const wheel = fan(THREE, 0.15, i ? 1 : -1);
-      wheel.position.set(0.34 - i * 0.44, 0, 0.26);
-      group.add(wheel);
-    }
-    return group;
-  }
-
-  function makePsu(THREE) {
-    const group = slab(THREE, 0.78, 0.52, 0.66, "psu", { metal: 0.42, rough: 0.5 });
-    const vent = slab(THREE, 0.5, 0.34, 0.02, "psu", { edges: false, metal: 0.1 });
-    vent.position.z = 0.34;
-    group.add(vent);
-    return group;
-  }
-
-  function makeDust(THREE) {
-    const count = window.innerWidth < COMPACT ? 380 : 820;
-    const positions = new Float32Array(count * 3);
-    for (let i = 0; i < count; i += 1) {
-      const radius = 3.1 + Math.random() * 4.4;
-      const theta = Math.random() * Math.PI * 2;
-      const phi = Math.acos(2 * Math.random() - 1);
-      positions[i * 3] = radius * Math.sin(phi) * Math.cos(theta);
-      positions[i * 3 + 1] = radius * Math.sin(phi) * Math.sin(theta) * 0.55;
-      positions[i * 3 + 2] = radius * Math.cos(phi);
-    }
-    const geometry = new THREE.BufferGeometry();
-    geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
-    return new THREE.Points(
-      geometry,
-      new THREE.PointsMaterial({
-        size: 0.032,
-        sizeAttenuation: true,
-        transparent: true,
-        depthWrite: false,
-      }),
-    );
-  }
-
-  /**
-   * Описание порядка сборки. home — место детали в корпусе, out — откуда она
-   * прилетает, seat/span — на каком отрезке прогресса деталь встаёт на место.
-   */
-  function blueprint() {
-    return [
-      { name: "board", build: makeBoard, home: [0, 0.04, -0.62], out: [-2.1, 0.2, -1.1], seat: 0.06, span: 0.22 },
-      { name: "cpu", build: makeCpu, home: [0.08, 0.44, -0.53], out: [1.9, 1.2, 1.1], seat: 0.24, span: 0.2 },
-      { name: "ram", build: makeRam, home: [-0.6, 0.06, -0.5], out: [-1.7, -1.1, 1.0], seat: 0.34, span: 0.18 },
-      { name: "psu", build: makePsu, home: [-0.44, -0.94, -0.3], out: [-1.6, -1.9, -0.8], seat: 0.44, span: 0.18 },
-      { name: "gpu", build: makeGpu, home: [0.04, -0.16, 0.16], out: [2.3, 0.6, 1.4], seat: 0.54, span: 0.2 },
-      { name: "panel", build: (T) => slab(T, 2.02, 2.42, 0.03, "panel", { edges: false }), home: [0, 0, 0.9], out: [0.4, 0, 2.6], seat: 0.8, span: 0.18 },
-    ];
-  }
-
-  function build() {
-    THREE = window.THREE;
-    try {
-      renderer = new THREE.WebGLRenderer({
-        canvas,
-        alpha: true,
-        antialias: true,
-        powerPreference: "high-performance",
-      });
-    } catch (error) {
-      void error;
-      degrade();
-      return;
-    }
-    if (!renderer.getContext()) {
-      degrade();
-      return;
-    }
-
-    renderer.setClearAlpha(0);
-    scene = new THREE.Scene();
-    camera = new THREE.PerspectiveCamera(38, 1, 0.1, 100);
-    camera.position.set(0, 0.25, 6.9);
-    camera.lookAt(0, 0, 0);
-    clock = new THREE.Clock();
-
-    const ambient = new THREE.AmbientLight(0xffffff, 1);
-    const key = new THREE.PointLight(0xffffff, 1, 16);
-    key.position.set(2.4, 2.6, 3.2);
-    const fill = new THREE.PointLight(0xffffff, 1, 16);
-    fill.position.set(-3, -2.2, 2.4);
-    scene.add(ambient, key, fill);
-    lights = { ambient, key, fill };
-
-    rig = new THREE.Group();
-    chassis = makeChassis(THREE);
-    dust = makeDust(THREE);
-
-    parts = blueprint().map((spec) => {
-      const mesh = spec.build(THREE);
-      mesh.userData = {
-        name: spec.name,
-        home: new THREE.Vector3().fromArray(spec.home),
-        out: new THREE.Vector3().fromArray(spec.out),
-        seat: spec.seat,
-        span: spec.span,
-        seated: 0,
-      };
-      mesh.traverse((node) => {
-        if (node.userData && node.userData.blades) fans.push(node.userData.blades);
-        if (node.userData && node.userData.led) led = node.userData.led;
-      });
-      rig.add(mesh);
-      return mesh;
-    });
-
-    // Три вентилятора: передний приток, задний выдув, верхний обдув.
-    [
-      { at: [0.72, 0.74, 0.52], out: [1.5, 1.3, 1.4], dir: 1 },
-      { at: [0.66, -0.42, -0.5], out: [1.4, -1.2, -1.4], dir: -1 },
-      { at: [-0.2, 1.12, 0.1], out: [-0.6, 2.0, 0.8], dir: 1 },
-    ].forEach((spec) => {
-      const wheel = fan(THREE, 0.32, spec.dir);
-      // userData дополняется, а не заменяется: в ней уже живёт blades.
-      wheel.userData.name = "fan";
-      wheel.userData.home = new THREE.Vector3().fromArray(spec.at);
-      wheel.userData.out = new THREE.Vector3().fromArray(spec.out);
-      wheel.userData.seat = 0.66;
-      wheel.userData.span = 0.2;
-      wheel.userData.seated = 0;
-      fans.push(wheel.userData.blades);
-      rig.add(wheel);
-      parts.push(wheel);
-    });
-
-    scene.add(rig, dust);
-    rig.add(chassis);
-
-    paint();
-    applyAssembly(0);
-    bind();
-    layout();
-    document.documentElement.classList.add("gl-ready");
-    exposeProbe();
-    sync();
-  }
-
-  function sceneTheme() {
-    return document.documentElement.dataset.theme === "light" ? "light" : "dark";
-  }
-
-  /** Перекрашивает все материалы сцены под текущую тему. */
-  function paint() {
-    if (!THREE || !rig) return;
-    const pal = PALETTE[sceneTheme()];
-
-    const walk = (root) => {
-      root.traverse((node) => {
-        const material = node.material;
-        if (!material) return;
-        const role = material.userData && material.userData.role;
-        if (!role) return;
-
-        if (role.startsWith("fill:")) {
-          const kind = role.slice(5);
-          if (kind === "panel") {
-            material.color.setHex(pal.panel);
-            material.opacity = pal.panelOpacity;
-          } else {
-            const key = FILLS[kind] || kind;
-            if (pal[key] === undefined) return;
-            material.color.setHex(pal[key]);
-            if (material.emissive) {
-              if (kind === "chip") {
-                material.emissive.setHex(pal.chipEmissive);
-                material.emissiveIntensity = pal.chipEmissiveIntensity;
-              } else {
-                material.emissive.setHex(pal.bodyEmissive);
-                material.emissiveIntensity = pal.bodyEmissiveIntensity;
-              }
-            }
-          }
-        } else if (role.startsWith("edge:")) {
-          const kind = role.slice(5);
-          if (kind === "panel") {
-            material.color.setHex(pal.panelEdge);
-            material.opacity = pal.panelEdgeOpacity;
-          } else {
-            const key = EDGES[kind] || "bodyEdge";
-            material.color.setHex(pal[key]);
-            material.opacity = pal.bodyEdgeOpacity;
-          }
-        } else if (role === "led") {
-          material.color.setHex(pal.led);
-        }
-        material.needsUpdate = true;
-      });
-    };
-
-    walk(rig);
-    walk(chassis);
-
-    if (dust) {
-      const material = dust.material;
-      material.color.setHex(pal.dust);
-      material.opacity = pal.dustOpacity;
-      // Аддитивное смешение на светлом фоне выбеливает точки в ноль.
-      material.blending =
-        sceneTheme() === "light" ? THREE.NormalBlending : THREE.AdditiveBlending;
-      material.needsUpdate = true;
-    }
-
-    if (lights) {
-      lights.ambient.color.setHex(pal.ambient);
-      lights.ambient.intensity = pal.ambientIntensity;
-      lights.key.color.setHex(pal.key);
-      lights.key.intensity = pal.keyIntensity;
-      lights.fill.color.setHex(pal.fill);
-      lights.fill.intensity = pal.fillIntensity;
-    }
-  }
-
-  /** Ставит каждую деталь между её «п exploded» и местом в корпусе. */
-  function applyAssembly(p) {
-    parts.forEach((mesh) => {
-      const { home, out, seat, span } = mesh.userData;
-      const t = clamp((p - seat) / span, 0, 1);
-      const e = easeOutBack(t);
-      mesh.userData.seated = t;
-      mesh.position.set(
-        mix(out.x, home.x, e),
-        mix(out.y, home.y, e),
-        mix(out.z, home.z, e),
-      );
-      // Лёгкий разворот в полёте, чтобы деталь не вставала строго с места.
-      mesh.rotation.set((1 - e) * 0.42, (1 - e) * -0.34, (1 - e) * 0.2);
-    });
-
-    // Корпус проявляется первым и оседает на габарит.
-    const ct = easeOutBack(clamp(p / 0.16, 0, 1));
-    const scale = mix(1.16, 1, ct);
-    chassis.scale.setScalar(scale);
-    chassis.material.opacity = clamp(ct, 0, 1) * 0.9;
-
-    if (led) led.material.opacity = clamp((p - 0.86) / 0.14, 0, 1) * 0.85;
-  }
-
-  function layout() {
-    if (!renderer) return;
-    const width = stage.clientWidth;
-    const height = stage.clientHeight;
-    const compact = width < COMPACT;
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, compact ? 1.35 : 1.75));
-    renderer.setSize(width, height, false);
-    camera.aspect = width / height;
-    camera.updateProjectionMatrix();
-    rig.scale.setScalar(compact ? 0.82 : 0.92);
-    rig.position.set(compact ? 0 : Math.min(width / 900, 2.3), compact ? 0.7 : 0.2, 0);
-  }
-
-  function frame() {
-    frameId = window.requestAnimationFrame(frame);
-    const dt = Math.min(clock.getDelta(), 0.05);
-    const time = clock.elapsedTime;
-
-    look.x += (look.tx - look.x) * 0.055;
-    look.y += (look.ty - look.y) * 0.055;
-
-    rig.rotation.y += 0.0021 + spin.vy;
-    rig.rotation.x = clamp(rig.rotation.x + spin.vx, -0.5, 0.5);
-    spin.vx *= 0.93;
-    spin.vy *= 0.93;
-
-    // Вентиляторы раскручиваются по мере того, как сборка приближается к концу.
-    const power = clamp((scrollP - 0.7) / 0.3, 0, 1);
-    fans.forEach((blades) => {
-      blades.rotation.z += dt * (0.4 + power * 7.5) * (blades.userData.dir || 1);
-    });
-
-    dust.rotation.y += dt * 0.014;
-
-    camera.position.x = look.x * 0.5;
-    camera.position.y = 0.25 - look.y * 0.36;
-    camera.position.z = 6.9 + scrollP * 0.5;
-    camera.lookAt(rig.position.x * 0.5, 0, 0);
-
-    renderer.render(scene, camera);
-  }
-
-  function sync() {
-    const should = !reduced && inView && !document.hidden;
-    if (should && !running) {
-      running = true;
-      clock.getDelta();
-      frame();
-    } else if (!should && running) {
-      running = false;
-      window.cancelAnimationFrame(frameId);
-      frameId = 0;
-    }
-  }
-
-  function onPointerMove(event) {
-    if (event.pointerType && event.pointerType !== "mouse") return;
-    look.tx = (event.clientX / window.innerWidth - 0.5) * 2;
-    look.ty = (event.clientY / window.innerHeight - 0.5) * 2;
-
-    if (!spin.dragging) return;
-    const dx = event.clientX - spin.px;
-    const dy = event.clientY - spin.py;
-    spin.px = event.clientX;
-    spin.py = event.clientY;
-    spin.vy = clamp(spin.vy + dx * 0.0045, -0.09, 0.09);
-    spin.vx = clamp(spin.vx + dy * 0.0032, -0.06, 0.06);
-  }
-
-  function onPointerDown(event) {
-    if (reduced || event.target.closest(interactive)) return;
-    spin.dragging = true;
-    spin.px = event.clientX;
-    spin.py = event.clientY;
-    stage.classList.add("is-grabbing");
-  }
-
-  function onPointerUp() {
-    spin.dragging = false;
-    stage.classList.remove("is-grabbing");
-  }
-
-  /**
-   * Прогресс идёт по «лишней» высоте секции: липкая сцена неподвижна, поэтому
-   * 0 — это верх героя, 1 — момент, когда сцена отлипает и уезжает вверх.
-   */
-  function onScroll() {
-    const span = Math.max(hero.offsetHeight - stage.offsetHeight, 1);
-    scrollP = clamp(-hero.getBoundingClientRect().top / span, 0, 1);
-    applyAssembly(scrollP);
-  }
-
-  function bind() {
-    window.addEventListener("pointermove", onPointerMove, { passive: true });
-    stage.addEventListener("pointerdown", onPointerDown, { passive: true });
-    window.addEventListener("pointerup", onPointerUp, { passive: true });
-    window.addEventListener("pointercancel", onPointerUp, { passive: true });
-    window.addEventListener("scroll", onScroll, { passive: true });
-    window.addEventListener("resize", layout);
-    window.addEventListener("themechange", paint);
-    document.addEventListener("visibilitychange", sync);
-
-    if ("IntersectionObserver" in window) {
-      // Наблюдаем сцену, а не секцию: как только она отлипла, цикл можно глушить.
-      new IntersectionObserver(
-        (entries) => {
-          inView = entries[0].isIntersecting;
-          sync();
-        },
-        { threshold: 0 },
-      ).observe(stage);
-    }
-
-    const onMotionChange = () => {
-      reduced = motionQuery.matches;
-      sync();
-    };
-    if (typeof motionQuery.addEventListener === "function") {
-      motionQuery.addEventListener("change", onMotionChange);
-    }
-
-    finePointer.addEventListener?.("change", () => {
-      look.tx = 0;
-      look.ty = 0;
-    });
-
-    onScroll();
-  }
-
-  /** Точка входа для проверочного прогона: включается только ?pcdebug. */
-  function exposeProbe() {
-    if (!new URLSearchParams(window.location.search).has("pcdebug")) return;
-    window.__heroPC = {
-      progress: () => scrollP,
-      parts: () =>
-        parts.map((mesh) => ({
-          name: mesh.userData.name,
-          seated: +mesh.userData.seated.toFixed(3),
-          pos: mesh.position.toArray().map((v) => +v.toFixed(3)),
-        })),
-    };
-  }
-
-  function start() {
-    const begin = () => loadLib();
-    if (document.readyState === "complete") begin();
-    else window.addEventListener("load", begin, { once: true });
-  }
-
-  start();
+  const begin = function begin() {
+    loadLib();
+  };
+  if (document.readyState === "complete") begin();
+  else window.addEventListener("load", begin, { once: true });
 })();
