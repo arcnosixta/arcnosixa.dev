@@ -177,9 +177,19 @@ SVG-мотив в `COVER_MOTIFS` (`app.js`): горизонт, окна, гра�
   платформы (web, mobile, desktop).
 - Число проектов дублируется в hero (`data-count` рядом со счётчиком) и в
   `I18N.*.workStatus` собирается из списка, поэтому руками его править не нужно.
-- Ссылка `https://arcnosixa.dev/` в `canonical`, `og:url`, `hreflang`, `robots.txt` и
-  `sitemap.xml` — это основной домен, он уже прописан. Менять нужно только если
-  домен сменится.
+- **Домен.** Сейчас сайт живёт на `https://arcnosixta.github.io/arcnosixa.dev/`, и
+  именно этот адрес стоит в `canonical`, `og:url`, `hreflang`, `robots.txt` и
+  `sitemap.xml`. Собственный домен `arcnosixa.dev` куплен, но в DNS у него пока
+  нет ни NS, ни A, ни CNAME, поэтому он не резолвится, а в Pages он не привязан
+  (`cname: null`). Пока так, ставить его в метаданные нельзя: краулер получит
+  canonical в никуда, а `og:image` не отдастся вообще.
+
+  Когда DNS будет поднят, переключение — это одна замена префикса
+  `https://arcnosixta.github.io/arcnosixa.dev/` на `https://arcnosixa.dev/`
+  в `index.html` (8 вхождений), `robots.txt` и `sitemap.xml`, плюс
+  `gh api -X PUT repos/arcnosixta/arcnosixa.dev/pages -f cname=arcnosixa.dev`.
+  Порядок важен: сначала DNS, потом CNAME в Pages, потом метаданные — иначе
+  сайт на время верификации уедет на github.io.
 
 Проверено и готово: контакты `t.me/arcnosixta` и `github.com/arcnosixta`,
 `title`/`description`/`og` в обоих языках, `og.png`, `robots.txt`, `sitemap.xml`,
@@ -202,6 +212,8 @@ JSON-LD (`Person`). Русский вариант в разметке, англ�
 Для GitHub Pages в репозитории уже есть `.github/workflows/pages.yml`: после пуша в
 `main` статика публикуется как сайт. Перед загрузкой workflow подставляет в ссылки на
 `styles.css` и скрипты `?v=<коммит>`, поэтому браузер не показывает старые файлы из
-кеша после деплоя. Своя версия в `index.html` руками не нужна. Домен `arcnosixa.dev`
-подключается в Settings → Pages → Custom domain; отдельного файла `CNAME` в
-репозитории нет, домен живёт в настройках Pages.
+кеша после деплоя. Своя версия в `index.html` руками не нужна. `arcnosixa.dev`
+подключается в Settings → Pages → Custom domain или через
+`gh api -X PUT repos/arcnosixta/arcnosixa.dev/pages -f cname=arcnosixa.dev`, но
+только после того, как в DNS появятся A-записи GitHub Pages — иначе верификация
+провалится. Файла `CNAME` в репозитории нет, домен живёт в настройках Pages.
