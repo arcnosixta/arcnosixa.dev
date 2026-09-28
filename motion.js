@@ -212,21 +212,15 @@
     if (reduced) {
       inner.style.removeProperty("--hero-shift");
       inner.style.removeProperty("--hero-fade");
-      hero.classList.remove("is-assembled");
       return;
     }
-    // Секция 01 вдвое выше экрана, поэтому прогресс считаем по «лишней» высоте
-    // липкой сцены, а не по всей секции — иначе сборка растянулась бы на 200svh.
-    const stage = hero.querySelector(".hero-stage");
-    const stageH = stage ? stage.offsetHeight : hero.offsetHeight;
-    const span = Math.max(hero.offsetHeight - stageH, 1);
+    // Hero — один экран, поэтому текст только слегка отходит и гаснет, когда
+    // секция уходит вверх: полностью скрывать его незачем, в hero нет длинной
+    // прокрутки, которая бы это оправдывала.
+    const span = hero.offsetHeight || 1;
     const p = clamp(-hero.getBoundingClientRect().top / span, 0, 1);
-    // Текст уходит в первой трети, дальше объект остаётся один на экране.
-    const fade = 1 - clamp(p / 0.3, 0, 1);
     inner.style.setProperty("--hero-shift", `${(p * 70).toFixed(1)}px`);
-    inner.style.setProperty("--hero-fade", fade.toFixed(3));
-    // Прозрачные ссылки не должны ловить клики и уводить фокус с клавиатуры.
-    hero.classList.toggle("is-assembled", fade <= 0.02);
+    inner.style.setProperty("--hero-fade", (1 - p * 0.85).toFixed(3));
   }
 
   function updateTimeline() {
