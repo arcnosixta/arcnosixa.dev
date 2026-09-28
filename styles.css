@@ -192,6 +192,15 @@ main:focus-visible {
   border-bottom-color: var(--line);
 }
 
+/* Над живой 3D-сценой размытие подложки пересчитывается каждый кадр и съедает
+   частоту. На это время панель становится плотнее, но без размытия: токен
+   переопределён, поэтому тёмная и светлая темы обе остаются в своём цвете. */
+.gl-live .topbar.is-stuck {
+  --glass: rgb(var(--ch-surface) / 0.93);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
 .topbar.is-hidden {
   transform: translateY(-104%);
 }

@@ -110,6 +110,14 @@
 
   const C1 = 1.70158;
 
+  /* Движение в секунду, а не в кадр. Иначе на 30 Гц риг проворачивает вдвое
+     меньший угол, чем на 60 Гц, слои расходятся по скорости и картинка
+     дёргается. Сглаживание — тоже по времени: 1 - exp(-rate * dt). */
+  const RIG_SPIN = 0.09; // рад/с, было 0.0015 за кадр на 60 Гц
+  const LOOK_RATE = 3.4; // скорость догоняющая за курсором
+  const SPIN_DAMP = 4.3; // затухание инерции вращения
+  const SCALE_LADDER = [1, 0.85, 0.7, 0.55, 0.45, 0.35];
+
   let reduced = motionQuery.matches;
   let THREE = null;
   let renderer = null;
@@ -124,13 +132,34 @@
   let fans = [];
   let parts = [];
   let leds = [];
-  let spin = { vx: 0, vy: 0, drag: false, px: 0, py: 0 };
+  let spin = { vx: 0, vy: 0, drag: false, px: 0, py: 0, dx: 0, dy: 0 };
   let look = { x: 0, y: 0, tx: 0, ty: 0 };
   let scrollP = 0;
   let inView = true;
   let running = false;
   let lastT = 0;
   let raf = 0;
+
+  /* Геометрия hero кешируется: раньше offsetHeight и getBoundingClientRect()
+     читались на каждом событии прокрутки и каждом движении мыши, то есть
+     браузер пересчитывал раскладку десятки раз в секунду. */
+  let stageW = 0;
+  let stageH = 0;
+  let stageRect = { left: 0, top: 0 };
+  let heroTop = 0;
+  let span = 1;
+  let layoutQueued = 0;
+  let scrollDirty = false;
+
+  /* Адаптивное качество. Смотрим на реальные интервалы кадров, а не на время
+     вызова render(): GPU считает асинхронно, и вокруг render() всегда быстро.
+     floor — лучший интервал за сессию, то есть частота самого экрана. */
+  let floor = 0;
+  let avg = 0;
+  let rung = 0;
+  let cooldownMs = 0;
+  let warmMs = 0;
+  let warmFrames = 0;
 
   function clamp(v, a, b) {
     return v < a ? a : v > b ? b : v;
@@ -1269,8 +1298,10 @@
   }
 
   function readScroll() {
-    const span = Math.max(hero.offsetHeight - stage.offsetHeight, 1);
-    scrollP = clamp(-hero.getBoundingClientRect().top / span, 0, 1);
+    /* Только window.scrollY: геометрия героя лежит в кеше, раскладку не трогаем. */
+    const p = clamp((heroTop - window.scrollY) / span, 0, 1);
+    if (p === scrollP) return;
+    scrollP = p;
     applyAssembly(scrollP);
     const power = clamp((scrollP - 0.72) / 0.26, 0, 1);
     fans.forEach((b) => {
@@ -1283,12 +1314,37 @@
     });
   }
 
-  function layout() {
+  /** Единственное место, где читается геометрия hero. */
+  function measure() {
+    stageW = stage.clientWidth;
+    stageH = stage.clientHeight;
+    span = Math.max(hero.offsetHeight - stageH, 1);
+    const rect = hero.getBoundingClientRect();
+    heroTop = rect.top + window.scrollY;
+    stageRect = stage.getBoundingClientRect();
+  }
+
+  /** Буфер по качеству: чем дороже кадр, тем меньше пикселей. */
+  function applyResolution() {
+    if (!renderer) return;
+    const dpr = Math.min(window.devicePixelRatio || 1, 2) * SCALE_LADDER[rung];
+    renderer.setPixelRatio(clamp(dpr, 0.5, 2));
+    renderer.setSize(stageW, stageH, false);
+  }
+
+  /** Пересчёт на resize: не чаще одного кадра и только при реальной смене размера. */
+  function applyLayout() {
+    layoutQueued = 0;
+    if (!renderer) return;
     const w = stage.clientWidth;
     const h = stage.clientHeight;
-    if (!w || !h || !renderer) return;
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
-    renderer.setSize(w, h, false);
+    if (!w || !h) return;
+    /* Сравниваем с прошлым размером до measure(): он перезаписывает кеш, и
+       после этого размер всегда «тот же самый». */
+    const sizeChanged = w !== stageW || h !== stageH;
+    measure();
+    if (!sizeChanged) return; // размер не изменился — буфер не трогаем
+    applyResolution();
 
     const compact = w <= COMPACT;
     const fov = compact ? 40 : 32;
@@ -1311,18 +1367,86 @@
     camera.updateProjectionMatrix();
   }
 
+  function layout() {
+    if (layoutQueued) return;
+    layoutQueued = requestAnimationFrame(applyLayout);
+  }
+
+  /** Подстройка качества под реальные пропуски кадров. */
+  function adapt(ms) {
+    /* Мусорные интервалы (вкладка была свёрнута, первый кадр) в оценку частоты
+       не идут. */
+    if (!(ms > 0) || ms > 2000) return;
+    if (!avg) avg = ms;
+    else avg += (ms - avg) * 0.08;
+    /* Порог 3 мс отсекает 300+ Гц: floor должен отражать частоту экрана, а не
+       удвоенный вызов rAF. */
+    if (ms > 3 && (!floor || ms < floor)) floor = ms;
+    /* Первые кадры ничего не знают о стоимости рендера: компиляция шейдеров и
+       первая отрисовка всегда дороже. Ждём 600 мс, а не N кадров: на слабой
+       машине 30 кадров — это полторы минуты впустую, а 600 мс — всегда меньше
+       секунды независимо от частоты. */
+    warmMs += ms;
+    warmFrames += 1;
+    if (warmMs < 600 || warmFrames < 6) return;
+    if (cooldownMs > 0) {
+      cooldownMs -= ms;
+      return;
+    }
+    if (!floor) return;
+
+    const last = SCALE_LADDER.length - 1;
+    /* Понижать разрешение, а не пропускать кадры: пропуск глаз видит сразу,
+       мягкая картинка — нет. */
+    const slow = avg > floor * 1.55 || avg > 40;
+    const fast = avg < floor * 1.18 && avg < 26;
+
+    /* Пауза между ступенями тоже по времени: 45 кадров на слабой машине — это
+       минуты, за которые лестница не успевает помочь. */
+    if (slow && rung < last) {
+      rung += 1;
+      cooldownMs = 700; // вниз быстро: тяжёлый кадр виден сразу
+    } else if (fast && rung > 0) {
+      rung -= 1;
+      cooldownMs = 2000; // вверх осторожно: лучше мягкая картинка, чем лаги
+    } else {
+      return;
+    }
+    applyResolution();
+  }
+
   function frame(t) {
     raf = 0;
-    const dt = Math.min((t - lastT) / 1000 || 0.016, 0.05);
+    const raw = t - lastT;
+    /* Метка первого кадра после запуска бывает раньше lastT: IntersectionObserver
+       срабатывает в конце кадра, а rAF — в начале следующего. Отрицательный dt
+       уводил бы сцену назад, а adapt() принимал его за 0 Гц. */
+    const dt = raw > 0 ? Math.min(raw / 1000, 0.05) : 0.016;
     lastT = t;
 
-    look.x += (look.tx - look.x) * 0.055;
-    look.y += (look.ty - look.y) * 0.055;
+    /* Сборка едет за прокруткой, но пересчитывается раз в кадр, а не на
+       каждое событие колеса. */
+    if (scrollDirty) {
+      scrollDirty = false;
+      readScroll();
+    }
 
-    rig.rotation.y = clamp(rig.rotation.y + 0.0015 + spin.vy, -0.6, 0.6);
-    rig.rotation.x = clamp(rig.rotation.x + spin.vx, -0.22, 0.22);
-    spin.vx *= 0.93;
-    spin.vy *= 0.93;
+    look.x += (look.tx - look.x) * (1 - Math.exp(-LOOK_RATE * dt));
+    look.y += (look.ty - look.y) * (1 - Math.exp(-LOOK_RATE * dt));
+
+    /* Инерция мыши: события копятся, скорость гасится за секунду, а не за кадр. */
+    if (spin.dx || spin.dy) {
+      spin.vy = clamp(spin.vy + spin.dx * 0.00034 * 60, -3.6, 3.6);
+      spin.vx = clamp(spin.vx + spin.dy * 0.00034 * 60, -3.6, 3.6);
+      spin.dx = 0;
+      spin.dy = 0;
+    }
+    const damp = Math.exp(-SPIN_DAMP * dt);
+    spin.vx *= damp;
+    spin.vy *= damp;
+
+    rig.rotation.y = clamp(rig.rotation.y + (RIG_SPIN + spin.vy) * dt, -0.6, 0.6);
+    rig.rotation.x = clamp(rig.rotation.x + spin.vx * dt, -0.22, 0.22);
 
     fans.forEach((b) => {
       b.rotation.z += dt * (0.15 + b.userData.power * 26) * b.userData.dir;
@@ -1335,14 +1459,26 @@
     camera.lookAt(0, 0, 0);
 
     renderer.render(scene, camera);
+    /* На лестницу идёт настоящий интервал кадра, а не зажатый dt: если кадр
+       реально занял 200 мс, это и надо компенсировать разрешением. */
+    adapt(raw);
     raf = requestAnimationFrame(frame);
   }
 
   function sync() {
     const should = !reduced && inView && !document.hidden;
+    /* Пока сцена жива, у залипшей верхней панели не должно быть
+       backdrop-filter: размытие подложки под перерисовываемым канвасом
+       считается каждый кадр. */
+    document.documentElement.classList.toggle("gl-live", should);
     if (should && !running) {
       running = true;
       lastT = performance.now();
+      avg = 0;
+      floor = 0;
+      warmMs = 0;
+      warmFrames = 0;
+      cooldownMs = 0;
       raf = requestAnimationFrame(frame);
     } else if (!should && running) {
       running = false;
@@ -1353,9 +1489,11 @@
 
   function onPointerMove(event) {
     if (spin.drag) return;
-    const r = stage.getBoundingClientRect();
-    look.tx = clamp(((event.clientX - r.left) / r.width - 0.5) * 2, -1, 1);
-    look.ty = clamp(((event.clientY - r.top) / r.height - 0.5) * 2, -1, 1);
+    /* Прямоугольник сцены из кеша: getBoundingClientRect() на каждом движении
+       мыши заставлял браузер пересчитывать раскладку. */
+    if (!stageW || !stageH) return;
+    look.tx = clamp(((event.clientX - stageRect.left) / stageW - 0.5) * 2, -1, 1);
+    look.ty = clamp(((event.clientY - stageRect.top) / stageH - 0.5) * 2, -1, 1);
   }
 
   function onPointerDown(event) {
@@ -1363,13 +1501,17 @@
     spin.drag = true;
     spin.px = event.clientX;
     spin.py = event.clientY;
+    spin.dx = 0;
+    spin.dy = 0;
     stage.classList.add("is-grabbing");
   }
 
   function onPointerMoveDrag(event) {
     if (!spin.drag) return;
-    spin.vy = clamp(spin.vy + (event.clientX - spin.px) * 0.00034, -0.06, 0.06);
-    spin.vx = clamp(spin.vx + (event.clientY - spin.py) * 0.00034, -0.06, 0.06);
+    /* Копим смещение и трактуем его в кадре, а не в событии: иначе скорость
+       зависит от частоты pointermove. */
+    spin.dx += event.clientX - spin.px;
+    spin.dy += event.clientY - spin.py;
     spin.px = event.clientX;
     spin.py = event.clientY;
   }
@@ -1377,6 +1519,8 @@
   function onPointerUp() {
     if (!spin.drag) return;
     spin.drag = false;
+    spin.dx = 0;
+    spin.dy = 0;
     stage.classList.remove("is-grabbing");
   }
 
@@ -1399,6 +1543,15 @@
     if (!new URLSearchParams(window.location.search).has("pcdebug")) return;
     window.__heroPC = {
       progress: () => scrollP,
+      /* Углы движения в радианах: контракт сцены — за секунду реального времени
+         риг поворачивается на одну и ту же величину при 30, 60 и 144 Гц. */
+      motion: () => ({
+        ry: rig.rotation.y,
+        rx: rig.rotation.x,
+        look: [look.x, look.y],
+        fan: fans.length ? fans[0].rotation.z : 0,
+        dpr: renderer.getPixelRatio(),
+      }),
       /* Скрыть или показать группу детали: так видно, кто именно заливает кадр. */
       hide: (name, off) => {
         const part = parts.find((m) => m.userData.name === name);
@@ -1541,7 +1694,8 @@
 
     camera = new THREE.PerspectiveCamera(32, 1, 0.1, 40);
     build();
-    layout();
+    /* Первый расчёт — сразу, иначе канвас кадр рисуется в размере 300x150. */
+    applyLayout();
     document.documentElement.classList.add("gl-ready");
     exposeProbe();
 
@@ -1575,6 +1729,12 @@
 
   function onScroll() {
     if (reduced) return;
+    /* Пока цикл идёт, пересчёт отложим до кадра: событий прокрутки за секунду
+       бывает больше, чем кадров. Если сцена не рисуется — считаем сразу. */
+    if (running) {
+      scrollDirty = true;
+      return;
+    }
     readScroll();
   }
 
