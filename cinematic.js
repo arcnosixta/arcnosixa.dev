@@ -9,15 +9,19 @@
 
   function stop() {
     clearTimeout(timer);
-    root.classList.remove("is-intro-playing");
+    clearTimeout(window.arcIntroFallback);
+    root.classList.remove("is-intro-waiting", "is-intro-playing");
   }
 
   function play() {
     stop();
     if (motion.matches || !intro) return;
-    void intro.offsetWidth;
-    root.classList.add("is-intro-playing");
-    timer = setTimeout(stop, 1950);
+    root.classList.add("is-intro-waiting");
+    timer = setTimeout(() => {
+      root.classList.add("is-intro-playing");
+      root.classList.remove("is-intro-waiting");
+      timer = setTimeout(stop, 1950);
+    }, 1250);
     try { sessionStorage.setItem("arc-intro-seen", "1"); } catch (_) { /* Optional. */ }
   }
 

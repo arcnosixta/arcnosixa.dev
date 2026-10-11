@@ -155,7 +155,7 @@
 [data-design="cinematic"] .intro-replay { display: grid; place-items: center; width: 40px; height: 40px; border: 1px solid var(--line); color: var(--signal); font-size: 24px; }
 [data-design="cinematic"] .intro-replay:hover { border-color: var(--signal); }
 .is-intro-playing .cinematic-intro { display: block; position: fixed; inset: 0; z-index: 100; pointer-events: none; overflow: hidden; animation: intro-vanish 1.9s both; }
-.intro-slice { position: absolute; inset: 0; background: linear-gradient(rgb(0 0 0 / .5), rgb(0 0 0 / .5)), url("assets/anime-portrait.png") 50% center / cover; }
+.intro-slice { position: absolute; inset: 0; background: #000; }
 .intro-slice-top { clip-path: polygon(0 0, 100% 0, 100% 37%, 0 63%); animation: intro-top 1.9s cubic-bezier(.76,0,.24,1) both; }
 .intro-slice-bottom { clip-path: polygon(0 63%, 100% 37%, 100% 100%, 0 100%); animation: intro-bottom 1.9s cubic-bezier(.76,0,.24,1) both; }
 .intro-wordmark { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #fa8b34; font-family: Impact, "Arial Narrow", sans-serif; font-size: clamp(42px, 12vw, 180px); letter-spacing: -.045em; animation: intro-title 1.9s both; }

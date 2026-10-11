@@ -43,10 +43,23 @@
       rel="stylesheet"
     />
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230b0d0d'/%3E%3Cpath d='M9 22 16 9l7 13' stroke='%23d8f26c' stroke-width='2.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M12.5 18.5h7' stroke='%23d8f26c' stroke-width='2.5' stroke-linecap='round'/%3E%3C/svg%3E" />
+    <style>
+      html.is-intro-waiting::before { content: ""; position: fixed; inset: 0; z-index: 1000; background: #000; }
+      @media (prefers-reduced-motion: reduce), print { html.is-intro-waiting::before { display: none; } }
+    </style>
     <script>
       var requestedDesign = new URLSearchParams(location.search).get("design");
       document.documentElement.dataset.design = ["atelier", "studio"].includes(requestedDesign) ? requestedDesign : "cinematic";
       if (document.documentElement.dataset.design === "cinematic") {
+        var introSeen = false;
+        try { introSeen = sessionStorage.getItem("arc-intro-seen") === "1"; } catch (_) {}
+        if (!introSeen && !location.hash && !window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+          document.documentElement.classList.add("is-intro-waiting");
+          // Reveal the page even if a later script fails to load.
+          window.arcIntroFallback = setTimeout(function () {
+            document.documentElement.classList.remove("is-intro-waiting");
+          }, 8000);
+        }
         var portraitPreload = document.createElement("link");
         portraitPreload.rel = "preload";
         portraitPreload.as = "image";
