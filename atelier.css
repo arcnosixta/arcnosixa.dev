@@ -289,6 +289,9 @@ body { background: var(--ink); }
 .project.is-open .project-detail-text > * { transition-delay: .12s; }
 .project.is-open .project-detail-text > *:nth-child(2) { transition-delay: .2s; }
 .project .project-toggle svg { transition: transform .75s cubic-bezier(.4, 0, .2, 1); }
+.project.is-layout-animating, .project.is-layout-animating:hover { transform: none; }
+.project.is-layout-animating .project-emblem { transform: none; }
+.project.is-resizing { z-index: 3; }
 @media (prefers-reduced-motion: reduce) {
   .project .project-detail, .project .project-detail-inner, .project .project-detail-text > *, .project .project-toggle svg { transition: none; }
   .project .project-lockup, .project .project-emblem { transition: none; transform: none; opacity: 1; }

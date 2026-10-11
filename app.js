@@ -681,10 +681,16 @@ function matchesFilter(card, filter) {
 function captureRects(cards) {
   const map = new Map();
   cards.forEach((card) => {
-    if (!card.classList.contains("is-filtered")) map.set(card, card.getBoundingClientRect());
+    if (!card.classList.contains("is-filtered")) {
+      const rect = card.getBoundingClientRect();
+      rect.coverHeight = card.querySelector(".project-cover")?.getBoundingClientRect().height;
+      map.set(card, rect);
+    }
   });
   return map;
 }
+
+const projectLayoutAnimations = new WeakMap();
 
 function playFlip(cards, before, after, duration = 520) {
   if (!canAnimate()) return;
@@ -705,17 +711,43 @@ function playFlip(cards, before, after, duration = 520) {
     }
     const dx = from.left - target.left;
     const dy = from.top - target.top;
-    if (Math.abs(dx) < 1 && Math.abs(dy) < 1) return;
-    card.animate(
-      [{ transform: `translate(${dx}px, ${dy}px)` }, { transform: "translate(0, 0)" }],
-      { duration, easing: duration > 520 ? "cubic-bezier(0.4, 0, 0.2, 1)" : FLIP_EASE },
-    );
+    const resize = duration > 520 && Math.abs(from.width - target.width) > 1;
+    if (Math.abs(dx) < 1 && Math.abs(dy) < 1 && !resize) return;
+    const start = { transform: `translate(${dx}px, ${dy}px)` };
+    const end = { transform: "translate(0, 0)" };
+    if (resize) {
+      // Animate real width so text and logos keep their proportions throughout the move.
+      start.width = `${from.width}px`;
+      end.width = `${target.width}px`;
+    }
+    const options = { duration, easing: duration > 520 ? "cubic-bezier(0.4, 0, 0.2, 1)" : FLIP_EASE };
+    card.classList.add("is-layout-animating");
+    card.classList.toggle("is-resizing", resize);
+    const animation = card.animate([start, end], options);
+    const cover = resize && from.coverHeight && target.coverHeight
+      ? card.querySelector(".project-cover").animate(
+        [{ height: `${from.coverHeight}px` }, { height: `${target.coverHeight}px` }], options,
+      ) : null;
+    const running = { animation, cover };
+    projectLayoutAnimations.set(card, running);
+    animation.finished.catch(() => {}).then(() => {
+      if (projectLayoutAnimations.get(card) !== running) return;
+      projectLayoutAnimations.delete(card);
+      card.classList.remove("is-layout-animating", "is-resizing");
+    });
   });
 }
 
 function withFlip(cards, mutate, animateDetails = false) {
   const grid = document.querySelector(".work-grid");
   const before = captureRects(cards);
+  cards.forEach((card) => {
+    const running = projectLayoutAnimations.get(card);
+    running?.animation.cancel();
+    running?.cover?.cancel();
+    projectLayoutAnimations.delete(card);
+    card.classList.remove("is-layout-animating", "is-resizing");
+  });
   // Measuring without transitions is useful for filters, but would snap an accordion open.
   if (!animateDetails) grid.classList.add("is-measuring");
   mutate();
