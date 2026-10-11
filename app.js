@@ -17,7 +17,8 @@ const I18N = {
     "nav.path": "Путь",
     "nav.contact": "Контакты",
     "hero.status": "Открыт к проектам и стажировкам",
-    "hero.hi": "Привет, я",
+    "hero.hi": "Интерфейсы.",
+    "hero.statement": "С характером.",
     "hero.roleLabel": "Роль:",
     "hero.lead":
       "Разрабатываю веб-интерфейсы на React, локальные инструменты для ИИ-агентов и мобильные приложения. От API и данных — до продуманного пользовательского опыта.",
@@ -31,7 +32,7 @@ const I18N = {
     "hero.focusLabel": "Фокус",
     "hero.focus": "Продуктовый фронтенд, локальные сервисы, интеграции ИИ-агентов",
     "hero.scroll": "скролл",
-    "hero.featureLabel": "Избранный проект / 2026",
+    "hero.featureLabel": "Сейчас в работе",
     "hero.featureDesc": "Рабочее пространство для локального ИИ-агента.",
     "hero.featureNote": "Архитектура проекта",
     "hero.featureCta": "Открыть сайт ↗",
@@ -214,7 +215,8 @@ const I18N = {
     "nav.path": "Path",
     "nav.contact": "Contact",
     "hero.status": "Open to projects and internships",
-    "hero.hi": "Hi, I'm",
+    "hero.hi": "Interfaces.",
+    "hero.statement": "With character.",
     "hero.roleLabel": "Role:",
     "hero.lead":
       "I build React interfaces, local tools for AI agents and mobile apps. From APIs and data to a carefully considered user experience.",
@@ -227,7 +229,7 @@ const I18N = {
     "hero.focusLabel": "Focus",
     "hero.focus": "Product frontend, local services, AI agent integrations",
     "hero.scroll": "scroll",
-    "hero.featureLabel": "Featured project / 2026",
+    "hero.featureLabel": "Currently building",
     "hero.featureDesc": "A workspace for a local AI coding agent.",
     "hero.featureNote": "Project architecture",
     "hero.featureCta": "Visit site ↗",
@@ -1401,7 +1403,7 @@ langToggle.addEventListener("click", () => {
 const THEME_KEY = "arc-theme";
 const themeToggle = document.getElementById("themeToggle");
 const themeColor = document.querySelector('meta[name="theme-color"]');
-const THEME_COLORS = { dark: "#0b0d0d", light: "#f6f6f0" };
+const THEME_COLORS = { dark: "#161715", light: "#f2ede3" };
 
 function currentTheme() {
   return document.documentElement.dataset.theme === "light" ? "light" : "dark";

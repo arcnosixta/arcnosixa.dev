@@ -58,6 +58,7 @@
       })();
     </script>
     <link rel="stylesheet" href="styles.css?v=4" />
+    <link rel="stylesheet" href="atelier.css?v=5" />
     <noscript>
       <style>
         .reveal,
@@ -193,10 +194,6 @@
       </noscript>
 
       <section class="hero" id="home">
-        <div class="hero-glow" aria-hidden="true"></div>
-        <div class="hero-grid" aria-hidden="true"></div>
-        <canvas class="hero-canvas" id="hero-canvas" aria-hidden="true"></canvas>
-        <div class="cursor-glow" id="cursorGlow" aria-hidden="true"></div>
 
         <div class="hero-inner">
           <div class="hero-copy">
@@ -206,8 +203,8 @@
           </p>
 
           <h1 class="hero-title reveal" data-delay="1">
-            <span data-i18n="hero.hi">Привет, я</span>
-            <span class="accent">Arcnosixa</span>
+            <span data-i18n="hero.hi">Интерфейсы.</span>
+            <span class="accent" data-i18n="hero.statement">С характером.</span>
           </h1>
 
           <p class="hero-role reveal" data-delay="2">
@@ -241,23 +238,27 @@
           </div>
 
           <aside class="hero-feature reveal" data-delay="3" aria-labelledby="heroFeatureTitle">
-            <div class="feature-heading mono">
-              <span data-i18n="hero.featureLabel">Избранный проект / 2026</span>
+            <div class="artwork" aria-hidden="true">
+              <svg viewBox="0 0 520 540" class="atelier-art">
+                <defs>
+                  <pattern id="art-lines" width="9" height="9" patternUnits="userSpaceOnUse"><path d="M0 0v9" stroke="#f2ede3" stroke-width="1" /></pattern>
+                </defs>
+                <circle cx="275" cy="252" r="211" fill="none" stroke="currentColor" stroke-width="1" opacity=".22" />
+                <path d="M20 252h480M275 26v450" stroke="currentColor" stroke-width="1" opacity=".16" />
+                <g class="art-sheet art-sheet-back"><path d="M130 50 470 136 388 465 48 379Z" fill="#ed663d" /><path d="m154 75 288 73-70 291-288-73Z" fill="url(#art-lines)" opacity=".45" /></g>
+                <g class="art-sheet art-sheet-front"><path d="m100 151 334-74 78 353-334 74Z" fill="#2848eb" /><path d="m162 416 78-258 39-9 149 208-58 13-31-47-97 22-14 59Z" fill="#f2ede3" /><path d="m258 206-24 94 72-16Z" fill="#2848eb" /></g>
+                <g class="art-star" fill="#ed663d"><path d="m422 28 10 36 35-15-24 30 30 23-37-5-4 38-14-35-34 17 22-31-32-21 38 3Z" /></g>
+                <circle cx="88" cy="447" r="43" fill="#f2ede3" stroke="#181916" stroke-width="1" />
+                <text x="88" y="453" text-anchor="middle" fill="#181916" font-family="monospace" font-size="16">&lt;/&gt;</text>
+                <text x="28" y="524" fill="currentColor" font-family="monospace" font-size="10" letter-spacing="2">FORM / FUNCTION / FEELING</text>
+                <text x="473" y="524" fill="currentColor" text-anchor="end" font-family="monospace" font-size="10">A—01</text>
+              </svg>
+            </div>
+            <a class="feature-bottom" href="https://ciel-flax.vercel.app" target="_blank" rel="noreferrer">
+              <span class="mono" data-i18n="hero.featureLabel">Сейчас в работе</span>
+              <b id="heroFeatureTitle">Ciel</b>
               <span aria-hidden="true">↗</span>
-            </div>
-            <h2 id="heroFeatureTitle">Ciel<span aria-hidden="true">.</span></h2>
-            <p class="feature-description" data-i18n="hero.featureDesc">Рабочее пространство для локального ИИ-агента.</p>
-            <div class="feature-diagram" role="img" aria-label="Браузер → локальный мост Node → агент OpenCode. JSON и SSE." data-i18n-aria="hero.diagramLabel">
-              <div class="diagram-node"><span class="mono">01 / UI</span><b>React 19</b></div>
-              <div class="diagram-connector mono" aria-hidden="true">↓ JSON / SSE ↑</div>
-              <div class="diagram-node diagram-node-accent"><span class="mono">02 / BRIDGE</span><b>Node.js</b></div>
-              <div class="diagram-connector mono" aria-hidden="true">↓ localhost ↑</div>
-              <div class="diagram-node"><span class="mono">03 / AGENT</span><b>OpenCode</b></div>
-            </div>
-            <div class="feature-bottom">
-              <span class="mono" data-i18n="hero.featureNote">Архитектура проекта</span>
-              <a href="https://ciel-flax.vercel.app" target="_blank" rel="noreferrer" data-i18n="hero.featureCta">Открыть сайт ↗</a>
-            </div>
+            </a>
           </aside>
 
           <div class="hero-cards reveal" data-delay="5">
@@ -382,9 +383,7 @@
       <p class="mono" data-i18n="footer.built">Сделано вручную: HTML, CSS, немного JavaScript</p>
     </footer>
 
-    <script src="scene3d.js?v=4"></script>
     <script src="motion.js?v=4"></script>
-    <script src="core.js?v=4"></script>
     <script src="app.js?v=4"></script>
   </body>
 </html>
