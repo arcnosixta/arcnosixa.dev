@@ -20,7 +20,7 @@ const I18N = {
     "hero.hi": "Привет, я",
     "hero.roleLabel": "Роль:",
     "hero.lead":
-      "Делаю интерфейсы, которые не стыдно показать: React-приложения, локальные инструменты для работы с ИИ-агентами и мобильные продукты с упором на производительность и детали.",
+      "Разрабатываю веб-интерфейсы на React, локальные инструменты для ИИ-агентов и мобильные приложения. От API и данных — до продуманного пользовательского опыта.",
     "hero.ctaWork": "Смотреть проекты",
     "hero.ctaContact": "Написать мне",
     "hero.nowLabel": "Сейчас",
@@ -31,6 +31,11 @@ const I18N = {
     "hero.focusLabel": "Фокус",
     "hero.focus": "Продуктовый фронтенд, локальные сервисы, интеграции ИИ-агентов",
     "hero.scroll": "скролл",
+    "hero.featureLabel": "Избранный проект / 2026",
+    "hero.featureDesc": "Рабочее пространство для локального ИИ-агента.",
+    "hero.featureNote": "Архитектура проекта",
+    "hero.featureCta": "Открыть сайт ↗",
+    "hero.diagramLabel": "Браузер → локальный мост Node → агент OpenCode. JSON и SSE.",
     "about.title": "Обо мне",
     "about.p1":
       "Я frontend-разработчик, которому нравится доводить продукты до конца: от структуры данных и API до анимаций, состояния загрузки и текста ошибки.",
@@ -210,7 +215,7 @@ const I18N = {
     "hero.hi": "Hi, I'm",
     "hero.roleLabel": "Role:",
     "hero.lead":
-      "I build interfaces worth showing: React apps, local tools for AI agents and mobile products with an eye for performance and detail.",
+      "I build React interfaces, local tools for AI agents and mobile apps. From APIs and data to a carefully considered user experience.",
     "hero.ctaWork": "See projects",
     "hero.ctaContact": "Get in touch",
     "hero.nowLabel": "Now",
@@ -220,6 +225,11 @@ const I18N = {
     "hero.focusLabel": "Focus",
     "hero.focus": "Product frontend, local services, AI agent integrations",
     "hero.scroll": "scroll",
+    "hero.featureLabel": "Featured project / 2026",
+    "hero.featureDesc": "A workspace for a local AI coding agent.",
+    "hero.featureNote": "Project architecture",
+    "hero.featureCta": "Visit site ↗",
+    "hero.diagramLabel": "Browser → local Node bridge → OpenCode agent. JSON and SSE.",
     "about.title": "About",
     "about.p1":
       "I'm a frontend developer who likes finishing products: from data shapes and APIs down to animations, loading states and error copy.",

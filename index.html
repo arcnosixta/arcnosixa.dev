@@ -199,6 +199,7 @@
         <div class="cursor-glow" id="cursorGlow" aria-hidden="true"></div>
 
         <div class="hero-inner">
+          <div class="hero-copy">
           <p class="eyebrow reveal">
             <span class="dot" aria-hidden="true"></span>
             <span data-i18n="hero.status">Открыт к проектам и стажировкам</span>
@@ -215,9 +216,8 @@
           </p>
 
           <p class="hero-lead reveal" data-delay="3" data-i18n="hero.lead">
-            Делаю интерфейсы, которые не стыдно показать: React-приложения, локальные
-            инструменты для работы с ИИ-агентами и мобильные продукты с упором на
-            производительность и детали.
+            Разрабатываю веб-интерфейсы на React, локальные инструменты для ИИ-агентов
+            и мобильные приложения. От API и данных — до продуманного пользовательского опыта.
           </p>
 
           <div class="hero-actions reveal" data-delay="4">
@@ -237,6 +237,28 @@
               </svg>
             </a>
           </div>
+
+          </div>
+
+          <aside class="hero-feature reveal" data-delay="3" aria-labelledby="heroFeatureTitle">
+            <div class="feature-heading mono">
+              <span data-i18n="hero.featureLabel">Избранный проект / 2026</span>
+              <span aria-hidden="true">↗</span>
+            </div>
+            <h2 id="heroFeatureTitle">Ciel<span aria-hidden="true">.</span></h2>
+            <p class="feature-description" data-i18n="hero.featureDesc">Рабочее пространство для локального ИИ-агента.</p>
+            <div class="feature-diagram" role="img" aria-label="Браузер → локальный мост Node → агент OpenCode. JSON и SSE." data-i18n-aria="hero.diagramLabel">
+              <div class="diagram-node"><span class="mono">01 / UI</span><b>React 19</b></div>
+              <div class="diagram-connector mono" aria-hidden="true">↓ JSON / SSE ↑</div>
+              <div class="diagram-node diagram-node-accent"><span class="mono">02 / BRIDGE</span><b>Node.js</b></div>
+              <div class="diagram-connector mono" aria-hidden="true">↓ localhost ↑</div>
+              <div class="diagram-node"><span class="mono">03 / AGENT</span><b>OpenCode</b></div>
+            </div>
+            <div class="feature-bottom">
+              <span class="mono" data-i18n="hero.featureNote">Архитектура проекта</span>
+              <a href="https://ciel-flax.vercel.app" target="_blank" rel="noreferrer" data-i18n="hero.featureCta">Открыть сайт ↗</a>
+            </div>
+          </aside>
 
           <div class="hero-cards reveal" data-delay="5">
             <article class="mini-card">
