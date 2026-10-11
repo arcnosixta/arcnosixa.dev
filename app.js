@@ -941,24 +941,35 @@ const PROJECT_POSTERS = {
 
 function projectCover(project) {
   const figure = el("figure", "project-cover");
-  const screenshots = {
-    ciel: ["project-ciel-dark.jpeg", "Главная страница Ciel в тёмной теме", "Ciel landing page in dark mode", 1794, 6509],
-    "esep-web": ["project-esep-dark.jpeg", "Главная ESEP: заявки и действия в тёмной теме", "ESEP dashboard: cases and actions in dark mode", 1794, 932],
-    "osint-portal": ["project-osint.png", "Интерфейс OSINT Portal", "OSINT Portal interface", 1440, 1000],
-    tradingagents: ["project-tradingagents.png", "CLI TradingAgents: выбор тикера; снимок из репозитория", "TradingAgents CLI ticker selection; repository screenshot", 3840, 2160],
+  const logos = {
+    ciel: ["logo-ciel.png", "Ciel", "LOCAL AI WORKSPACE"],
+    "esep-web": ["logo-esep.png", "ESEP", "REAL ESTATE / SERVICES"],
+    "osint-portal": ["logo-osint.svg", "OSINT PORTAL", "SIGNALS / EVIDENCE"],
+    tradingagents: ["logo-tradingagents.svg", "TRADING AGENTS", "MULTI-AGENT / RESEARCH"],
   };
-  const screenshot = screenshots[project.key];
-  if (screenshot) {
-    const img = el("img");
-    img.src = `assets/${screenshot[0]}`;
-    img.alt = screenshot[lang === "ru" ? 1 : 2];
-    img.loading = "lazy";
-    img.decoding = "async";
-    img.width = screenshot[3];
-    img.height = screenshot[4];
-    // Keep the hero legible instead of shrinking the full-page capture into a thumbnail.
-    if (project.key === "ciel") img.style.objectFit = "cover";
-    figure.appendChild(img);
+  const logo = logos[project.key];
+  if (logo) {
+    figure.classList.add("project-logo-panel");
+    figure.setAttribute("role", "img");
+    figure.setAttribute("aria-label", `${lang === "ru" ? "Логотип" : "Logo"}: ${project.title}`);
+    const lockup = el("div", "project-lockup");
+    lockup.setAttribute("aria-hidden", "true");
+    const mark = el("span", "project-emblem");
+    if (project.key === "ciel") {
+      mark.classList.add("project-emblem-ciel");
+    } else {
+      const img = el("img");
+      img.src = `assets/${logo[0]}`;
+      img.alt = "";
+      img.loading = "lazy";
+      img.decoding = "async";
+      img.width = img.height = 160;
+      mark.appendChild(img);
+    }
+    lockup.appendChild(mark);
+    lockup.appendChild(el("span", "project-wordmark", logo[1]));
+    lockup.appendChild(el("span", "project-logo-caption mono", logo[2]));
+    figure.appendChild(lockup);
     return figure;
   }
   figure.setAttribute("aria-hidden", "true");

@@ -246,3 +246,38 @@ body { background: var(--ink); }
   .contact { background: none; color: #181916; }
   .contact-lead, .contact-meta span, .contact-note { color: #181916; }
 }
+
+/* Project identities share the same stage; marks retain their own silhouettes. */
+.project .project-logo-panel,
+.project.is-open .project-logo-panel { position: relative; display: grid; place-items: center; width: 100%; min-width: 0; aspect-ratio: 640 / 420; min-height: 240px; background: #090909; border: 1px solid #302820; isolation: isolate; }
+.project.is-open .project-cover.project-logo-panel { aspect-ratio: 3 / 1; }
+.project-logo-panel::before { content: ""; position: absolute; inset: 0; z-index: -1; background: radial-gradient(ellipse at var(--px, 50%) var(--py, 50%), #f8822415, transparent 65%), linear-gradient(130deg, transparent 38%, #ffffff04 38%, #ffffff04 62%, transparent 62%); }
+.project-logo-panel::after { content: ""; position: absolute; top: -50%; left: -50%; width: 35%; height: 200%; background: linear-gradient(90deg, transparent, #f8822414, transparent); transform: skewX(-24deg) translateX(-150%); pointer-events: none; }
+.project-lockup { display: flex; flex-direction: column; align-items: center; width: 100%; min-width: 0; gap: 18px; padding: 36px 20px; text-align: center; transition: opacity .8s ease, transform .8s cubic-bezier(.2,.7,.2,1); }
+.project-emblem { display: block; width: clamp(88px, 10vw, 144px); height: clamp(88px, 10vw, 144px); transition: transform .7s cubic-bezier(.2,.7,.2,1); }
+.project-emblem-ciel { background: #f88224; mask: url("assets/logo-ciel.png") center / contain no-repeat; }
+.project .project-logo-panel .project-emblem img { display: block; width: 100%; height: 100%; object-fit: contain; background: none; }
+.project[data-key="esep-web"] .project-emblem img { filter: hue-rotate(155deg) saturate(.8); }
+.project-wordmark { font-family: "Manrope", sans-serif; font-size: clamp(20px, 2.5vw, 32px); font-weight: 800; letter-spacing: -.045em; color: #f6f5f2; line-height: 1.1; }
+.project-logo-caption { font-size: 8px; letter-spacing: .18em; color: #ba9e87; }
+.project.reveal:not(.is-in) .project-lockup { opacity: 0; transform: translateY(24px) scale(.94); }
+.project.is-in .project-logo-panel::after { animation: project-light-pass 1.3s .15s both; }
+.project:focus-within .project-logo-panel { border-color: #f88224; }
+@keyframes project-light-pass { 0% { transform: skewX(-24deg) translateX(-150%); } 100% { transform: skewX(-24deg) translateX(600%); } }
+@media (hover: hover) and (pointer: fine) {
+  .project.tiltable { transition: transform .5s var(--ease-out), opacity .75s var(--ease-out), translate .75s var(--ease-out); }
+  .project.tiltable:hover { transform: perspective(1200px) translateY(-5px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)); scale: 1; box-shadow: none; }
+  .project.is-open.tiltable:hover { transform: none; }
+  .project:hover .project-logo-panel { border-color: #f88224; }
+  .project:hover .project-emblem { transform: translateY(-6px) rotate(-4deg) scale(1.07); }
+}
+@media (max-width: 680px) {
+  .project.is-open .project-cover.project-logo-panel { aspect-ratio: 640 / 420; }
+  .project-emblem { width: 104px; height: 104px; }
+}
+@media (max-width: 380px) { .brand-text { display: none; } }
+@media (prefers-reduced-motion: reduce) {
+  .project .project-lockup, .project .project-emblem { transition: none; transform: none; opacity: 1; }
+  .project.tiltable, .project.tiltable:hover { transform: none; transition: none; }
+  .project.is-in .project-logo-panel::after { animation: none; display: none; }
+}
