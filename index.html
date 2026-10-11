@@ -125,9 +125,9 @@
       </a>
 
       <nav class="nav" id="nav" aria-label="Primary" data-i18n-aria="a11y.nav">
+        <a href="#work" data-i18n="nav.work">Проекты</a>
         <a href="#about" data-i18n="nav.about">Обо мне</a>
         <a href="#skills" data-i18n="nav.skills">Навыки</a>
-        <a href="#work" data-i18n="nav.work">Проекты</a>
         <a href="#path" data-i18n="nav.path">Путь</a>
         <a href="#contact" data-i18n="nav.contact">Контакты</a>
       </nav>
@@ -282,9 +282,18 @@
         </div>
       </section>
 
-      <section class="section" id="about">
+      <section class="section" id="work">
         <div class="section-head reveal">
           <span class="section-index mono">01</span>
+          <h2 data-i18n="work.title">Избранные проекты</h2>
+        </div>
+
+        <div id="projects"></div>
+      </section>
+
+      <section class="section" id="about">
+        <div class="section-head reveal">
+          <span class="section-index mono">02</span>
           <h2 data-i18n="about.title">Обо мне</h2>
         </div>
 
@@ -311,8 +320,8 @@
               <span class="stat-label" data-i18n="about.stat1">проектов в портфолио</span>
             </li>
             <li class="stat reveal">
-              <span class="stat-value mono" data-count="4" data-count-suffix="+">0</span>
-              <span class="stat-label" data-i18n="about.stat2">года коммерческой разработки</span>
+              <span class="stat-value mono">React</span>
+              <span class="stat-label" data-i18n="about.stat2">основной инструмент для веба</span>
             </li>
             <li class="stat reveal">
               <span class="stat-value mono" data-count="2">0</span>
@@ -328,21 +337,14 @@
 
       <section class="section" id="skills">
         <div class="section-head reveal">
-          <span class="section-index mono">02</span>
+          <span class="section-index mono">03</span>
           <h2 data-i18n="skills.title">Навыки</h2>
         </div>
 
         <div class="skills" id="skillsGrid"></div>
       </section>
 
-      <section class="section" id="work">
-        <div class="section-head reveal">
-          <span class="section-index mono">03</span>
-          <h2 data-i18n="work.title">Проекты</h2>
-        </div>
 
-        <div id="projects"></div>
-      </section>
 
       <section class="section" id="path">
         <div class="section-head reveal">
@@ -365,6 +367,7 @@
             и надёжная интеграция с ИИ. Пишите — отвечаю быстро.
           </p>
 
+          <a class="btn btn-primary contact-cta" href="https://t.me/arcnosixta" target="_blank" rel="noreferrer" data-i18n="contact.cta">Обсудить проект в Telegram ↗</a>
           <div class="contact-links" id="contactLinks"></div>
 
           <p class="contact-note mono" data-i18n="contact.note">

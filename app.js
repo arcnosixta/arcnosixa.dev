@@ -36,6 +36,8 @@ const I18N = {
     "hero.featureNote": "Архитектура проекта",
     "hero.featureCta": "Открыть сайт ↗",
     "hero.diagramLabel": "Браузер → локальный мост Node → агент OpenCode. JSON и SSE.",
+    "contact.cta": "Обсудить проект в Telegram ↗",
+    "work.private": "Закрытый репозиторий",
     "about.title": "Обо мне",
     "about.p1":
       "Я frontend-разработчик, которому нравится доводить продукты до конца: от структуры данных и API до анимаций, состояния загрузки и текста ошибки.",
@@ -44,11 +46,11 @@ const I18N = {
     "about.p3":
       "Ценю простые решения без лишних зависимостей, читаемый код и то, что продукт остаётся понятным после того, как я перестал его трогать.",
     "about.stat1": "проектов в портфолио",
-    "about.stat2": "года коммерческой разработки",
+    "about.stat2": "основной инструмент для веба",
     "about.stat3": "языка интерфейса в проектах",
     "about.stat4": "платформы: web, mobile, desktop",
     "skills.title": "Навыки",
-    "work.title": "Проекты",
+    "work.title": "Избранные проекты",
     "path.title": "Путь",
     "contact.title": "Контакты",
     "contact.lead":
@@ -230,6 +232,8 @@ const I18N = {
     "hero.featureNote": "Project architecture",
     "hero.featureCta": "Visit site ↗",
     "hero.diagramLabel": "Browser → local Node bridge → OpenCode agent. JSON and SSE.",
+    "contact.cta": "Let's talk on Telegram ↗",
+    "work.private": "Private repository",
     "about.title": "About",
     "about.p1":
       "I'm a frontend developer who likes finishing products: from data shapes and APIs down to animations, loading states and error copy.",
@@ -238,11 +242,11 @@ const I18N = {
     "about.p3":
       "I value simple solutions without extra dependencies, readable code, and products that stay understandable after I stop touching them.",
     "about.stat1": "projects in this portfolio",
-    "about.stat2": "years of production work",
+    "about.stat2": "my primary tool for the web",
     "about.stat3": "interface languages shipped",
     "about.stat4": "platforms: web, mobile, desktop",
     "skills.title": "Skills",
-    "work.title": "Work",
+    "work.title": "Selected work",
     "path.title": "Path",
     "contact.title": "Contact",
     "contact.lead":
@@ -954,7 +958,6 @@ function projectCard(project, index) {
   text.appendChild(list);
   inner.appendChild(text);
 
-  const aside = el("div", "project-detail-aside");
   const links = el("div", "project-links");
   project.links.forEach((link) => {
     const node = el(
@@ -967,12 +970,13 @@ function projectCard(project, index) {
     node.rel = "noreferrer";
     links.appendChild(node);
   });
-  links.appendChild(el("span", "link link-ghost", project.key));
-  aside.appendChild(links);
-  inner.appendChild(aside);
+  if (!project.links.length) {
+    links.appendChild(el("span", "link link-ghost", t("work.private")));
+  }
 
   detail.appendChild(inner);
   card.appendChild(detail);
+  card.appendChild(links);
 
   return card;
 }
@@ -1039,6 +1043,14 @@ function renderProjects() {
   status.setAttribute("aria-live", "polite");
   host.appendChild(status);
 
+
+  const grid = el("div", "work-grid");
+  list.forEach((project, index) => {
+    const card = projectCard(project, index);
+    if (project.key === openProject) setProjectOpen(card, true);
+    grid.appendChild(card);
+  });
+  host.appendChild(grid);
   if (window.CoreBand) {
     host.appendChild(
       window.CoreBand.attach(host, {
@@ -1050,13 +1062,6 @@ function renderProjects() {
     );
   }
 
-  const grid = el("div", "work-grid");
-  list.forEach((project, index) => {
-    const card = projectCard(project, index);
-    if (project.key === openProject) setProjectOpen(card, true);
-    grid.appendChild(card);
-  });
-  host.appendChild(grid);
   renderLabs(host);
 
   const cards = [...grid.querySelectorAll(".project")];
