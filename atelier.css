@@ -1,5 +1,6 @@
 /* Digital atelier: paper, ink, cobalt. Shared tokens keep both editions coherent. */
 .studio-art { display: none; }
+.cinematic-visual, .cinematic-slash, .cinematic-edition, .chapter-word { display: none; }
 .design-switch { font-size: 10px; color: var(--paper-faint); white-space: nowrap; }
 @media (max-width: 680px) { .design-switch { position: absolute; right: 20px; top: 82px; } }
 :root {
