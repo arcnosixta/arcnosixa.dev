@@ -888,12 +888,46 @@ const COVER_BY_KEY = {
   tradingagents: "waves",
 };
 
+// Original vector posters describe each project's domain; these are not UI screenshots.
+const PROJECT_POSTERS = {
+  ciel: `<rect width="640" height="420" fill="#2848eb"/>
+    <g stroke="#f2ede3" fill="none" opacity=".45"><ellipse cx="320" cy="208" rx="268" ry="105" transform="rotate(-24 320 208)"/><ellipse cx="320" cy="208" rx="268" ry="105" transform="rotate(24 320 208)"/><circle cx="320" cy="208" r="155"/></g>
+    <text x="320" y="260" text-anchor="middle" fill="#f2ede3" font-family="Georgia,serif" font-style="italic" font-size="172" letter-spacing="-12">ciel.</text>
+    <circle cx="531" cy="138" r="12" fill="#ed663d"/>
+    <text x="28" y="36" fill="#f2ede3" font-family="monospace" font-size="10" letter-spacing="2">LOCAL-FIRST / AI WORKSPACE</text>
+    <text x="28" y="390" fill="#f2ede3" font-family="monospace" font-size="10">REACT ↔ NODE ↔ OPENCODE</text>`,
+  "esep-web": `<rect width="640" height="420" fill="#ed663d"/>
+    <g stroke="#181916" stroke-width="1" opacity=".2"><path d="M0 84h640M0 168h640M0 252h640M0 336h640M128 0v420M256 0v420M384 0v420M512 0v420"/></g>
+    <path d="m320 58 158 88v175l-158 89-158-89V146Z" fill="#f2ede3"/>
+    <path d="m320 58 158 88-158 90-158-90Z" fill="#181916"/>
+    <path d="M320 236v174l158-89V146Z" fill="#2848eb"/>
+    <g stroke="#ed663d" stroke-width="4"><path d="m191 199 96 55m-96-12 96 55m-96-12 96 55"/></g>
+    <text x="28" y="46" fill="#181916" font-family="Arial,sans-serif" font-size="37" font-weight="bold" letter-spacing="-2">ESEP</text>
+    <text x="28" y="390" fill="#181916" font-family="monospace" font-size="10" letter-spacing="2">PROPERTY / PLATFORM / SIX PLATFORMS</text>`,
+  "osint-portal": `<rect width="640" height="420" fill="#202722"/>
+    <g fill="none" stroke="#d8dfcc" stroke-width="1"><path d="M90 110 220 205 350 87 550 155 420 304 220 205 90 335m0-225 260-23 70 217 140 31M90 335l330-31" opacity=".35"/><circle cx="220" cy="205" r="66"/><circle cx="220" cy="205" r="94" opacity=".3"/></g>
+    <g fill="#ed663d"><circle cx="90" cy="110" r="7"/><circle cx="350" cy="87" r="7"/><circle cx="420" cy="304" r="7"/><circle cx="550" cy="155" r="7"/><circle cx="90" cy="335" r="7"/></g>
+    <circle cx="220" cy="205" r="25" fill="#d8dfcc"/><circle cx="220" cy="205" r="9" fill="#202722"/>
+    <text x="360" y="217" fill="#d8dfcc" font-family="monospace" font-size="32" letter-spacing="-2">osint_</text>
+    <text x="28" y="36" fill="#d8dfcc" font-family="monospace" font-size="10" letter-spacing="2">TRACE. CONNECT. UNDERSTAND.</text>
+    <text x="28" y="390" fill="#d8dfcc" font-family="monospace" font-size="10">18 TOOLS / ONE WORKSPACE</text>`,
+  tradingagents: `<rect width="640" height="420" fill="#e4dfd3"/>
+    <g stroke="#181916" opacity=".15"><path d="M32 110h576M32 180h576M32 250h576M32 320h576M112 75v270M224 75v270M336 75v270M448 75v270M560 75v270"/></g>
+    <path d="m32 300 58-18 56 25 60-70 57 16 57-80 57 12 58-60 57 29 58-47 58-37" stroke="#2848eb" stroke-width="4" fill="none"/>
+    <path d="m32 220 58 28 56-53 60 18 57-54 57 14 57-42 58 31 57-45 58 10 58-36" stroke="#ed663d" stroke-width="2" fill="none"/>
+    <text x="32" y="57" fill="#181916" font-family="Georgia,serif" font-size="33" font-style="italic">TradingAgents</text>
+    <circle cx="490" cy="286" r="45" fill="#2848eb"/><text x="490" y="292" text-anchor="middle" fill="#f2ede3" font-family="monospace" font-size="16">5+ AI</text>
+    <text x="32" y="390" fill="#181916" font-family="monospace" font-size="10" letter-spacing="2">MULTI-AGENT / LIVE PROGRESS</text>`,
+};
+
 function projectCover(project) {
   const figure = el("figure", "project-cover");
   figure.setAttribute("aria-hidden", "true");
   const rand = seeded(project.key);
   const motif = COVER_MOTIFS[COVER_BY_KEY[project.key] || "horizon"];
-  figure.innerHTML = `<svg viewBox="0 0 ${COVER_W} ${COVER_H}" preserveAspectRatio="xMidYMid slice">${motif(rand)}</svg>`;
+  figure.innerHTML = PROJECT_POSTERS[project.key]
+    ? `<svg viewBox="0 0 640 420" preserveAspectRatio="xMidYMid slice">${PROJECT_POSTERS[project.key]}</svg>`
+    : `<svg viewBox="0 0 ${COVER_W} ${COVER_H}" preserveAspectRatio="xMidYMid slice">${motif(rand)}</svg>`;
   return figure;
 }
 
@@ -1020,7 +1054,7 @@ function renderProjects() {
   const host = document.getElementById("projects");
   host.textContent = "";
   const list = I18N[lang].projectsList;
-  openProject = (list.find((item) => item.featured) || list[0]).key;
+  openProject = null;
   workFilter = "all";
 
   const bar = el("div", "work-bar");

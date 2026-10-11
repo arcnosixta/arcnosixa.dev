@@ -102,6 +102,50 @@ body { background: var(--ink); }
 .section-head h2 { font-weight: 500; font-size: clamp(40px, 5vw, 72px); letter-spacing: -0.065em; }
 .section-index { align-self: flex-start; padding-top: 8px; color: var(--signal); font-size: 11px; }
 
+/* A gallery of four distinct posters, with an intentionally uneven rhythm. */
+.work-bar { margin-bottom: 30px; }
+.filters { border-radius: 0; background: none; border: 0; padding: 0; gap: 4px; }
+.filter { border-radius: 0; padding: 10px 14px; font-size: 11px; }
+.filter-thumb { border-radius: 0; height: 100%; top: 0; box-shadow: none; }
+.filters.is-stacked { border-radius: 0; }
+.filters.is-stacked .filter[aria-pressed="true"] { box-shadow: none; }
+.work-grid { grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 54px 32px; align-items: start; }
+.project { grid-column: span 7; border: 0; border-radius: 0; background: none; padding: 0; overflow: visible; gap: 16px; }
+.project:nth-child(2), .project:nth-child(3) { grid-column: span 5; }
+.project:nth-child(2) { margin-top: 80px; }
+.project:nth-child(4) { margin-top: 80px; }
+.project.is-open { grid-column: 1 / -1; background: none; border: 0; margin-top: 0; }
+.project.is-filtered { display: none; }
+.project-rail, .project::before, .project::after { display: none; }
+.project-cover { margin: 0 0 4px; height: auto; aspect-ratio: 640 / 420; border: 0; background: none; overflow: hidden; }
+.project.is-open .project-cover { aspect-ratio: 2.5; }
+.project-cover svg { transition: transform 1s var(--ease-out); }
+.project:hover .project-cover svg { transform: scale(1.045); }
+.project-top { flex-wrap: wrap; gap: 10px; }
+.project-title { font-size: 32px; font-weight: 500; letter-spacing: -0.06em; }
+.project-num { color: var(--paper-faint); font-size: 10px; }
+.chip-featured { background: none; border: 0; color: var(--lime-ink); padding: 0; font-size: 9px; }
+.chip-year { border: 0; padding: 0; color: var(--paper-faint); }
+.project-toggle { border: 0; border-bottom: 1px solid var(--line-bright); border-radius: 0; padding: 8px 0; font-size: 9px; }
+.project.is-open .project-toggle { color: var(--lime-ink); border-color: var(--lime-ink); }
+.project-tagline { max-width: 48ch; font-size: 15px; }
+.project-stack { gap: 6px 14px; }
+.project-stack li { background: none; border: 0; border-radius: 0; padding: 0; font-size: 10px; }
+.project.is-open .project-stack li { background: none; }
+.project-metrics { border-top: 1px solid var(--line); padding-top: 16px; gap: 12px 20px; }
+.project-metrics li { display: block; max-width: 22ch; font-size: 10px; line-height: 1.6; }
+.project-metrics li::before { display: none; }
+.project-metrics b { display: block; font-size: 16px; font-family: "Manrope", sans-serif; font-weight: 600; }
+.project-links { margin-top: 0; }
+.link { padding: 8px 0; border: 0; border-bottom: 1px solid var(--line-bright); border-radius: 0; font-size: 11px; }
+.link-ghost { border: 0; }
+.project-desc { font-size: 17px; max-width: 82ch; }
+.project-list { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 28px; max-width: 1000px; }
+.project-list li::before { background: var(--signal); border-radius: 0; width: 4px; height: 4px; }
+.labs { margin-top: 72px; }
+.console { background: none; border: 0; border-radius: 0; }
+.console-bar { background: none; border-bottom: 1px solid var(--line-bright); padding-inline: 0; }
+.console-row { padding-inline: 0; border-bottom: 1px solid var(--line); }
 .about { grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); }
 .about-text p:first-child { font-size: clamp(23px, 2.7vw, 36px); line-height: 1.45; letter-spacing: -0.045em; }
 .about-text p + p { font-size: 15px; max-width: 62ch; }
@@ -157,6 +201,11 @@ body { background: var(--ink); }
   .skills { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 @media (max-width: 680px) {
+  .work-grid { grid-template-columns: minmax(0, 1fr); gap: 42px; }
+  .project, .project:nth-child(2), .project:nth-child(3), .project:nth-child(4), .project.is-open { grid-column: 1; margin-top: 0; }
+  .project.is-open .project-cover { aspect-ratio: 640 / 420; }
+  .project-title { font-size: 28px; }
+  .project-list { grid-template-columns: minmax(0, 1fr); }
   .hero-inner { grid-template-columns: minmax(0, 1fr); gap: 0; }
   .hero-title { font-size: clamp(42px, 10.7vw, 70px); margin-top: 28px; }
   .hero-lead { max-width: 40ch; font-size: 14px; }
