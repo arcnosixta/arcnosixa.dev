@@ -1,8 +1,16 @@
 /* Digital atelier: paper, ink, cobalt. Shared tokens keep both editions coherent. */
 .studio-art { display: none; }
 .cinematic-visual, .cinematic-slash, .cinematic-edition, .chapter-word { display: none; }
+.cinematic-intro, .intro-replay { display: none; }
 .design-switch { font-size: 10px; color: var(--paper-faint); white-space: nowrap; }
-@media (max-width: 680px) { .design-switch { position: absolute; right: 20px; top: 82px; } }
+.design-picker { position: relative; }
+.design-switch { cursor: pointer; list-style: none; padding: 10px 0; }
+.design-switch::-webkit-details-marker { display: none; }
+.design-options { position: absolute; right: 0; top: calc(100% + 12px); width: 190px; padding: 12px; background: var(--ink); border: 1px solid var(--line-bright); z-index: 60; }
+.design-options a { display: flex; justify-content: space-between; padding: 12px; font-size: 12px; color: var(--paper); }
+.design-options a[aria-current], .design-options a:hover { color: var(--lime-ink); }
+.design-options a > span { font-size: 8px; color: var(--paper-faint); }
+@media (max-width: 680px) { .design-picker { position: absolute; right: 20px; top: 82px; } }
 :root {
   --ch-paper: 242 237 227;
   --ch-ink: 22 23 21;
@@ -124,6 +132,10 @@ body { background: var(--ink); }
 .project-cover { margin: 0 0 4px; height: auto; aspect-ratio: 640 / 420; border: 0; background: none; overflow: hidden; }
 .project.is-open .project-cover { aspect-ratio: 2.5; }
 .project-cover svg { transition: transform 1s var(--ease-out); }
+.project-cover img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: top; }
+.project[data-key="tradingagents"] .project-cover img { object-fit: contain; background: #1e1e1e; }
+.project.is-open .project-cover:has(img) { aspect-ratio: 1440 / 1000; }
+.project.is-open .project-cover img { object-fit: contain; background: #171717; }
 .project:hover .project-cover svg { transform: scale(1.045); }
 .project-top { flex-wrap: wrap; gap: 10px; }
 .project-title { font-size: 32px; font-weight: 500; letter-spacing: -0.06em; }

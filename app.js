@@ -504,7 +504,7 @@ const PROJECTS = [
       ["17", "живых сегментов запуска", "live run segments"],
       ["Apache-2.0", "open source, self-hosted", "open source, self-hosted"],
     ],
-    links: [{ label: "GitHub", labelEn: "GitHub", href: "https://github.com/arcnosixta/osint-portal" }],
+    links: [{ label: "Сайт", labelEn: "Website", href: "https://osint-portal-gamma.vercel.app/" }, { label: "GitHub", labelEn: "GitHub", href: "https://github.com/arcnosixta/osint-portal" }],
   },
   {
     key: "tradingagents",
@@ -514,31 +514,31 @@ const PROJECTS = [
     year: "2026",
     title: "TradingAgents",
     titleEn: "TradingAgents",
-    tagline: "Мультиагентный трейдинг-фреймворк с веб-интерфейсом",
-    taglineEn: "A multi-agent trading framework with a web UI",
-    desc: "Форк TauricResearch/TradingAgents: команда LLM-агентов повторяет работу реальной трейдинг-фирмы — фундаментальный, сентиментный и технический аналитики, трейдер, риск-менеджмент и портфельный управляющий спорят между собой и приходят к решению. Своё добавление — веб-приложение с живым прогрессом рана и историей запусков.",
+    tagline: "Мультиагентный трейдинг-фреймворк с CLI",
+    taglineEn: "A multi-agent trading framework with a CLI",
+    desc: "Форк TauricResearch/TradingAgents: команда LLM-агентов повторяет работу трейдинг-фирмы — аналитики, трейдер, риск-менеджмент и портфельный управляющий обсуждают данные и приходят к решению. Сейчас проект запускается через CLI: конфигурация, выбор моделей и статистика. Веб-интерфейс находится в разработке.",
     descEn:
-      "A fork of TauricResearch/TradingAgents: a team of LLM agents mirrors a real trading firm — fundamental, sentiment and technical analysts, a trader, risk management and a portfolio manager debate each other and settle on a decision. My addition is a web app with live run progress and a run history.",
+      "A fork of TauricResearch/TradingAgents: LLM analysts, a trader, risk managers and a portfolio manager discuss data and reach a decision. The current interface is a CLI with configuration, model selection and statistics. A web interface is in development.",
     points: [
       "Форк TauricResearch/TradingAgents (arXiv 2412.20138) и свои правки",
-      "Веб-приложение: FastAPI, Jinja2, статика, Dockerfile.web",
-      "SSE-стрим прогресса рана, история запусков в JSON",
+      "В разработке: веб-интерфейс на FastAPI и Jinja2",
+      "В исходниках веб-версии: SSE-прогресс и история в JSON",
       "Свой CLI: конфиг, каталог моделей, статистика, анонсы",
       "Мульти-провайдерные LLM, авто-детект ключей TRADINGAGENTS_*, Ollama",
     ],
     pointsEn: [
       "Fork of TauricResearch/TradingAgents (arXiv 2412.20138) plus my changes",
-      "Web app: FastAPI, Jinja2, static assets, Dockerfile.web",
-      "SSE stream of run progress, run history stored as JSON",
+      "In development: a FastAPI and Jinja2 web interface",
+      "Web source includes SSE progress and JSON run history",
       "Own CLI: config, model catalog, stats, announcements",
       "Multi-provider LLMs, TRADINGAGENTS_* key auto-detection, Ollama",
     ],
     metrics: [
       ["5+", "ролей агентов в команде", "agent roles on the team"],
-      ["SSE", "прогресс рана в браузере", "run progress in the browser"],
+      ["CLI", "текущий интерфейс", "current interface"],
       ["JSON", "история каждого запуска", "history for every run"],
     ],
-    links: [],
+    links: [{ label: "GitHub", labelEn: "GitHub", href: "https://github.com/arcnosixta/TradingAgents" }],
   },
 ];
 
@@ -562,10 +562,12 @@ function localizeProjects(target) {
 
 const studioDesign = document.documentElement.dataset.design === "studio";
 const cinematicDesign = document.documentElement.dataset.design === "cinematic";
-const nextDesign = cinematicDesign ? "studio" : studioDesign ? "atelier" : "cinematic";
-const nextVersion = cinematicDesign ? "02" : studioDesign ? "01" : "03";
-I18N.ru["nav.design"] = `Вариант ${nextVersion} ↗`;
-I18N.en["nav.design"] = `Version ${nextVersion} ↗`;
+I18N.ru["nav.design"] = "Дизайны";
+I18N.en["nav.design"] = "Designs";
+I18N.ru["design.main"] = "Основной";
+I18N.en["design.main"] = "Main";
+I18N.ru["a11y.replay"] = "Повторить вступление";
+I18N.en["a11y.replay"] = "Replay introduction";
 if (studioDesign || cinematicDesign) {
   I18N.ru["hero.hi"] = I18N.en["hero.hi"] = "Arcnosixa";
   I18N.ru["hero.statement"] = "Разработка цифровых продуктов";
@@ -575,7 +577,7 @@ if (cinematicDesign) {
   I18N.ru["hero.statement"] = "Код. Форма. Воображение.";
   I18N.en["hero.statement"] = "Code. Form. Imagination.";
 }
-document.querySelector(".design-switch").href = `?design=${nextDesign}`;
+document.querySelector(`.design-options a[href="?design=${document.documentElement.dataset.design}"]`)?.setAttribute("aria-current", "page");
 
 I18N.ru.projectsList = localizeProjects("ru");
 I18N.en.projectsList = localizeProjects("en");
@@ -939,6 +941,24 @@ const PROJECT_POSTERS = {
 
 function projectCover(project) {
   const figure = el("figure", "project-cover");
+  const screenshots = {
+    ciel: ["ciel", "Главная страница Ciel", "Ciel landing page"],
+    "esep-web": ["esep", "Форма входа ESEP", "ESEP sign-in screen"],
+    "osint-portal": ["osint", "Интерфейс OSINT Portal", "OSINT Portal interface"],
+    tradingagents: ["tradingagents", "CLI TradingAgents: выбор тикера; снимок из репозитория", "TradingAgents CLI ticker selection; repository screenshot"],
+  };
+  const screenshot = screenshots[project.key];
+  if (screenshot) {
+    const img = el("img");
+    img.src = `assets/project-${screenshot[0]}.png`;
+    img.alt = screenshot[lang === "ru" ? 1 : 2];
+    img.loading = "lazy";
+    img.decoding = "async";
+    img.width = project.key === "tradingagents" ? 3840 : 1440;
+    img.height = project.key === "tradingagents" ? 2160 : 1000;
+    figure.appendChild(img);
+    return figure;
+  }
   figure.setAttribute("aria-hidden", "true");
   const rand = seeded(project.key);
   const motif = COVER_MOTIFS[COVER_BY_KEY[project.key] || "horizon"];
@@ -1244,7 +1264,7 @@ function applyStaticText() {
   syncMeta("property", "og:title", title);
   syncMeta("property", "og:description", description);
   syncMeta("property", "og:locale", t("meta.locale"));
-  const socialImage = `https://arcnosixta.github.io/arcnosixa.dev/${cinematicDesign ? "assets/cinematic-key-visual.png" : studioDesign ? "og-studio.png" : "og.png"}`;
+  const socialImage = `https://arcnosixta.github.io/arcnosixa.dev/${cinematicDesign ? "assets/anime-portrait.png" : studioDesign ? "og-studio.png" : "og.png"}`;
   syncMeta("property", "og:image", socialImage);
   syncMeta("name", "twitter:image", socialImage);
   syncMeta("property", "og:image:width", cinematicDesign ? "1672" : "1200");
@@ -1435,14 +1455,16 @@ window.addEventListener("resize", () => {
 
 document.fonts?.ready.then(refreshThumb);
 
-function closeMenu() {
+function closeMenu(restoreFocus = false) {
   nav.classList.remove("is-open");
   burger.setAttribute("aria-expanded", "false");
+  if (restoreFocus) burger.focus();
 }
 
 burger.addEventListener("click", () => {
   const open = nav.classList.toggle("is-open");
   burger.setAttribute("aria-expanded", String(open));
+  if (open && cinematicDesign) nav.querySelector("a")?.focus();
 });
 
 nav.addEventListener("click", (event) => {
@@ -1522,7 +1544,28 @@ else if (systemLight.addListener) systemLight.addListener(onSystemTheme);
 applyTheme(currentTheme());
 
 document.addEventListener("keydown", (event) => {
-  if (event.key === "Escape") closeMenu();
+  const picker = document.getElementById("designPicker");
+  if (event.key === "Escape" && picker?.open) {
+    picker.open = false;
+    picker.querySelector("summary").focus();
+  }
+  const menuOpen = nav.classList.contains("is-open");
+  if (event.key === "Escape" && menuOpen) closeMenu(true);
+  if (cinematicDesign && menuOpen && event.key === "Tab") {
+    const controls = [burger, ...nav.querySelectorAll("a")];
+    const current = controls.indexOf(document.activeElement);
+    event.preventDefault();
+    const next = (current + (event.shiftKey ? -1 : 1) + controls.length) % controls.length;
+    controls[next].focus();
+  }
+});
+
+document.addEventListener("click", (event) => {
+  const picker = document.getElementById("designPicker");
+  if (picker?.open && !picker.contains(event.target)) picker.open = false;
+  if (cinematicDesign && nav.classList.contains("is-open") && !topbar.contains(event.target)) {
+    closeMenu();
+  }
 });
 
 function showToast(message) {

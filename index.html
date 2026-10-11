@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ru">
+<html lang="ru" data-design="cinematic">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -24,7 +24,7 @@
       property="og:description"
       content="Портфолио frontend-разработчика: React, локальные сервисы, Flutter и Telegram Mini Apps."
     />
-    <meta property="og:image" content="https://arcnosixta.github.io/arcnosixa.dev/assets/cinematic-key-visual.png" />
+    <meta property="og:image" content="https://arcnosixta.github.io/arcnosixa.dev/assets/anime-portrait.png" />
     <meta property="og:image:width" content="1672" />
     <meta property="og:image:height" content="941" />
     <meta property="og:image:alt" content="Arcnosixa — frontend / React" />
@@ -34,7 +34,7 @@
       name="twitter:description"
       content="Портфолио frontend-разработчика: React, локальные сервисы, Flutter и Telegram Mini Apps."
     />
-    <meta name="twitter:image" content="https://arcnosixta.github.io/arcnosixa.dev/assets/cinematic-key-visual.png" />
+    <meta name="twitter:image" content="https://arcnosixta.github.io/arcnosixa.dev/assets/anime-portrait.png" />
     <title>Arcnosixa — frontend / React</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -46,6 +46,13 @@
     <script>
       var requestedDesign = new URLSearchParams(location.search).get("design");
       document.documentElement.dataset.design = ["atelier", "studio"].includes(requestedDesign) ? requestedDesign : "cinematic";
+      if (document.documentElement.dataset.design === "cinematic") {
+        var portraitPreload = document.createElement("link");
+        portraitPreload.rel = "preload";
+        portraitPreload.as = "image";
+        portraitPreload.href = "assets/anime-portrait.png";
+        document.head.appendChild(portraitPreload);
+      }
       // Тема применяется до первой отрисовки, иначе при перезагрузке мигает.
       (function () {
         try {
@@ -60,9 +67,9 @@
       })();
     </script>
     <link rel="stylesheet" href="styles.css?v=4" />
-    <link rel="stylesheet" href="atelier.css?v=5" />
+    <link rel="stylesheet" href="atelier.css?v=8" />
     <link rel="stylesheet" href="studio.css?v=6" />
-    <link rel="stylesheet" href="cinematic.css?v=7" />
+    <link rel="stylesheet" href="cinematic.css?v=8" />
     <noscript>
       <style>
         .reveal,
@@ -119,12 +126,18 @@
     </script>
   </head>
   <body>
+    <div class="cinematic-intro" id="cinematicIntro" aria-hidden="true">
+      <div class="intro-slice intro-slice-top"></div>
+      <div class="intro-slice intro-slice-bottom"></div>
+      <div class="intro-wordmark">ARCNOSIXA<span>CODE / FORM / IMAGINATION</span></div>
+      <div class="intro-cut"></div>
+    </div>
     <a class="skip-link" href="#main" data-i18n="a11y.skip">К содержанию</a>
 
     <div class="progress" aria-hidden="true"><span id="progressBar"></span></div>
 
     <header class="topbar" id="topbar">
-      <a class="brand" href="#home">
+      <a class="brand" href="#home" aria-label="Arcnosixa">
         <span class="brand-mark" aria-hidden="true">A</span>
         <span class="brand-text">Arcnosixa</span>
       </a>
@@ -138,7 +151,15 @@
       </nav>
 
       <div class="topbar-actions">
-        <a class="design-switch" href="?design=atelier" data-i18n="nav.design">Вариант 01 ↗</a>
+        <button class="intro-replay" id="introReplay" type="button" aria-label="Повторить вступление" data-i18n-aria="a11y.replay">↻</button>
+        <details class="design-picker" id="designPicker">
+          <summary class="design-switch" data-i18n="nav.design">Дизайны</summary>
+          <div class="design-options">
+            <a href="?design=cinematic">Cinematic <span data-i18n="design.main">Основной</span></a>
+            <a href="?design=studio">Studio</a>
+            <a href="?design=atelier">Atelier</a>
+          </div>
+        </details>
         <button
           class="theme-toggle"
           id="themeToggle"
@@ -212,8 +233,8 @@
           </p>
 
           <h1 class="hero-title reveal" data-delay="1">
-            <span data-i18n="hero.hi">Интерфейсы.</span>
-            <span class="accent" data-i18n="hero.statement">С характером.</span>
+            <span data-i18n="hero.hi">Arcnosixa</span>
+            <span class="accent" data-i18n="hero.statement">Код. Форма. Воображение.</span>
           </h1>
 
           <p class="hero-role reveal" data-delay="2">
@@ -411,6 +432,7 @@
     </footer>
 
     <script src="motion.js?v=4"></script>
-    <script src="app.js?v=4"></script>
+    <script src="app.js?v=8"></script>
+    <script src="cinematic.js?v=8"></script>
   </body>
 </html>
