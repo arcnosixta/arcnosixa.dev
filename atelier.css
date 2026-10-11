@@ -276,7 +276,21 @@ body { background: var(--ink); }
   .project-emblem { width: 104px; height: 104px; }
 }
 @media (max-width: 380px) { .brand-text { display: none; } }
+
+/* Keep the logo edge-to-edge while giving every text row room to breathe. */
+.project { --project-inset: clamp(18px, 2vw, 28px); }
+.project > :is(.project-top, .project-tagline, .project-stack, .project-metrics, .project-detail, .project-links) { margin-inline: var(--project-inset); }
+.project > .project-top { margin-top: 8px; }
+.project > .project-links { padding-bottom: var(--project-inset); }
+.project .project-detail { transition: grid-template-rows .95s cubic-bezier(.4, 0, .2, 1); }
+.project .project-detail-inner { transition: visibility 0s linear .95s; }
+.project.is-open .project-detail-inner { transition-delay: 0s; }
+.project .project-detail-text > * { transition: opacity .65s ease, translate .85s cubic-bezier(.4, 0, .2, 1); }
+.project.is-open .project-detail-text > * { transition-delay: .12s; }
+.project.is-open .project-detail-text > *:nth-child(2) { transition-delay: .2s; }
+.project .project-toggle svg { transition: transform .75s cubic-bezier(.4, 0, .2, 1); }
 @media (prefers-reduced-motion: reduce) {
+  .project .project-detail, .project .project-detail-inner, .project .project-detail-text > *, .project .project-toggle svg { transition: none; }
   .project .project-lockup, .project .project-emblem { transition: none; transform: none; opacity: 1; }
   .project.tiltable, .project.tiltable:hover { transform: none; transition: none; }
   .project.is-in .project-logo-panel::after { animation: none; display: none; }

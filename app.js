@@ -686,7 +686,7 @@ function captureRects(cards) {
   return map;
 }
 
-function playFlip(cards, before, after) {
+function playFlip(cards, before, after, duration = 520) {
   if (!canAnimate()) return;
   cards.forEach((card) => {
     if (card.classList.contains("is-filtered")) return;
@@ -708,19 +708,20 @@ function playFlip(cards, before, after) {
     if (Math.abs(dx) < 1 && Math.abs(dy) < 1) return;
     card.animate(
       [{ transform: `translate(${dx}px, ${dy}px)` }, { transform: "translate(0, 0)" }],
-      { duration: 520, easing: FLIP_EASE },
+      { duration, easing: duration > 520 ? "cubic-bezier(0.4, 0, 0.2, 1)" : FLIP_EASE },
     );
   });
 }
 
-function withFlip(cards, mutate) {
+function withFlip(cards, mutate, animateDetails = false) {
   const grid = document.querySelector(".work-grid");
   const before = captureRects(cards);
-  grid.classList.add("is-measuring");
+  // Measuring without transitions is useful for filters, but would snap an accordion open.
+  if (!animateDetails) grid.classList.add("is-measuring");
   mutate();
   const after = captureRects(cards);
   grid.classList.remove("is-measuring");
-  playFlip(cards, before, after);
+  playFlip(cards, before, after, animateDetails ? 950 : 520);
 }
 
 function setFilter(next) {
@@ -1171,7 +1172,7 @@ function renderProjects() {
     withFlip(cards, () => {
       others.forEach((node) => setProjectOpen(node, false));
       setProjectOpen(card, willOpen);
-    });
+    }, true);
     if (willOpen) placeThumb(filters);
   });
 
@@ -1195,7 +1196,7 @@ function renderProjects() {
     if (event.key === "Escape") {
       const card = toggles[index].closest(".project");
       if (!card.classList.contains("is-open")) return;
-      withFlip(cards, () => setProjectOpen(card, false));
+      withFlip(cards, () => setProjectOpen(card, false), true);
     }
   });
 
