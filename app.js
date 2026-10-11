@@ -1237,6 +1237,9 @@ function applyStaticText() {
   syncMeta("property", "og:title", title);
   syncMeta("property", "og:description", description);
   syncMeta("property", "og:locale", t("meta.locale"));
+  const socialImage = `https://arcnosixta.github.io/arcnosixa.dev/${studioDesign ? "og-studio.png" : "og.png"}`;
+  syncMeta("property", "og:image", socialImage);
+  syncMeta("name", "twitter:image", socialImage);
   document.documentElement.lang = lang;
   document.querySelectorAll("[data-lang-label]").forEach((node) => {
     node.classList.toggle("is-on", node.dataset.langLabel === lang);
