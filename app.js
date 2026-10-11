@@ -7,9 +7,9 @@ const I18N = {
     "a11y.theme": "Переключить тему",
     "a11y.themeLight": "Включить светлую тему",
     "a11y.themeDark": "Включить тёмную тему",
-    "meta.title": "Arcnosixa — frontend / React",
+    "meta.title": "Arcnosixa — архитектура и системы",
     "meta.description":
-      "Arcnosixa — frontend-разработчик: React, дизайн-системы, локальные сервисы и мобильные приложения. Портфолио и избранные проекты.",
+      "Arcnosixa — разработка и архитектура проектов, серверная логика, ИИ-интеграции и конфигурации ПК. Портфолио и избранные проекты.",
     "meta.locale": "ru_RU",
     "nav.about": "Обо мне",
     "nav.skills": "Навыки",
@@ -17,20 +17,20 @@ const I18N = {
     "nav.path": "Путь",
     "nav.contact": "Контакты",
     "hero.status": "Открыт к проектам и стажировкам",
-    "hero.hi": "Интерфейсы.",
-    "hero.statement": "С характером.",
+    "hero.hi": "Идея.",
+    "hero.statement": "В работающую систему.",
     "hero.roleLabel": "Роль:",
     "hero.lead":
-      "Разрабатываю веб-интерфейсы на React, локальные инструменты для ИИ-агентов и мобильные приложения. От API и данных — до продуманного пользовательского опыта.",
+      "Проектирую архитектуру приложений, серверную логику и связи между сервисами. Создаю инструменты для ИИ-агентов, изучаю Linux и подбираю конфигурации ПК под конкретные задачи.",
     "hero.ctaWork": "Смотреть проекты",
     "hero.ctaContact": "Написать мне",
     "hero.nowLabel": "Сейчас",
     "hero.now":
-      "Полирую Ciel: локальный мост к OpenCode, SSE-стримы и аккуратная типографика",
+      "Развиваю Ciel: локальный мост к OpenCode, потоки событий и взаимодействие с агентом",
     "hero.stackLabel": "Стек",
-    "hero.stack": "React 19 · Vite · TypeScript · Node · Flutter · Supabase",
+    "hero.stack": "Node.js · Python · Go · Linux · Docker · Supabase",
     "hero.focusLabel": "Фокус",
-    "hero.focus": "Продуктовый фронтенд, локальные сервисы, интеграции ИИ-агентов",
+    "hero.focus": "Архитектура систем, серверы, ИИ-интеграции и конфигурации ПК",
     "hero.scroll": "скролл",
     "hero.featureLabel": "Сейчас в работе",
     "hero.featureDesc": "Рабочее пространство для локального ИИ-агента.",
@@ -41,13 +41,14 @@ const I18N = {
     "work.private": "Закрытый репозиторий",
     "about.title": "Обо мне",
     "about.p1":
-      "Я frontend-разработчик, которому нравится доводить продукты до конца: от структуры данных и API до анимаций, состояния загрузки и текста ошибки.",
+      "Мне интересна архитектура: как устроен проект, где проходят границы модулей и как данные движутся между ними. Превращаю идею в систему с понятной логикой, API и связями между сервисами.",
     "about.p2":
-      "Большую часть времени работаю с React: собираю интерфейсы, поднимаю локальные сервисы, пишу логику на Node, прикручиваю ИИ-агентов к рабочим инструментам. Отдельно люблю мобильную разработку на Flutter и Telegram Mini Apps.",
+      "Работаю с серверной логикой, локальными сервисами и интеграциями ИИ-агентов. Люблю разбираться в устройстве Linux, проектировать серверные решения и подбирать конфигурации ПК под конкретные задачи — с учётом совместимости, нагрузки, охлаждения и питания.",
     "about.p3":
-      "Ценю простые решения без лишних зависимостей, читаемый код и то, что продукт остаётся понятным после того, как я перестал его трогать.",
+      "Хорошее решение для меня — то, которое можно объяснить, проверить и развивать. Думаю о надёжности, безопасности и том, как система будет работать после запуска.",
     "about.stat1": "проектов в портфолио",
-    "about.stat2": "основной инструмент для веба",
+    "about.stat2": "основной фокус разработки",
+    "about.stat2value": "Системы",
     "about.stat3": "языка интерфейса в проектах",
     "about.stat4": "платформы: web, mobile, desktop",
     "skills.title": "Навыки",
@@ -55,7 +56,7 @@ const I18N = {
     "path.title": "Путь",
     "contact.title": "Контакты",
     "contact.lead":
-      "Открыт к фронтенд-проектам, стажировкам и задачам, где нужен аккуратный интерфейс и надёжная интеграция с ИИ. Пишите — отвечаю быстро.",
+      "Открыт к задачам по архитектуре проектов, серверной логике и интеграциям ИИ. Можно обсудить новый сервис, устройство системы или конфигурацию ПК. Пишите — разберём задачу.",
     "contact.note": "Обычно отвечаю в течение дня. Люблю задачи с реальными пользователями.",
     "footer.built": "Сделано вручную: HTML, CSS, немного JavaScript",
     "work.featured": "Главный",
@@ -68,7 +69,8 @@ const I18N = {
     "work.lessons": "Учебные и pet-проекты",
     "work.filterLabel": "Фильтр проектов",
     "work.filterAll": "Все",
-    "work.filterWeb": "Интерфейсы",
+    "work.filterWeb": "Приложения",
+    "work.filterSystems": "Системы и ПК",
     "work.filterMobile": "Мобильные",
     "work.filterAi": "ИИ-автоматизация",
     "work.projectOne": "проект",
@@ -82,31 +84,31 @@ const I18N = {
     "core.charge": "заряд",
     "core.release": "разряд",
     "core.hint": "колесо ↑ заряд · ↓ разряд",
-    "skills.note.frontend": "Компонентный подход, состояние, анимации, доступность",
+    "skills.note.frontend": "Границы модулей, потоки данных и понятные контракты",
     "skills.note.backend": "Локальные API, SSE-стримы, безопасность, без лишних абстракций",
     "skills.note.mobile": "Кроссплатформенные приложения, Supabase, криптография на клиенте",
     "skills.note.ai": "LLM-интеграции, MCP, агенты, вопросы и разрешения",
-    "skills.note.design": "Сетки, типографика, тёмные темы, дизайн-токены",
-    "skills.note.flow": "Vite, TypeScript, линтеры, тесты, CI",
-    "skills.frontend": "Frontend",
+    "skills.note.design": "Конфигурации под задачу, совместимость и устройство Linux",
+    "skills.note.flow": "Контроль версий, воспроизводимость, проверки и автоматизация",
+    "skills.frontend": "Архитектура проектов",
     "skills.backend": "Сервисы и API",
     "skills.mobile": "Мобильная разработка",
     "skills.ai": "ИИ и агенты",
-    "skills.design": "Интерфейс и дизайн",
+    "skills.design": "ПК и системная среда",
     "skills.flow": "Инструменты и процесс",
     "typed": [
-      "Frontend-разработчик",
-      "React-инженер",
-      "Проектирую интерфейсы",
-      "Поднимаю локальные сервисы",
+      "Архитектура проектов",
+      "Серверы и API",
+      "Системы и интеграции",
+      "Проектирование ПК",
     ],
     "skillsList": {
-      frontend: ["React 19", "TypeScript", "Hooks", "Vite", "React Router", "Motion"],
-      backend: ["Node.js", "Express", "REST / JSON", "SSE", "PostgreSQL", "Neo4j"],
+      frontend: ["Границы модулей", "API-контракты", "Потоки данных", "Интеграции", "Состояние системы", "Тестируемость"],
+      backend: ["Node.js", "Python", "Go", "REST / JSON", "SSE", "PostgreSQL"],
       mobile: ["Flutter", "Dart", "Supabase", "Firebase", "FCM", "Crypto"],
       ai: ["OpenCode", "LLM-агенты", "MCP", "OpenRouter", "Промпты", "RAG"],
-      design: ["Figma", "Design tokens", "CSS Grid", "Dark UI", "Анимации", "A11y"],
-      flow: ["Vite", "TypeScript", "Oxlint", "Vitest", "node:test", "Git"],
+      design: ["Совместимость ПК", "Сокеты / чипсеты", "Питание / TDP", "RAM / SSD", "Linux", "QEMU"],
+      flow: ["Git", "Docker", "CI", "TypeScript", "node:test", "unittest"],
     },
     "labsList": [
       {
@@ -141,7 +143,7 @@ const I18N = {
     "timelineList": [
       {
         when: "2026",
-        title: "Ciel — локальный ИИ-фронтенд",
+        title: "Ciel — система для локального ИИ-агента",
         where: "React · Node · OpenCode",
         desc: "Спроектировал мост между браузером и локальным сервером агента: SSE, разрешения, вопросы агенту, локализация и тёмная тема.",
         descEn:
@@ -165,11 +167,11 @@ const I18N = {
       },
       {
         when: "2024",
-        title: "Первые React-проекты и основы",
+        title: "Основы разработки и устройства систем",
         where: "JavaScript · CSS",
-        desc: "Учебные проекты, привычка к компонентному подходу, интерес к анимациям и типографике.",
+        desc: "Учебные проекты: программирование, связи между компонентами и работа с данными.",
         descEn:
-          "Study projects, a habit of component thinking, and an interest in animation and typography.",
+          "Study projects: programming, component relationships and working with data.",
       },
     ],
     "contactsList": [
@@ -205,9 +207,9 @@ const I18N = {
     "a11y.theme": "Switch theme",
     "a11y.themeLight": "Switch to the light theme",
     "a11y.themeDark": "Switch to the dark theme",
-    "meta.title": "Arcnosixa — frontend / React",
+    "meta.title": "Arcnosixa — architecture & systems",
     "meta.description":
-      "Arcnosixa — frontend developer: React, design systems, local services and mobile apps. Portfolio and selected projects.",
+      "Arcnosixa — project architecture, server-side development, AI integrations and PC configurations. Portfolio and selected projects.",
     "meta.locale": "en_US",
     "nav.about": "About",
     "nav.skills": "Skills",
@@ -215,19 +217,19 @@ const I18N = {
     "nav.path": "Path",
     "nav.contact": "Contact",
     "hero.status": "Open to projects and internships",
-    "hero.hi": "Interfaces.",
-    "hero.statement": "With character.",
+    "hero.hi": "An idea.",
+    "hero.statement": "Into a working system.",
     "hero.roleLabel": "Role:",
     "hero.lead":
-      "I build React interfaces, local tools for AI agents and mobile apps. From APIs and data to a carefully considered user experience.",
+      "I design application architecture, server-side logic and connections between services. I build tools for AI agents, explore Linux and plan PC configurations for specific workloads.",
     "hero.ctaWork": "See projects",
     "hero.ctaContact": "Get in touch",
     "hero.nowLabel": "Now",
-    "hero.now": "Polishing Ciel: the local OpenCode bridge, SSE streams and careful typography",
+    "hero.now": "Building Ciel: a local OpenCode bridge, event streams and agent interaction",
     "hero.stackLabel": "Stack",
-    "hero.stack": "React 19 · Vite · TypeScript · Node · Flutter · Supabase",
+    "hero.stack": "Node.js · Python · Go · Linux · Docker · Supabase",
     "hero.focusLabel": "Focus",
-    "hero.focus": "Product frontend, local services, AI agent integrations",
+    "hero.focus": "System architecture, servers, AI integrations and PC configurations",
     "hero.scroll": "scroll",
     "hero.featureLabel": "Currently building",
     "hero.featureDesc": "A workspace for a local AI coding agent.",
@@ -238,13 +240,14 @@ const I18N = {
     "work.private": "Private repository",
     "about.title": "About",
     "about.p1":
-      "I'm a frontend developer who likes finishing products: from data shapes and APIs down to animations, loading states and error copy.",
+      "Architecture interests me: how a project is structured, where module boundaries belong and how data flows between them. I turn an idea into a system with clear logic, APIs and connections between services.",
     "about.p2":
-      "Most of my time goes into React: building interfaces, standing up local services, writing Node logic, wiring AI agents into everyday tools. On the side I love Flutter and Telegram Mini Apps.",
+      "I work on server-side logic, local services and AI agent integrations. I enjoy exploring Linux, designing server solutions and planning PC configurations around compatibility, workloads, cooling and power.",
     "about.p3":
-      "I value simple solutions without extra dependencies, readable code, and products that stay understandable after I stop touching them.",
+      "A good solution can be explained, tested and extended. I think about reliability, security and how a system will operate after launch.",
     "about.stat1": "projects in this portfolio",
-    "about.stat2": "my primary tool for the web",
+    "about.stat2": "my main development focus",
+    "about.stat2value": "Systems",
     "about.stat3": "interface languages shipped",
     "about.stat4": "platforms: web, mobile, desktop",
     "skills.title": "Skills",
@@ -252,7 +255,7 @@ const I18N = {
     "path.title": "Path",
     "contact.title": "Contact",
     "contact.lead":
-      "Open to frontend projects, internships and tasks where the interface matters and the AI integration has to be reliable. Write to me — I reply fast.",
+      "Open to project architecture, server-side development and AI integrations. Let's discuss a new service, a system design or a PC configuration and work through the requirements.",
     "contact.note": "Usually within a day. I like tasks with real users.",
     "footer.built": "Handmade: HTML, CSS, a bit of JavaScript",
     "work.featured": "Featured",
@@ -265,7 +268,8 @@ const I18N = {
     "work.lessons": "Study and pet projects",
     "work.filterLabel": "Project filters",
     "work.filterAll": "All",
-    "work.filterWeb": "Web",
+    "work.filterWeb": "Applications",
+    "work.filterSystems": "Systems & PCs",
     "work.filterMobile": "Mobile",
     "work.filterAi": "AI",
     "work.projectOne": "project",
@@ -279,31 +283,31 @@ const I18N = {
     "core.charge": "charge",
     "core.release": "release",
     "core.hint": "wheel ↑ charge · ↓ release",
-    "skills.note.frontend": "Component thinking, state, animation, accessibility",
+    "skills.note.frontend": "Module boundaries, data flows and clear contracts",
     "skills.note.backend": "Local APIs, SSE streams, security, no needless abstractions",
     "skills.note.mobile": "Cross-platform apps, Supabase, client-side crypto",
     "skills.note.ai": "LLM integrations, MCP, agents, questions and permissions",
-    "skills.note.design": "Grids, typography, dark themes, design tokens",
-    "skills.note.flow": "Vite, TypeScript, linters, tests, CI",
-    "skills.frontend": "Frontend",
+    "skills.note.design": "Workload-specific configurations, compatibility and Linux internals",
+    "skills.note.flow": "Version control, reproducibility, checks and automation",
+    "skills.frontend": "Project architecture",
     "skills.backend": "Services and API",
     "skills.mobile": "Mobile",
     "skills.ai": "AI and agents",
-    "skills.design": "Interface and design",
+    "skills.design": "PCs and system environment",
     "skills.flow": "Tooling and flow",
     "typed": [
-      "Frontend developer",
-      "React engineer",
-      "Interface designer",
-      "Local services builder",
+      "Project architecture",
+      "Servers and APIs",
+      "Systems and integrations",
+      "PC configuration",
     ],
     "skillsList": {
-      frontend: ["React 19", "TypeScript", "Hooks", "Vite", "React Router", "Motion"],
-      backend: ["Node.js", "Express", "REST / JSON", "SSE", "PostgreSQL", "Neo4j"],
+      frontend: ["Module boundaries", "API contracts", "Data flows", "Integrations", "System state", "Testability"],
+      backend: ["Node.js", "Python", "Go", "REST / JSON", "SSE", "PostgreSQL"],
       mobile: ["Flutter", "Dart", "Supabase", "Firebase", "FCM", "Crypto"],
       ai: ["OpenCode", "LLM agents", "MCP", "OpenRouter", "Prompts", "RAG"],
-      design: ["Figma", "Design tokens", "CSS Grid", "Dark UI", "Animation", "A11y"],
-      flow: ["Vite", "TypeScript", "Oxlint", "Vitest", "node:test", "Git"],
+      design: ["PC compatibility", "Sockets / chipsets", "Power / TDP", "RAM / SSD", "Linux", "QEMU"],
+      flow: ["Git", "Docker", "CI", "TypeScript", "node:test", "unittest"],
     },
     "labsList": [
       {
@@ -338,7 +342,7 @@ const I18N = {
     "timelineList": [
       {
         when: "2026",
-        title: "Ciel — a local AI frontend",
+        title: "Ciel — a local AI agent system",
         where: "React · Node · OpenCode",
         desc: "Designed the bridge between the browser and a local agent server: SSE, permissions, agent questions, localization and a dark theme.",
         descEn:
@@ -361,11 +365,11 @@ const I18N = {
       },
       {
         when: "2024",
-        title: "First React projects and fundamentals",
+        title: "Development and system fundamentals",
         where: "JavaScript · CSS",
-        desc: "Study projects, a habit of component thinking, an interest in animation and typography.",
+        desc: "Study projects: programming, component relationships and working with data.",
         descEn:
-          "Study projects, a habit of component thinking, an interest in animation and typography.",
+          "Study projects: programming, component relationships and working with data.",
       },
     ],
     "contactsList": [
@@ -540,6 +544,54 @@ const PROJECTS = [
     ],
     links: [{ label: "GitHub", labelEn: "GitHub", href: "https://github.com/arcnosixta/TradingAgents" }],
   },
+  {
+    key: "rigforge", title: "RigForge", titleEn: "RigForge", year: "2026",
+    stack: ["JavaScript", "Compatibility engine", "Hardware"], accent: "#f88224", accentInk: "#f88224",
+    tagline: "Конфигуратор ПК с проверкой совместимости",
+    taglineEn: "PC configuration with compatibility checks",
+    desc: "Подбор комплектующих и апгрейд ноутбуков с отдельным движком правил: сокеты, память, размеры, охлаждение и питание. Конфигурация проверяется по мере сборки, а выбранные компоненты можно передать ссылкой.",
+    descEn: "PC parts selection and laptop upgrades backed by a separate rules engine for sockets, memory, dimensions, cooling and power. A build is checked as it takes shape and can be shared through a URL.",
+    points: ["Проверки сокетов, чипсетов, RAM и форм-факторов", "Расчёт рекомендуемой мощности блока питания", "Апгрейд ноутбуков с учётом ограничений RAM и накопителей", "Отдельные каталог, движок совместимости и состояние сборки"],
+    pointsEn: ["Socket, chipset, RAM and form-factor checks", "Recommended power-supply calculation", "Laptop upgrades respecting RAM and storage constraints", "Separate catalog, compatibility engine and build state"],
+    metrics: [["9", "категорий комплектующих", "component categories"], ["12", "моделей ноутбуков в каталоге", "laptop models in the catalog"], ["URL", "сохранение конфигурации в ссылке", "shareable build state"]],
+    links: [{ label: "GitHub", labelEn: "GitHub", href: "https://github.com/arcnosixta/rigforge" }],
+  },
+  {
+    key: "distroforge", title: "Distroforge", titleEn: "Distroforge", year: "2026",
+    stack: ["Go", "Linux", "QEMU", "initramfs"], accent: "#f88224", accentInk: "#f88224",
+    tagline: "От пустой папки до собственной Linux-системы",
+    taglineEn: "From an empty folder to a Linux system",
+    desc: "Практический курс build-your-own-distro и CLI на Go: подготовка rootfs, собственный init-процесс, сборка initramfs и запуск в QEMU. Рабочий MVP загружает систему с оболочкой и менеджером пакетов; создание ISO пока запланировано.",
+    descEn: "The build-your-own-distro course and a Go CLI cover rootfs preparation, a custom init process, initramfs assembly and QEMU boot. The working MVP boots a shell and a package manager; ISO generation is planned.",
+    points: ["CLI-команды check, init, build и run", "Собственный PID 1 и менеджер пакетов на Go", "Сборка initramfs и запуск в виртуальной машине", "Опубликованы главы 00–06; ISO-команда ещё не реализована"],
+    pointsEn: ["CLI commands: check, init, build and run", "Custom PID 1 and package manager written in Go", "Initramfs assembly and virtual-machine boot", "Chapters 00–06 published; ISO command not implemented yet"],
+    metrics: [["7", "опубликованных глав курса", "published course chapters"], ["PID 1", "свой init-процесс", "custom init process"], ["QEMU", "загрузка собранной системы", "booting the assembled system"]],
+    links: [{ label: "GitHub", labelEn: "GitHub", href: "https://github.com/arcnosixta/build-your-own-distro" }],
+  },
+  {
+    key: "squeeze", title: "squeeze", titleEn: "squeeze", year: "2026",
+    stack: ["TypeScript", "Node.js", "Proxy", "MCP"], accent: "#f88224", accentInk: "#f88224",
+    tagline: "Меньше повторяющихся логов в контексте ИИ-агента",
+    taglineEn: "Less repeated tool output in an AI agent's context",
+    desc: "Локальный прокси между coding-агентом и LLM API. Группирует повторяющийся вывод инструментов, сохраняет заменённые фрагменты в хранилище и даёт агенту получить оригинал через MCP. Исходный код и JSON пропускает; ANSI-коды и серии пустых строк удаляются без сохранения.",
+    descEn: "A local proxy between a coding agent and an LLM API. It groups repeated tool output, stores replaced spans and lets the agent retrieve originals over MCP. Source code and JSON are skipped; ANSI codes and blank-line runs are discarded without preservation.",
+    points: ["Поддержка Anthropic API и OpenAI Chat Completions / Responses", "Хранилище фрагментов с адресацией по содержимому", "MCP-инструменты squeeze_fetch и squeeze_compress", "CLI для сжатия, диагностики и воспроизводимых бенчмарков"],
+    pointsEn: ["Anthropic API and OpenAI Chat Completions / Responses support", "Content-addressed storage for replaced spans", "MCP tools: squeeze_fetch and squeeze_compress", "CLI compression, diagnostics and reproducible benchmarks"],
+    metrics: [["0", "runtime-зависимостей", "runtime dependencies"], ["MCP", "получение сохранённых оригиналов", "retrieving stored originals"], ["Local", "прокси и хранилище на своей машине", "proxy and store on your machine"]],
+    links: [{ label: "GitHub", labelEn: "GitHub", href: "https://github.com/arcnosixta/squeeze" }],
+  },
+  {
+    key: "tooldelta", title: "ToolDelta", titleEn: "ToolDelta", year: "2026",
+    stack: ["Python", "MCP", "JSON Schema", "CI", "Pyodide"], accent: "#f88224", accentInk: "#f88224",
+    tagline: "Проверка изменений контрактов MCP до обновления агента",
+    taglineEn: "Review MCP contract changes before updating an agent",
+    desc: "Офлайн-инструмент сравнивает сохранённые каталоги tools/list, отмечает несовместимые изменения схем и создаёт отчёты для ревью и CI. Есть браузерное демо с Python-движком через Pyodide. Статус alpha: неподдерживаемые конструкции требуют ручного разбора, отчёт не гарантирует полную совместимость.",
+    descEn: "An offline tool compares saved tools/list catalogs, flags incompatible schema changes and generates reports for reviews and CI. A browser demo runs the Python engine through Pyodide. Alpha status: unsupported constructs need manual review, and a report does not guarantee complete compatibility.",
+    points: ["Раздельные проверки входных и выходных схем", "HTML, Markdown и JSON-отчёты с воспроизводимым порядком", "CI-gates для breaking changes и изменений, требующих ревью", "Локальный анализ JSON без запуска MCP-сервера или вызова инструментов"],
+    pointsEn: ["Separate input and output schema checks", "HTML, Markdown and JSON reports with deterministic ordering", "CI gates for breaking changes and review findings", "Local JSON analysis without starting an MCP server or invoking tools"],
+    metrics: [["0", "runtime-зависимостей CLI", "CLI runtime dependencies"], ["3", "формата отчётов", "report formats"], ["Offline", "анализ сохранённых каталогов", "saved catalog analysis"]],
+    links: [{ label: "Демо", labelEn: "Demo", href: "https://arcnosixta.github.io/tooldelta/" }, { label: "GitHub", labelEn: "GitHub", href: "https://github.com/arcnosixta/tooldelta" }],
+  },
 ];
 
 function localizeProjects(target) {
@@ -642,12 +694,17 @@ const PROJECT_CATS = {
   "esep-web": ["web", "mobile", "ai"],
   "osint-portal": ["web"],
   tradingagents: ["ai"],
+  rigforge: ["web", "systems"],
+  distroforge: ["systems"],
+  squeeze: ["ai", "systems"],
+  tooldelta: ["ai", "systems"],
 };
 
 const WORK_FILTERS = [
   ["all", "work.filterAll"],
   ["web", "work.filterWeb"],
   ["mobile", "work.filterMobile"],
+  ["systems", "work.filterSystems"],
   ["ai", "work.filterAi"],
 ];
 
@@ -979,6 +1036,10 @@ function projectCover(project) {
     "esep-web": ["logo-esep.png", "ESEP", "REAL ESTATE / SERVICES"],
     "osint-portal": ["logo-osint.svg", "OSINT PORTAL", "SIGNALS / EVIDENCE"],
     tradingagents: ["logo-tradingagents.svg", "TRADING AGENTS", "MULTI-AGENT / RESEARCH"],
+    rigforge: ["logo-rigforge.svg", "RIGFORGE", "HARDWARE / COMPATIBILITY"],
+    distroforge: ["logo-distroforge.svg", "DISTROFORGE", "LINUX / FROM SCRATCH"],
+    squeeze: ["logo-squeeze.svg", "squeeze", "PROXY / CONTEXT"],
+    tooldelta: ["logo-tooldelta.svg", "TOOLDELTA", "MCP / CONTRACTS"],
   };
   const logo = logos[project.key];
   if (logo) {
@@ -1429,7 +1490,7 @@ document.addEventListener("click", (event) => {
 function animateCounters() {
   const projectStat = document.querySelector('[data-stat="projects"] .stat-value');
   if (projectStat) projectStat.dataset.count = String(PROJECTS.length);
-  document.querySelectorAll(".stat-value").forEach((node) => {
+  document.querySelectorAll(".stat-value[data-count]").forEach((node) => {
     if (node.dataset.done) return;
     node.dataset.done = "1";
     const target = Number(node.dataset.count || 0);
