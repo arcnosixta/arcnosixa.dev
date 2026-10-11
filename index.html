@@ -44,6 +44,7 @@
     />
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230b0d0d'/%3E%3Cpath d='M9 22 16 9l7 13' stroke='%23d8f26c' stroke-width='2.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M12.5 18.5h7' stroke='%23d8f26c' stroke-width='2.5' stroke-linecap='round'/%3E%3C/svg%3E" />
     <script>
+      document.documentElement.dataset.design = new URLSearchParams(location.search).get("design") === "atelier" ? "atelier" : "studio";
       // Тема применяется до первой отрисовки, иначе при перезагрузке мигает.
       (function () {
         try {
@@ -59,6 +60,7 @@
     </script>
     <link rel="stylesheet" href="styles.css?v=4" />
     <link rel="stylesheet" href="atelier.css?v=5" />
+    <link rel="stylesheet" href="studio.css?v=6" />
     <noscript>
       <style>
         .reveal,
@@ -134,6 +136,7 @@
       </nav>
 
       <div class="topbar-actions">
+        <a class="design-switch" href="?design=atelier" data-i18n="nav.design">Вариант 01 ↗</a>
         <button
           class="theme-toggle"
           id="themeToggle"
@@ -238,6 +241,23 @@
           </div>
 
           <aside class="hero-feature reveal" data-delay="3" aria-labelledby="heroFeatureTitle">
+            <div class="studio-art" aria-hidden="true">
+              <span class="studio-art-label mono">OBJECT 02 / DIGITAL CRAFT</span>
+              <svg viewBox="0 0 640 420" class="metal-art">
+                <defs>
+                  <linearGradient id="metal" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0" stop-color="#565a60"/><stop offset=".2" stop-color="#eef0f2"/><stop offset=".38" stop-color="#888c92"/><stop offset=".5" stop-color="#fff"/><stop offset=".68" stop-color="#44474c"/><stop offset=".83" stop-color="#dce0e5"/><stop offset="1" stop-color="#62666c"/>
+                  </linearGradient>
+                </defs>
+                <g class="metal-loop" fill="none" stroke="url(#metal)" stroke-width="68">
+                  <path d="M320 210C250 100 150 60 98 132S109 313 183 296 270 244 320 210 469 118 520 160 562 291 505 309 375 290 320 210Z" />
+                </g>
+                <path d="M296 174c9 11 18 23 24 36" fill="none" stroke="#f4f5f6" stroke-width="2" opacity=".6"/>
+                <path d="M46 365h548" stroke="currentColor" opacity=".2"/>
+                <text x="46" y="392" fill="currentColor" font-family="monospace" font-size="10" letter-spacing="2">IDEA → SYSTEM → INTERFACE</text>
+                <circle cx="583" cy="52" r="6" fill="#ff4d35" />
+              </svg>
+            </div>
             <div class="artwork" aria-hidden="true">
               <svg viewBox="0 0 520 540" class="atelier-art">
                 <defs>

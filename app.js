@@ -560,6 +560,16 @@ function localizeProjects(target) {
   });
 }
 
+const studioDesign = document.documentElement.dataset.design === "studio";
+I18N.ru["nav.design"] = studioDesign ? "Вариант 01 ↗" : "Вариант 02 ↗";
+I18N.en["nav.design"] = studioDesign ? "Version 01 ↗" : "Version 02 ↗";
+if (studioDesign) {
+  I18N.ru["hero.hi"] = I18N.en["hero.hi"] = "Arcnosixa";
+  I18N.ru["hero.statement"] = "Разработка цифровых продуктов";
+  I18N.en["hero.statement"] = "Digital product development";
+}
+document.querySelector(".design-switch").href = studioDesign ? "?design=atelier" : "?design=studio";
+
 I18N.ru.projectsList = localizeProjects("ru");
 I18N.en.projectsList = localizeProjects("en");
 
