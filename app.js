@@ -942,20 +942,22 @@ const PROJECT_POSTERS = {
 function projectCover(project) {
   const figure = el("figure", "project-cover");
   const screenshots = {
-    ciel: ["ciel", "Главная страница Ciel", "Ciel landing page"],
-    "esep-web": ["esep", "Форма входа ESEP", "ESEP sign-in screen"],
-    "osint-portal": ["osint", "Интерфейс OSINT Portal", "OSINT Portal interface"],
-    tradingagents: ["tradingagents", "CLI TradingAgents: выбор тикера; снимок из репозитория", "TradingAgents CLI ticker selection; repository screenshot"],
+    ciel: ["project-ciel-dark.jpeg", "Главная страница Ciel в тёмной теме", "Ciel landing page in dark mode", 1794, 6509],
+    "esep-web": ["project-esep-dark.jpeg", "Главная ESEP: заявки и действия в тёмной теме", "ESEP dashboard: cases and actions in dark mode", 1794, 932],
+    "osint-portal": ["project-osint.png", "Интерфейс OSINT Portal", "OSINT Portal interface", 1440, 1000],
+    tradingagents: ["project-tradingagents.png", "CLI TradingAgents: выбор тикера; снимок из репозитория", "TradingAgents CLI ticker selection; repository screenshot", 3840, 2160],
   };
   const screenshot = screenshots[project.key];
   if (screenshot) {
     const img = el("img");
-    img.src = `assets/project-${screenshot[0]}.png`;
+    img.src = `assets/${screenshot[0]}`;
     img.alt = screenshot[lang === "ru" ? 1 : 2];
     img.loading = "lazy";
     img.decoding = "async";
-    img.width = project.key === "tradingagents" ? 3840 : 1440;
-    img.height = project.key === "tradingagents" ? 2160 : 1000;
+    img.width = screenshot[3];
+    img.height = screenshot[4];
+    // Keep the hero legible instead of shrinking the full-page capture into a thumbnail.
+    if (project.key === "ciel") img.style.objectFit = "cover";
     figure.appendChild(img);
     return figure;
   }

@@ -34,8 +34,10 @@ RU/EN работают во всех вариантах. Cinematic сохран�
   типографика, адаптив и галерея с асимметричной сеткой.
 - Графика первого экрана находится прямо в `index.html`; слои постера и звезда
   анимируются через CSS. `prefers-reduced-motion` отключает движение.
-- Обложки `assets/project-*.png` — реальные интерфейсы: публичная главная
-  Ciel (`https://ciel-flax.vercel.app/`), вход ESEP (`https://esep.pages.dev/`),
+- Обложки `assets/project-*` — реальные интерфейсы: предоставленные владельцем
+  тёмные скриншоты Ciel (`project-ciel-dark.jpeg`) и главной ESEP
+  (`project-esep-dark.jpeg`). Полностраничный Ciel показан с верхней части,
+  чтобы первый экран оставался читаемым. Другие обложки:
   OSINT Portal (`https://osint-portal-gamma.vercel.app/`). TradingAgents пока CLI:
   снимок `assets/cli/cli_init.png` взят из его репозитория
   `https://github.com/arcnosixta/TradingAgents` (экран исходного фреймворка).
