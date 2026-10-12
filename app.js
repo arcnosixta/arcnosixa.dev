@@ -7,9 +7,9 @@ const I18N = {
     "a11y.theme": "Переключить тему",
     "a11y.themeLight": "Включить светлую тему",
     "a11y.themeDark": "Включить тёмную тему",
-    "meta.title": "Arcnosixa — архитектура и системы",
+    "meta.title": "arcnosixta — архитектура и системы",
     "meta.description":
-      "Arcnosixa — разработка и архитектура проектов, серверная логика, ИИ-интеграции и конфигурации ПК. Портфолио и избранные проекты.",
+      "arcnosixta — разработка и архитектура проектов, серверная логика, ИИ-интеграции и конфигурации ПК. Портфолио и избранные проекты.",
     "meta.locale": "ru_RU",
     "nav.about": "Обо мне",
     "nav.skills": "Навыки",
@@ -207,9 +207,9 @@ const I18N = {
     "a11y.theme": "Switch theme",
     "a11y.themeLight": "Switch to the light theme",
     "a11y.themeDark": "Switch to the dark theme",
-    "meta.title": "Arcnosixa — architecture & systems",
+    "meta.title": "arcnosixta — architecture & systems",
     "meta.description":
-      "Arcnosixa — project architecture, server-side development, AI integrations and PC configurations. Portfolio and selected projects.",
+      "arcnosixta — project architecture, server-side development, AI integrations and PC configurations. Portfolio and selected projects.",
     "meta.locale": "en_US",
     "nav.about": "About",
     "nav.skills": "Skills",
@@ -621,7 +621,7 @@ I18N.en["design.main"] = "Main";
 I18N.ru["a11y.replay"] = "Повторить вступление";
 I18N.en["a11y.replay"] = "Replay introduction";
 if (studioDesign || cinematicDesign) {
-  I18N.ru["hero.hi"] = I18N.en["hero.hi"] = "Arcnosixa";
+  I18N.ru["hero.hi"] = I18N.en["hero.hi"] = "arcnosixta";
   I18N.ru["hero.statement"] = "Разработка цифровых продуктов";
   I18N.en["hero.statement"] = "Digital product development";
 }
