@@ -5,31 +5,22 @@
   if (root.dataset.design !== "cinematic") return;
   const gsap = window.gsap, ScrollTrigger = window.ScrollTrigger;
   const intro = document.getElementById("cinematicIntro"), hero = document.getElementById("home");
-  const portrait = hero.querySelector(".cinematic-visual"), replay = document.getElementById("introReplay");
+  const replay = document.getElementById("introReplay");
   const motion = window.matchMedia("(prefers-reduced-motion: reduce)");
   let introTimeline, introTimer, introCutTimer, scenes, refreshTimer;
   let introSplashTimers = [];
   let introActive = false;
   let introRunning = false, introVersion = 0;
-  let hoverCleanup = () => {};
   const detailTweens = new WeakMap();
   const signalObserver = new IntersectionObserver((entries) => {
     entries.forEach((entry) => entry.target.classList.toggle("is-visible", entry.isIntersecting));
   }, { rootMargin: "100px" });
   const emit = (name, detail) => document.dispatchEvent(new CustomEvent(`portfolio:${name}`, { detail }));
-  const orbit = document.createElement("div");
-  orbit.className = "cinema-orbit";
-  orbit.setAttribute("aria-hidden", "true");
-  portrait.append(orbit);
   const caption = document.createElement("div");
   caption.className = "cinema-caption";
   caption.setAttribute("aria-hidden", "true");
   caption.innerHTML = "<b>01 / ARC</b><span>CODE IN MOTION. IDEAS IN FORM.</span>";
-  portrait.append(caption);
-  const scroll = document.createElement("span");
-  scroll.className = "cinema-scroll";
-  scroll.setAttribute("aria-hidden", "true");
-  portrait.append(scroll);
+  hero.querySelector(".cinematic-visual").append(caption);
 
   function stopIntro() {
     const wasActive = introActive;
@@ -125,6 +116,8 @@
         .to(top, { xPercent: 8, yPercent: -100, duration: 1.3 }, 4.7)
         .to(bottom, { xPercent: -8, yPercent: 100, duration: 1.3 }, 4.7)
         .to(intro.querySelector(".intro-controls"), { opacity: 0, duration: .15 }, 5.65);
+      // Music gets two additional seconds on the uncut title before the scene.
+      introTimeline.shiftChildren(2, true, 0);
     } else {
       root.classList.add("is-directed-intro");
     }
@@ -150,15 +143,15 @@
       introRunning = true;
       intro.dataset.stage = "playing";
       try { sessionStorage.setItem("arc-intro-seen", "1"); } catch (_) { /* Optional. */ }
-      emit("intro-start", { duration: 6, musicStarted: Boolean(result?.started) });
+      emit("intro-start", { duration: 8, musicStarted: Boolean(result?.started) });
       if (introTimeline) introTimeline.play(0);
       else {
         root.classList.remove("is-directed-intro");
         root.classList.add("is-intro-playing");
-        introCutTimer = setTimeout(() => phase("blade"), 1800);
-        introSplashTimers = impacts.map((time, index) => setTimeout(() => splash(index), time * 1000));
+        introCutTimer = setTimeout(() => phase("blade"), 3800);
+        introSplashTimers = impacts.map((time, index) => setTimeout(() => splash(index), (time + 2) * 1000));
       }
-      introTimer = setTimeout(stopIntro, introTimeline ? 6800 : 6000);
+      introTimer = setTimeout(stopIntro, introTimeline ? 8800 : 8000);
     }
     start.onclick = () => { void begin(start.dataset.silent === "1"); };
     skip.onclick = stopIntro;
@@ -204,7 +197,6 @@
   }
   function buildScenes() {
     scenes?.revert();
-    hoverCleanup();
     decorate();
     if (!gsap || !ScrollTrigger) return;
     gsap.registerPlugin(ScrollTrigger);
@@ -212,12 +204,6 @@
     scenes.add({ desktop: "(min-width: 681px)", mobile: "(max-width: 680px)", reduce: "(prefers-reduced-motion: reduce)" }, (scope) => {
       if (scope.conditions.reduce) return;
       const mobile = scope.conditions.mobile;
-      gsap.fromTo(portrait, { y: 0, scale: 1 }, {
-        y: mobile ? 28 : 90, scale: 1.04, ease: "none",
-        scrollTrigger: { trigger: hero, start: "top top", end: "bottom top", scrub: 1 },
-      });
-      gsap.to(orbit, { rotation: 110, ease: "none", scrollTrigger: { trigger: hero, start: "top top", end: "bottom top", scrub: 1.2 } });
-      gsap.fromTo(".cinematic-slash", { x: 0 }, { x: -100, ease: "none", scrollTrigger: { trigger: hero, start: "top top", end: "bottom top", scrub: 1.2 } });
       gsap.fromTo(".chapter-word", { xPercent: 12 }, { xPercent: -8, ease: "none", scrollTrigger: { trigger: "#work", start: "top bottom", end: "top top", scrub: .8 } });
       document.querySelectorAll(".section").forEach((section) => {
         gsap.fromTo(section.querySelector(".section-head"), { "--chapter-line": 0 }, {
@@ -240,17 +226,6 @@
         ScrollTrigger.create({ trigger: section, start: "top 55%", end: "bottom 55%", onEnter: () => emit("chapter", { id: section.id }), onEnterBack: () => emit("chapter", { id: section.id }) });
       });
     });
-    const fine = window.matchMedia("(hover: hover) and (pointer: fine)");
-    function pointer(event) {
-      if (motion.matches || !fine.matches) return;
-      const rect = portrait.getBoundingClientRect();
-      portrait.style.setProperty("--portrait-x", `${((event.clientX - rect.left) / rect.width - .5) * 16}px`);
-      portrait.style.setProperty("--portrait-y", `${((event.clientY - rect.top) / rect.height - .5) * 12}px`);
-    }
-    function reset() { portrait.style.removeProperty("--portrait-x"); portrait.style.removeProperty("--portrait-y"); }
-    portrait.addEventListener("pointermove", pointer, { passive: true });
-    portrait.addEventListener("pointerleave", reset);
-    hoverCleanup = () => { portrait.removeEventListener("pointermove", pointer); portrait.removeEventListener("pointerleave", reset); reset(); };
     ScrollTrigger.refresh();
   }
   replay?.addEventListener("click", playIntro);
@@ -269,8 +244,6 @@
   document.getElementById("projects").addEventListener("click", (event) => { if (event.target.closest(".filter")) refresh(); });
   motion.addEventListener("change", () => {
     stopIntro();
-    portrait.style.removeProperty("--portrait-x");
-    portrait.style.removeProperty("--portrait-y");
   });
   document.addEventListener("visibilitychange", () => {
     root.classList.toggle("is-page-hidden", document.hidden);
@@ -279,7 +252,7 @@
     if (document.hidden) introTimeline.pause();
     else {
       introTimeline.resume();
-      introTimer = setTimeout(stopIntro, (6 - introTimeline.time()) * 1000 + 800);
+      introTimer = setTimeout(stopIntro, (8 - introTimeline.time()) * 1000 + 800);
     }
   });
   window.addEventListener("pagehide", stopIntro);

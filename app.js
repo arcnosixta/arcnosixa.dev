@@ -797,6 +797,7 @@ function playFlip(cards, before, after, duration = 520) {
 
 function withFlip(cards, mutate, animateDetails = false) {
   const grid = document.querySelector(".work-grid");
+  if (grid?.closest(".work-gallery")) { mutate(); return; }
   const before = captureRects(cards);
   cards.forEach((card) => {
     const running = projectLayoutAnimations.get(card);
@@ -825,6 +826,7 @@ function setFilter(next) {
     withFlip(cards, () => {
       cards.forEach((card) => card.classList.toggle("is-filtered", !matchesFilter(card, next)));
       syncCount(cards);
+      document.dispatchEvent(new CustomEvent("portfolio:filter"));
     });
   };
 

@@ -55,11 +55,10 @@
 [data-design="cinematic"] .hero { padding: 0; min-height: 100svh; background: #000; }
 [data-design="cinematic"] .hero-inner { display: flex; flex-direction: column; justify-content: center; min-height: 100svh; width: 41%; max-width: none; margin-left: 59%; padding: 64px 34px; text-align: center; gap: 0; translate: none; opacity: 1; }
 [data-design="cinematic"] .hero-copy { display: contents; }
-[data-design="cinematic"] .cinematic-visual { display: block; position: absolute; inset: 0 auto 0 0; width: 57%; background: url("assets/anime-portrait.png") 50% center / cover; animation: key-visual-in 1.6s ease-out both; }
+[data-design="cinematic"] .cinematic-visual { display: block; position: absolute; inset: 0 auto 0 0; width: 57%; background: url("assets/anime-portrait.png") 50% center / cover; animation: none; }
 [data-design="cinematic"] .cinematic-visual::after { content: ""; position: absolute; inset: 0; background: linear-gradient(0deg, rgb(0 0 0 / .35), transparent 35%); }
 [data-design="cinematic"] .cinematic-slash { display: block; position: absolute; right: -16%; bottom: 0; width: 55%; height: 46%; background: #202020; clip-path: polygon(64% 0, 100% 0, 36% 100%, 0 100%); pointer-events: none; }
 [data-design="cinematic"] .cinematic-edition { display: block; position: absolute; top: 26px; left: 24px; color: #181818; background: #f6f5f2; padding: 7px 10px; z-index: 3; font-size: 9px; letter-spacing: .1em; }
-@keyframes key-visual-in { from { opacity: 0; transform: scale(1.025); } to { opacity: 1; transform: scale(1); } }
 [data-design="cinematic"] .eyebrow { color: var(--signal); font-size: 9px; margin-bottom: 38px; align-self: center; }
 [data-design="cinematic"] .eyebrow .dot { display: none; }
 [data-design="cinematic"] .hero-title { font-family: Impact, "Arial Narrow", "Manrope", sans-serif; text-transform: uppercase; font-size: clamp(36px, 5.4vw, 86px); font-weight: 900; letter-spacing: -.065em; line-height: .95; margin: 0; }
@@ -167,10 +166,10 @@ html.is-directed-intro, html.is-intro-playing { overflow: hidden; }
 .intro-cut { position: absolute; top: calc(50% - 1px); left: -10%; width: 120%; height: 2px; background: #fa8b34; transform: rotate(-9deg) scaleX(0); transform-origin: center; }
 .intro-splashes { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
 .blood-splash { opacity: 0; transform-box: fill-box; transform-origin: center; }
-.blood-splash-1 { fill: #b21d2c; --splash-scale: 1.05; }
-.blood-splash-2 { fill: #d02b39; --splash-scale: .75; }
-.blood-splash-3 { fill: #941320; --splash-scale: 1; }
-.blood-splash-4 { fill: #bd2030; --splash-scale: .62; }
+.blood-splash-1 { fill: #fa8b34; --splash-scale: 1.05; }
+.blood-splash-2 { fill: #fa8b34; --splash-scale: .75; }
+.blood-splash-3 { fill: #fa8b34; --splash-scale: 1; }
+.blood-splash-4 { fill: #fa8b34; --splash-scale: .62; }
 .intro-controls { position: absolute; left: 0; right: 0; bottom: max(30px, 6svh); display: flex; justify-content: center; align-items: center; gap: 20px; }
 .intro-controls button { min-height: 44px; padding: 12px 18px; font: 11px "JetBrains Mono", monospace; }
 .intro-controls button[hidden] { display: none; }
@@ -196,3 +195,8 @@ html.is-directed-intro, html.is-intro-playing { overflow: hidden; }
   .is-intro-playing .cinematic-intro { display: none; }
   [data-design="cinematic"] .intro-replay { display: none; }
 }
+
+/* Two seconds of music on the static name before the six-second cut scene. */
+.is-intro-playing .cinematic-intro,
+.is-intro-playing :is(.intro-bed, .intro-slice, .intro-wordmark, .intro-cut, .intro-splashes) { animation-delay: 2s; }
+.is-intro-playing .blood-splash { animation-delay: calc(var(--splash-delay) + 2s); }
