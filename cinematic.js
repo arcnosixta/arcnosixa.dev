@@ -34,7 +34,10 @@
     introTimeline?.kill();
     introTimeline = null;
     root.classList.remove("is-intro-waiting", "is-intro-playing", "is-directed-intro");
-    if (intro) intro.style.display = "none";
+    if (intro) {
+      intro.style.display = "none";
+      gsap?.set(intro.querySelectorAll(".intro-slice, .intro-wordmark, .intro-cut"), { clearProps: "transform,opacity" });
+    }
   }
   function playIntro() {
     stopIntro();
@@ -51,17 +54,21 @@
     intro.style.display = "block";
     const top = intro.querySelector(".intro-slice-top"), bottom = intro.querySelector(".intro-slice-bottom");
     const title = intro.querySelector(".intro-wordmark"), cut = intro.querySelector(".intro-cut");
+    // The two polygons meet at 63% on the left and 37% on the right.
+    // Derive the slash from the same geometry on every screen aspect ratio.
+    const angle = -Math.atan2(window.innerHeight * .26, window.innerWidth) * 180 / Math.PI;
     introTimeline = gsap.timeline({ defaults: { ease: "power3.inOut" }, onComplete: stopIntro });
     introTimeline.set([top, bottom], { yPercent: 0 })
-      .set(title, { opacity: 0, scale: 1.12, y: 16 })
-      .set(cut, { scaleX: 0, opacity: 1, rotation: -9, transformOrigin: "left center" })
-      .to(title, { opacity: 1, scale: 1, y: 0, duration: .65, ease: "power3.out" }, .08)
-      .to(cut, { scaleX: 1, duration: .45 }, .35)
-      .to(title, { opacity: 0, scale: .96, duration: .3 }, .88)
-      .to(top, { yPercent: -110, duration: .95 }, .85)
-      .to(bottom, { yPercent: 110, duration: .95 }, .85)
-      .to(cut, { opacity: 0, duration: .3 }, 1.05);
-    introTimer = setTimeout(stopIntro, 2400);
+      .set(title, { opacity: 0, scale: 1.06, y: 16 })
+      .set(cut, { scaleX: 0, opacity: 0, rotation: angle, transformOrigin: "center center" })
+      .to(title, { opacity: 1, scale: 1, y: 0, duration: .55, ease: "power3.out" }, .08)
+      .to(title, { opacity: 0, y: -12, duration: .25 }, .85)
+      .set(cut, { opacity: 1 }, 1)
+      .to(cut, { scaleX: 1, duration: .35 }, 1)
+      .to(top, { yPercent: -110, duration: .85 }, 1.3)
+      .to(bottom, { yPercent: 110, duration: .85 }, 1.3)
+      .to(cut, { opacity: 0, duration: .25 }, 1.4);
+    introTimer = setTimeout(stopIntro, 2700);
   }
   const motifs = {
     ciel: '<path class="signal-path" d="M60 210H230L320 120L410 210H580M230 210L320 300L410 210"/><path class="signal-pulse" d="M60 210H230L320 120L410 210H580"/><circle class="signal-node" cx="60" cy="210" r="9"/><circle class="signal-node" cx="580" cy="210" r="9"/>',
@@ -173,6 +180,7 @@
   });
   document.addEventListener("visibilitychange", () => root.classList.toggle("is-page-hidden", document.hidden));
   window.addEventListener("pagehide", stopIntro);
+  window.addEventListener("resize", () => { if (introTimeline) stopIntro(); });
   window.addEventListener("load", refresh, { once: true });
   document.fonts?.ready.then(refresh);
   buildScenes();

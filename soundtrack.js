@@ -1,4 +1,4 @@
-/* Original synthesized score. No audio downloads, autoplay, or microphone access. */
+/* Optional local music file, original fallback score, and synthesized UI effects. */
 (() => {
   "use strict";
   if (document.documentElement.dataset.design !== "cinematic") return;
@@ -8,6 +8,14 @@
     ru: { start: "Включить звук", active: "Звук включён", title: "ЗВУКОВАЯ СЦЕНА", settings: "Настройки звука", close: "Закрыть настройки звука", music: "Музыка", fx: "Эффекты", volume: "Громкость", on: "Вкл", off: "Выкл", note: "ARC / AFTER HOURS\nЭмбиент · 76 BPM · оригинальная композиция", hint: "Музыка и эффекты включаются отдельно.", error: "Не удалось включить звук. Попробуйте ещё раз." },
     en: { start: "Enable sound", active: "Sound is on", title: "SOUND STAGE", settings: "Sound settings", close: "Close sound settings", music: "Music", fx: "Effects", volume: "Volume", on: "On", off: "Off", note: "ARC / AFTER HOURS\nAmbient · 76 BPM · original score", hint: "Music and effects have separate controls.", error: "Could not enable audio. Please try again." },
   };
+  Object.assign(copy.ru, { choose: "Выбрать Number One / TYBW", replace: "Заменить аудиофайл", selected: "Выбранный трек", fileError: "Не удалось воспроизвести файл. Выберите MP3, WAV или OGG.", note: "ARC / AFTER HOURS · эмбиент\nДля Number One / TYBW выберите аудиофайл." });
+  Object.assign(copy.en, { choose: "Choose Number One / TYBW", replace: "Replace audio file", selected: "Selected track", fileError: "Could not play this file. Choose MP3, WAV or OGG.", note: "ARC / AFTER HOURS · ambient\nChoose an audio file for Number One / TYBW." });
+  const recording = new Audio();
+  recording.preload = "none";
+  recording.loop = true;
+  const configuredSource = document.documentElement.dataset.musicSrc;
+  if (configuredSource) recording.src = configuredSource;
+  let fileURL = "", hasRecording = Boolean(configuredSource), fileName = "Number One / Thousand-Year Blood War", fileFailed = false;
   let music = false, effects = false, musicVolume = .35, effectsVolume = .45;
   try {
     const saved = JSON.parse(localStorage.getItem("arc-sound-levels") || "{}");
@@ -19,6 +27,7 @@
   desk.innerHTML = `<button class="sound-main" type="button" aria-pressed="false"><span class="sound-bars" aria-hidden="true"><i></i><i></i><i></i><i></i></span><span class="sound-label"></span></button>
     <button class="sound-settings" type="button" aria-expanded="false" aria-controls="soundPanel"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M4 7h16M4 17h16"/><circle cx="9" cy="7" r="3" fill="#0b0b0b"/><circle cx="15" cy="17" r="3" fill="#0b0b0b"/></svg></button>
     <div class="sound-panel" id="soundPanel" hidden><div class="sound-panel-head"><span class="sound-title"></span><button class="sound-close" type="button">×</button></div><p class="sound-track"></p>
+      <button type="button" class="sound-file"></button><input class="sound-file-input" type="file" accept="audio/*,.mp3,.wav,.ogg,.m4a,.flac" hidden />
       <div class="sound-row"><label for="musicVolume" class="music-name"></label><button type="button" class="sound-music" aria-pressed="false"></button><input id="musicVolume" type="range" min="0" max="100" step="1" /></div>
       <div class="sound-row"><label for="effectsVolume" class="effects-name"></label><button type="button" class="sound-effects" aria-pressed="false"></button><input id="effectsVolume" type="range" min="0" max="100" step="1" /></div>
       <p class="sound-status" role="status"></p></div>`;
@@ -30,7 +39,7 @@
   musicSlider.value = String(musicVolume * 100);
   effectsSlider.value = String(effectsVolume * 100);
   let failed = false, pending = false;
-  let context, musicBus, effectsBus, rhythmBus, noiseBuffer;
+  let context, musicBus, effectsBus, rhythmBus, noiseBuffer, recordingBus;
   let scheduler = 0, suspendTimer = 0, nextBeat = 0, beat = 0, inWork = false, lastEffect = -1;
   const stepTime = 60 / 76 / 2;
   const chords = [[45, 52, 59, 64], [41, 48, 55, 60], [48, 55, 62, 67], [43, 50, 57, 62]];
@@ -45,7 +54,8 @@
     settings.setAttribute("aria-label", t.settings);
     q(".sound-close").setAttribute("aria-label", t.close);
     q(".sound-title").textContent = t.title;
-    q(".sound-track").textContent = t.note;
+    q(".sound-track").textContent = hasRecording ? `${t.selected}\n${fileName}` : t.note;
+    q(".sound-file").textContent = hasRecording ? t.replace : t.choose;
     q(".music-name").textContent = t.music;
     q(".effects-name").textContent = t.fx;
     musicButton.textContent = music ? t.on : t.off;
@@ -56,7 +66,7 @@
     effectsButton.setAttribute("aria-label", t.fx);
     musicSlider.setAttribute("aria-label", `${t.music}: ${t.volume}`);
     effectsSlider.setAttribute("aria-label", `${t.fx}: ${t.volume}`);
-    q(".sound-status").textContent = failed ? t.error : t.hint;
+    q(".sound-status").textContent = fileFailed ? t.fileError : failed ? t.error : t.hint;
     q(".sound-track").style.whiteSpace = "pre-line";
   }
   function ramp(param, value, seconds = .25) {
@@ -71,11 +81,15 @@
     limiter.ratio.value = 5;
     limiter.connect(context.destination);
     musicBus = context.createGain();
+    recordingBus = context.createGain();
     effectsBus = context.createGain();
     rhythmBus = context.createGain();
     musicBus.gain.value = effectsBus.gain.value = 0;
+    recordingBus.gain.value = 0;
     rhythmBus.gain.value = inWork ? 1 : .12;
     musicBus.connect(limiter);
+    recordingBus.connect(limiter);
+    context.createMediaElementSource(recording).connect(recordingBus);
     effectsBus.connect(limiter);
     rhythmBus.connect(musicBus);
     const delay = context.createDelay(1), feedback = context.createGain(), echoFilter = context.createBiquadFilter();
@@ -134,7 +148,7 @@
     source.stop(time + duration + .05);
   }
   function schedule() {
-    if (!music || document.hidden || context.state !== "running") return;
+    if (!music || hasRecording || document.hidden || context.state !== "running") return;
     if (nextBeat < context.currentTime) nextBeat = context.currentTime + .04;
     while (nextBeat < context.currentTime + .18) {
       const chord = chords[Math.floor(beat / 32) % chords.length];
@@ -152,17 +166,18 @@
   function updateMix() {
     if (!context) return;
     clearTimeout(suspendTimer);
-    ramp(musicBus.gain, music ? musicVolume * .75 : 0, .6);
+    ramp(musicBus.gain, music && !hasRecording ? musicVolume * .75 : 0, .6);
+    ramp(recordingBus.gain, music && hasRecording ? musicVolume * .65 : 0, .25);
     ramp(effectsBus.gain, effects ? effectsVolume * .55 : 0);
     ramp(rhythmBus.gain, inWork ? 1 : .12, 1.4);
-    if (music && !scheduler) {
+    if (music && !hasRecording && !scheduler) {
       musicSources.forEach((source) => { try { source.stop(); } catch (_) { /* Already ended. */ } });
       musicSources.clear();
       beat = 0;
       nextBeat = context.currentTime + .06;
       scheduler = setInterval(schedule, 80);
       schedule();
-    } else if (!music) {
+    } else if (!music || hasRecording) {
       clearInterval(scheduler);
       scheduler = 0;
     }
@@ -181,10 +196,16 @@
       effects = nextEffects;
       failed = false;
       updateMix();
+      if (music && hasRecording) await recording.play();
+      else recording.pause();
+      fileFailed = false;
       effect("click");
     } catch (_) {
       failed = true;
-      music = effects = false;
+      music = false;
+      effects = Boolean(nextEffects && context?.state === "running");
+      recording.pause();
+      updateMix();
     } finally { pending = false; syncUI(); }
   }
   function effect(kind) {
@@ -194,9 +215,9 @@
     lastEffect = now;
     const t = now + .008;
     if (kind === "intro") {
-      noise(t, .85, .12, 3600, effectsBus, true);
-      tone(33, t + .65, .7, .3, effectsBus, "sine", .01, 0, 30);
-      tone(81, t + .68, .8, .07, effectsBus);
+      noise(t + .7, .6, .12, 3600, effectsBus, true);
+      tone(33, t + 1.3, .7, .3, effectsBus, "sine", .01, 0, 30);
+      tone(81, t + 1.32, .8, .07, effectsBus);
     } else if (kind === "chapter") {
       noise(t, .3, .055, 2200, effectsBus, true);
       tone(69, t, .5, .035, effectsBus);
@@ -217,6 +238,28 @@
     else if (returnFocus) settings.focus();
   }
   main.addEventListener("click", () => toggle(!(music || effects), !(music || effects)));
+  q(".sound-file").addEventListener("click", () => q(".sound-file-input").click());
+  q(".sound-file-input").addEventListener("change", async (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+    recording.pause();
+    if (fileURL) URL.revokeObjectURL(fileURL);
+    fileURL = URL.createObjectURL(file);
+    recording.src = fileURL;
+    hasRecording = true;
+    fileName = file.name.replace(/\.[^.]+$/, "");
+    fileFailed = false;
+    syncUI();
+    await toggle(true, effects);
+    event.target.value = "";
+  });
+  recording.addEventListener("error", () => {
+    recording.pause();
+    music = false;
+    fileFailed = true;
+    updateMix();
+    syncUI();
+  });
   musicButton.addEventListener("click", () => toggle(!music, effects));
   effectsButton.addEventListener("click", () => toggle(music, !effects));
   settings.addEventListener("click", () => setPanel(panel.hidden));
@@ -253,13 +296,18 @@
     if (!context) return;
     clearTimeout(suspendTimer);
     try {
-      if (document.hidden) { clearInterval(scheduler); scheduler = 0; await context.suspend(); }
-      else if (music || effects) { await context.resume(); updateMix(); }
+      if (document.hidden) { recording.pause(); clearInterval(scheduler); scheduler = 0; await context.suspend(); }
+      else if (music || effects) {
+        await context.resume();
+        updateMix();
+        if (music && hasRecording) await recording.play();
+      }
     } catch (_) { /* The next click can resume interrupted audio. */ }
   }
   document.addEventListener("visibilitychange", visibility);
   window.addEventListener("pagehide", () => {
     clearInterval(scheduler); scheduler = 0; clearTimeout(suspendTimer);
+    recording.pause();
     context?.suspend().catch(() => {});
   });
   window.addEventListener("pageshow", visibility);
