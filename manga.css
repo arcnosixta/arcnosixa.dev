@@ -141,6 +141,20 @@
 [data-design="cinematic"] .journey-frame .timeline { position: relative; padding-left: 48px; }
 .journey-frame .tl-item { position: relative; }
 .journey-stop { position: absolute; left: -29px; top: 39px; width: 12px; height: 12px; border: 1px solid #fa8b34; border-radius: 50%; background: #fa8b34; }
+.scroll-scene { position: relative; background: #080808; }
+.scroll-scene[data-scene="skills"] { overflow: clip; }
+.scroll-scene > section { will-change: auto; }
+[data-design="cinematic"] .skill-scroll-slot > .skill-card { transition: none; }
+.journey-camera { width: 100%; max-width: none; overflow: hidden; background: #080808; }
+.journey-camera .journey-route, .journey-camera .journey-stop { display: none; }
+[data-design="cinematic"] .journey-camera .timeline { display: flex; gap: 36px; width: max-content; max-width: none; padding: 0; margin: 0; }
+[data-design="cinematic"] .journey-camera .tl-item,
+[data-design="cinematic"] .journey-camera .tl-item:nth-child(even) { display: flex; flex-direction: column; flex: 0 0 auto; width: min(780px, 65vw); min-height: min(70svh, 640px); padding: 40px; gap: 30px; border: 1px solid #fa8b3460; background: #121110; }
+[data-design="cinematic"] .journey-camera .tl-item:nth-child(even) { background: #fa8b34; color: #171511; }
+[data-design="cinematic"] .journey-camera .tl-when { font-size: clamp(80px, 10vw, 150px); text-align: left; }
+[data-design="cinematic"] .journey-camera .tl-item:nth-child(even) :is(.tl-when, .tl-title, .tl-where, .tl-desc) { color: #171511; }
+.journey-camera .tl-title { max-width: 26ch; }
+.journey-camera .tl-desc { max-width: 58ch; }
 [data-design="cinematic"] .tl-item { display: grid; grid-template-columns: .8fr 1.2fr; gap: 40px; padding: 45px 0; border-bottom: 1px solid #ffffff30; }
 [data-design="cinematic"] .tl-when { font: clamp(50px, 7vw, 100px)/1 Impact, "Arial Narrow", sans-serif; color: #fa8b34; letter-spacing: -.04em; }
 [data-design="cinematic"] .tl-title { font: 26px/1.15 "Manrope", sans-serif; color: #e9e5dc; }
@@ -247,6 +261,7 @@
   [data-design="cinematic"] .footer { padding-inline: 22px; }
 }
 @media (prefers-reduced-motion: reduce) {
+  .scroll-scene > section { transform: none !important; clip-path: none !important; border-radius: 0 !important; }
   .cover-name, .scene-piece, .scene-contribution, .cinema-contact-word { transform: none !important; opacity: 1 !important; }
   .scene-seam, .spread-seam { transform: none !important; }
   .agent-packet, .graph-scan { display: none !important; }

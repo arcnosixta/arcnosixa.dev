@@ -124,6 +124,11 @@
       lead.replaceChildren(...sentences.map(text => node("span", "author-line", text.trim() + " ")));
     }
     document.querySelectorAll(".skill-card").forEach(row => {
+      if (!row.parentElement.classList.contains("skill-scroll-slot")) {
+        const slot = node("div", "skill-scroll-slot");
+        row.before(slot);
+        slot.append(row);
+      }
       if (row.querySelector(".skill-wire")) return;
       const wire = node("span", "skill-wire");
       wire.setAttribute("aria-hidden", "true");
@@ -157,6 +162,13 @@
       rule.append(node("i", "final-left"), node("i", "final-right"));
       finale.querySelector(".cinema-contact-word").after(rule);
     }
+    for (const section of document.querySelectorAll("#about, #skills, #path, #contact")) {
+      if (section.parentElement.classList.contains("scroll-scene")) continue;
+      const host = node("div", "scroll-scene");
+      host.dataset.scene = section.id;
+      section.before(host);
+      host.append(section);
+    }
     measureJourney();
   }
 
@@ -174,46 +186,50 @@
     route.querySelectorAll("path").forEach(path => path.setAttribute("d", d));
   }
 
-  function directSpreads() {
-    // About: ink passes through sentences, then marks the factual statistics.
-    gsap.fromTo(".author-line", { color: "#6b6257", "--author-ink": 0 }, {
-      color: "#171511", "--author-ink": 1, duration: 1, stagger: .35, ease: "none",
-      scrollTrigger: { id: "spread-author", trigger: ".about-text", start: "top 90%", end: "top 48%", scrub: true },
+  function directSpreads(desktop) {
+    const about = document.getElementById("about");
+    const skills = document.getElementById("skills");
+    const path = document.getElementById("path");
+    const contact = document.getElementById("contact");
+    // Whole spreads move against stable, untransformed scroll hosts.
+    gsap.fromTo(about, {
+      clipPath: "polygon(0 25%, 100% 0, 100% 72%, 0 100%)", scale: .88,
+      rotation: -3, transformOrigin: "50% 30%",
+    }, {
+      clipPath: "polygon(0 0%, 100% 0, 100% 100%, 0 100%)", scale: 1, rotation: 0, ease: "none",
+      scrollTrigger: { id: "motion-about", trigger: about.parentElement, start: "top 95%", end: "top 35%", scrub: true },
     });
-    document.querySelectorAll("#stats .stat").forEach(stat => gsap.fromTo(stat, { "--stat-mark": 0 }, {
-      "--stat-mark": 1, ease: "none", scrollTrigger: { trigger: stat, start: "top 92%", end: "top 70%", scrub: true },
-    }));
-    // Skills: a bus connects each heading to its technology tokens.
-    document.querySelectorAll(".skill-card").forEach((row, index) => {
-      const tl = gsap.timeline({ scrollTrigger: { id: `spread-skill-${index}`, trigger: row, start: "top 92%", end: "top 58%", scrub: true } });
-      tl.fromTo(row.querySelector(".skill-wire"), { scaleX: 0, transformOrigin: "left" }, { scaleX: 1, duration: .5, ease: "none" }, 0)
-        .fromTo(row.querySelector(".skill-port"), { rotation: 0 }, { rotation: 90, duration: .3 }, .35)
-        .fromTo(row.querySelectorAll(".tag"), { x: i => i % 2 ? 14 : -14, y: 8 }, { x: 0, y: 0, duration: .3, stagger: .055, ease: "power2.out" }, .3);
+    gsap.fromTo(skills.querySelector(".spread-word"), { xPercent: 35 }, {
+      xPercent: 0, ease: "none", scrollTrigger: { id: "motion-skills", trigger: skills.parentElement, start: "top 95%", end: "top 25%", scrub: true },
     });
-    // Path: one continuous route with milestones; years remain in place.
-    const route = document.querySelector(".journey-progress");
-    const routeState = { progress: 0 };
-    const paintRoute = () => {
-      const length = route.getTotalLength();
-      route.style.strokeDasharray = String(length);
-      route.style.strokeDashoffset = String(length * (1 - routeState.progress));
-    };
-    gsap.fromTo(routeState, { progress: 0 }, { progress: 1, ease: "none", onUpdate: paintRoute,
-      scrollTrigger: { id: "spread-journey", trigger: "#timeline", start: "top 85%", end: "bottom 65%", scrub: true, onRefresh: paintRoute },
+    skills.querySelectorAll(".skill-card").forEach((row, index) => {
+      gsap.fromTo(row, { x: () => (index % 2 ? 1 : -1) * innerWidth * (desktop ? .3 : .15), rotation: index % 2 ? 4 : -4, scale: .9 }, {
+        x: 0, rotation: 0, scale: 1, ease: "none",
+        scrollTrigger: { id: `motion-skill-${index}`, trigger: row.parentElement, start: "top 100%", end: "top 60%", scrub: true, invalidateOnRefresh: true },
+      });
     });
-    document.querySelectorAll(".journey-stop").forEach(stop => gsap.fromTo(stop, { scale: .5, backgroundColor: "#080808" }, {
-      scale: 1, backgroundColor: "#fa8b34", ease: "none",
-      scrollTrigger: { trigger: stop.parentElement, start: "top 88%", end: "top 65%", scrub: true },
-    }));
-    // Contact: a typographic stamp opens from its baseline; rules split outwards.
-    const finale = gsap.timeline({ scrollTrigger: { id: "spread-finale", trigger: ".cinema-contact-word", start: "top 92%", end: "top 55%", scrub: true } });
-    finale.fromTo(".cinema-contact-word span", { scaleY: .25, transformOrigin: "center bottom" }, { scaleY: 1, duration: .5, stagger: .035, ease: "back.out(1.15)" }, 0)
-      .fromTo(".final-left", { scaleX: 0, transformOrigin: "right" }, { scaleX: 1, duration: .5, ease: "none" }, .2)
-      .fromTo(".final-right", { scaleX: 0, transformOrigin: "left" }, { scaleX: 1, duration: .5, ease: "none" }, .2);
-    document.querySelectorAll("#contact .contact-link").forEach((link, index) => gsap.fromTo(link, { "--contact-line": 0 }, {
-      "--contact-line": 1, duration: .6, delay: index * .08, ease: "power2.out",
-      scrollTrigger: { trigger: link, start: "top 90%", once: true },
-    }));
+    const frame = path.querySelector(".journey-frame");
+    const track = path.querySelector("#timeline");
+    if (desktop && innerHeight >= 700) {
+      frame.classList.add("journey-camera");
+      gsap.to(track, {
+        x: () => -(track.scrollWidth - frame.clientWidth), ease: "none",
+        scrollTrigger: {
+          id: "motion-path", trigger: frame, start: "top 15%", end: () => `+=${Math.max(track.scrollWidth - frame.clientWidth, 1)}`,
+          pin: true, scrub: true, invalidateOnRefresh: true, anticipatePin: 1,
+        },
+      });
+    } else {
+      path.querySelectorAll(".tl-item").forEach((row, index) => gsap.fromTo(row, { xPercent: index % 2 ? 12 : -12, scale: .82, rotation: index % 2 ? 3 : -3 }, {
+        xPercent: 0, scale: 1, rotation: 0, ease: "none",
+        scrollTrigger: { id: `motion-path-${index}`, trigger: frame, start: () => `top+=${row.offsetTop} 100%`, end: () => `top+=${row.offsetTop} 55%`, scrub: true, invalidateOnRefresh: true },
+      }));
+    }
+    gsap.fromTo(contact, { scale: .65, borderRadius: "180px 180px 0 0", y: 120, transformOrigin: "center top" }, {
+      scale: 1, borderRadius: "0px 0px 0 0", y: 0, ease: "none",
+      scrollTrigger: { id: "motion-contact", trigger: contact.parentElement, start: "top 100%", end: "top 28%", scrub: true },
+    });
+    return () => frame.classList.remove("journey-camera");
   }
 
   function draw(timeline, paths, at, duration, stagger = 0) {
@@ -230,7 +246,7 @@
     if (!window.gsap || !window.ScrollTrigger) return;
     gsap.registerPlugin(ScrollTrigger);
     media = gsap.matchMedia();
-    media.add({ desktop: "(min-width: 1000px)", mobile: "(max-width: 999px)", reduce: "(prefers-reduced-motion: reduce)" }, (scope) => {
+    media.add({ desktop: "(min-width: 1000px) and (min-height: 700px)", mobile: "(max-width: 999px), (max-height: 699px)", reduce: "(prefers-reduced-motion: reduce)" }, (scope) => {
       if (scope.conditions.reduce) return;
       const desktop = scope.conditions.desktop;
       gsap.to(".cover-name", { xPercent: -10, ease: "none", scrollTrigger: { trigger: "#home", start: "top top", end: "bottom top", scrub: true } });
@@ -266,11 +282,12 @@
           });
         }
       });
-      directSpreads();
+      const cleanupSpreads = directSpreads(desktop);
       if (desktop) document.querySelectorAll(".archive-project:not(.is-filtered)").forEach((card, i) => gsap.fromTo(card.querySelector(".project-title"), {
         clipPath: i % 2 ? "inset(0 100% 0 0)" : "inset(100% 0 0 0)",
       }, { clipPath: "inset(0% 0% 0% 0%)", duration: .45, scrollTrigger: { trigger: card, start: "top 90%", once: true } }));
       return () => {
+        cleanupSpreads();
         const route = document.querySelector(".journey-progress");
         route?.style.removeProperty("stroke-dasharray");
         route?.style.removeProperty("stroke-dashoffset");

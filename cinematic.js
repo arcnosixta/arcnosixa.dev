@@ -202,7 +202,7 @@
     gsap.registerPlugin(ScrollTrigger);
     scenes = gsap.matchMedia();
     scenes.add("all", () => {
-      document.querySelectorAll("main > section").forEach((section) => {
+      document.querySelectorAll("main > section, main > .scroll-scene > section").forEach((section) => {
         ScrollTrigger.create({ trigger: section, start: "top 55%", end: "bottom 55%", onEnter: () => emit("chapter", { id: section.id }), onEnterBack: () => emit("chapter", { id: section.id }) });
       });
     });
