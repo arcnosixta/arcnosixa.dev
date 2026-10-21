@@ -142,7 +142,6 @@
       root.classList.remove("is-awaiting-audio");
       introRunning = true;
       intro.dataset.stage = "playing";
-      try { sessionStorage.setItem("arc-intro-seen", "1"); } catch (_) { /* Optional. */ }
       emit("intro-start", { duration: 8, musicStarted: Boolean(result?.started) });
       if (introTimeline) introTimeline.play(0);
       else {
@@ -240,8 +239,5 @@
   window.addEventListener("load", refresh, { once: true });
   document.fonts?.ready.then(refresh);
   buildScenes();
-  let seen = false;
-  try { seen = sessionStorage.getItem("arc-intro-seen") === "1"; } catch (_) { /* Optional. */ }
-  if (!seen && !location.hash) playIntro();
-  else { stopIntro(); emit("intro-end"); }
+  playIntro();
 })();

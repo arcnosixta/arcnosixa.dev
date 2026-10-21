@@ -51,9 +51,7 @@
       var requestedDesign = new URLSearchParams(location.search).get("design");
       document.documentElement.dataset.design = ["atelier", "studio"].includes(requestedDesign) ? requestedDesign : "cinematic";
       if (document.documentElement.dataset.design === "cinematic") {
-        var introSeen = false;
-        try { introSeen = sessionStorage.getItem("arc-intro-seen") === "1"; } catch (_) {}
-        if (!introSeen && !location.hash && !window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+        if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
           document.documentElement.classList.add("is-intro-waiting");
           // Reveal the page even if a later script fails to load.
           window.arcIntroFallback = setTimeout(function () {
@@ -472,7 +470,7 @@
     <script src="vendor/gsap.min.js"></script>
     <script src="vendor/ScrollTrigger.min.js"></script>
     <script src="soundtrack.js?v=7"></script>
-    <script src="cinematic.js?v=17"></script>
+    <script src="cinematic.js?v=18"></script>
     <script src="manga.js?v=4"></script>
   </body>
 </html>
