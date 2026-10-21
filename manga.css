@@ -38,7 +38,7 @@
 [data-design="cinematic"] .manga-scenes .story-project,
 [data-design="cinematic"] .manga-scenes .story-project:is(:nth-child(n), .is-open) { display: block; grid-column: 1 / -1; width: 100%; margin: 0 0 100px; padding: 0; background: transparent; border: 0; overflow: visible; isolation: auto; }
 [data-design="cinematic"] .manga-scenes .project.is-filtered { display: none; }
-.scene-stage { position: relative; display: grid; grid-template-columns: 1.05fr 1fr; gap: 5%; align-items: center; min-height: 86svh; padding-block: 45px; background: #080808; }
+.scene-stage { position: relative; display: grid; grid-template-columns: 1.05fr 1fr; gap: 5%; align-items: start; min-height: 0; padding-block: 45px; background: #080808; }
 [data-design="cinematic"] .story-project .scene-art { position: relative; grid-column: 1; width: 100%; height: min(65svh, 650px); min-height: 440px; aspect-ratio: auto; border: 0; margin: 0; background: #121110; overflow: hidden; clip-path: polygon(0 8%, 100% 0, 100% 92%, 0 100%); }
 .story-project .scene-art > :is(.project-lockup, .project-signal), .story-project .scene-art::before, .story-project .scene-art::after { display: none; }
 .scene-number { position: absolute; left: 10px; top: 32px; color: #ffffff06; font: clamp(160px, 26vw, 440px)/1 Impact, "Arial Narrow", sans-serif; pointer-events: none; }
@@ -86,7 +86,9 @@
 .agent-request span, .agent-response span { font: 8px "JetBrains Mono", monospace; color: #8e8176; margin-bottom: 12px; }
 .agent-window b { font: 22px "JetBrains Mono", monospace; color: #e9e5dc; }
 .agent-window code { margin-top: 10px; font: 9px "JetBrains Mono", monospace; color: #fa8b34; }
-.agent-stream { display: flex; gap: 5px; padding: 0 22px; }
+.agent-stream { position: relative; display: flex; gap: 5px; padding: 0 22px; overflow: hidden; }
+.agent-window .agent-packet { position: absolute; left: 22px; top: 0; width: calc((100% - 44px) / 5); height: 4px; background: #e9e5dc; z-index: 1; }
+.graph-scan { opacity: 0; pointer-events: none; }
 .agent-stream i { height: 4px; width: 20%; background: #fa8b34; }
 .agent-status { padding: 14px 22px; font: 7px "JetBrains Mono", monospace; border-top: 1px solid #ffffff20; }
 .agent-status span { display: inline; float: right; color: #a99a8b; }
@@ -230,6 +232,7 @@
 @media (prefers-reduced-motion: reduce) {
   .cover-name, .scene-piece, .scene-contribution, .cinema-contact-word { transform: none !important; opacity: 1 !important; }
   .scene-seam, .spread-seam { transform: none !important; }
+  .agent-packet, .graph-scan { display: none !important; }
 }
 @media print {
   .cover-name, .cover-issue, .cover-subtitle, .scene-seam, .spread-seam, .author-portrait { display: none; }
