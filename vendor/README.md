@@ -2,6 +2,13 @@
 
 Сторонние файлы живут здесь и не редактируются.
 
+## GSAP / ScrollTrigger 3.15.0
+
+- `gsap.min.js`, `ScrollTrigger.min.js` — локальные UMD-сборки, работают без CDN и сборщика.
+- Источники: https://cdn.jsdelivr.net/npm/gsap@3.15.0/dist/gsap.min.js и https://cdn.jsdelivr.net/npm/gsap@3.15.0/dist/ScrollTrigger.min.js
+- Лицензия: https://gsap.com/standard-license/ (заголовки сохранены).
+- Используются в `cinematic.js`: вступление, параллакс, главы и раскрытие деталей.
+
 ## three.min.js
 
 - three.js r147 (`REVISION === "147"`), UMD-сборка `build/three.min.js`

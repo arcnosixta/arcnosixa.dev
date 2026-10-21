@@ -874,6 +874,7 @@ function setProjectOpen(card, open) {
   toggle.setAttribute("aria-expanded", String(open));
   toggle.querySelector("span").textContent = t(open ? "work.collapse" : "work.details");
   openProject = open ? key : null;
+  document.dispatchEvent(new CustomEvent("portfolio:project", { detail: { card, open } }));
 }
 
 /**
