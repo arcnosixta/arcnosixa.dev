@@ -109,6 +109,111 @@
     });
     document.querySelectorAll(".skill-card, .tl-item").forEach(card => { card.classList.remove("reveal"); card.classList.add("is-in"); });
     document.querySelectorAll(".skill-card").forEach((card, i) => card.style.setProperty("--skill-index", i));
+    prepareSpreads();
+  }
+
+  function prepareSpreads() {
+    document.querySelectorAll("#about .reveal, #skills .reveal, #path .reveal, #contact .reveal").forEach(el => {
+      el.classList.remove("reveal");
+      el.classList.add("is-in");
+    });
+    // Preserve real text and DOM reading order; only decorative accents are hidden.
+    const lead = document.querySelector(".about-text p:first-child");
+    if (!lead.querySelector(".author-line")) {
+      const sentences = lead.textContent.trim().match(/[^.!?]+[.!?]*/g) || [lead.textContent];
+      lead.replaceChildren(...sentences.map(text => node("span", "author-line", text.trim() + " ")));
+    }
+    document.querySelectorAll(".skill-card").forEach(row => {
+      if (row.querySelector(".skill-wire")) return;
+      const wire = node("span", "skill-wire");
+      wire.setAttribute("aria-hidden", "true");
+      wire.append(node("i", "skill-port"));
+      row.prepend(wire);
+    });
+    const journey = document.querySelector("#timeline");
+    if (!journey.parentElement.classList.contains("journey-frame")) {
+      const frame = node("div", "journey-frame");
+      journey.before(frame);
+      frame.append(journey);
+    }
+    if (!journey.parentElement.querySelector(".journey-route")) {
+      const route = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+      route.classList.add("journey-route");
+      route.setAttribute("aria-hidden", "true");
+      route.setAttribute("preserveAspectRatio", "none");
+      route.innerHTML = '<path class="journey-track"/><path class="journey-progress"/>';
+      journey.parentElement.prepend(route);
+    }
+    journey.querySelectorAll(".tl-item").forEach(row => {
+      if (row.querySelector(".journey-stop")) return;
+      const stop = node("span", "journey-stop");
+      stop.setAttribute("aria-hidden", "true");
+      row.prepend(stop);
+    });
+    const finale = document.querySelector("#contact");
+    if (!finale.querySelector(".final-rule")) {
+      const rule = node("div", "final-rule");
+      rule.setAttribute("aria-hidden", "true");
+      rule.append(node("i", "final-left"), node("i", "final-right"));
+      finale.querySelector(".cinema-contact-word").after(rule);
+    }
+    measureJourney();
+  }
+
+  function measureJourney() {
+    const host = document.querySelector("#timeline");
+    const route = host?.parentElement.querySelector(".journey-route");
+    if (!route) return;
+    const rows = [...host.querySelectorAll(".tl-item")];
+    const points = rows.map(row => row.offsetTop + 45);
+    const height = Math.max(host.offsetHeight, 1);
+    route.setAttribute("viewBox", `0 0 32 ${height}`);
+    let d = `M16 0`;
+    points.forEach(y => { d += `V${Math.max(0, y - 18)}L25 ${y}L16 ${y + 18}`; });
+    d += `V${height}`;
+    route.querySelectorAll("path").forEach(path => path.setAttribute("d", d));
+  }
+
+  function directSpreads() {
+    // About: ink passes through sentences, then marks the factual statistics.
+    gsap.fromTo(".author-line", { color: "#6b6257", "--author-ink": 0 }, {
+      color: "#171511", "--author-ink": 1, duration: 1, stagger: .35, ease: "none",
+      scrollTrigger: { id: "spread-author", trigger: ".about-text", start: "top 90%", end: "top 48%", scrub: true },
+    });
+    document.querySelectorAll("#stats .stat").forEach(stat => gsap.fromTo(stat, { "--stat-mark": 0 }, {
+      "--stat-mark": 1, ease: "none", scrollTrigger: { trigger: stat, start: "top 92%", end: "top 70%", scrub: true },
+    }));
+    // Skills: a bus connects each heading to its technology tokens.
+    document.querySelectorAll(".skill-card").forEach((row, index) => {
+      const tl = gsap.timeline({ scrollTrigger: { id: `spread-skill-${index}`, trigger: row, start: "top 92%", end: "top 58%", scrub: true } });
+      tl.fromTo(row.querySelector(".skill-wire"), { scaleX: 0, transformOrigin: "left" }, { scaleX: 1, duration: .5, ease: "none" }, 0)
+        .fromTo(row.querySelector(".skill-port"), { rotation: 0 }, { rotation: 90, duration: .3 }, .35)
+        .fromTo(row.querySelectorAll(".tag"), { x: i => i % 2 ? 14 : -14, y: 8 }, { x: 0, y: 0, duration: .3, stagger: .055, ease: "power2.out" }, .3);
+    });
+    // Path: one continuous route with milestones; years remain in place.
+    const route = document.querySelector(".journey-progress");
+    const routeState = { progress: 0 };
+    const paintRoute = () => {
+      const length = route.getTotalLength();
+      route.style.strokeDasharray = String(length);
+      route.style.strokeDashoffset = String(length * (1 - routeState.progress));
+    };
+    gsap.fromTo(routeState, { progress: 0 }, { progress: 1, ease: "none", onUpdate: paintRoute,
+      scrollTrigger: { id: "spread-journey", trigger: "#timeline", start: "top 85%", end: "bottom 65%", scrub: true, onRefresh: paintRoute },
+    });
+    document.querySelectorAll(".journey-stop").forEach(stop => gsap.fromTo(stop, { scale: .5, backgroundColor: "#080808" }, {
+      scale: 1, backgroundColor: "#fa8b34", ease: "none",
+      scrollTrigger: { trigger: stop.parentElement, start: "top 88%", end: "top 65%", scrub: true },
+    }));
+    // Contact: a typographic stamp opens from its baseline; rules split outwards.
+    const finale = gsap.timeline({ scrollTrigger: { id: "spread-finale", trigger: ".cinema-contact-word", start: "top 92%", end: "top 55%", scrub: true } });
+    finale.fromTo(".cinema-contact-word span", { scaleY: .25, transformOrigin: "center bottom" }, { scaleY: 1, duration: .5, stagger: .035, ease: "back.out(1.15)" }, 0)
+      .fromTo(".final-left", { scaleX: 0, transformOrigin: "right" }, { scaleX: 1, duration: .5, ease: "none" }, .2)
+      .fromTo(".final-right", { scaleX: 0, transformOrigin: "left" }, { scaleX: 1, duration: .5, ease: "none" }, .2);
+    document.querySelectorAll("#contact .contact-link").forEach((link, index) => gsap.fromTo(link, { "--contact-line": 0 }, {
+      "--contact-line": 1, duration: .6, delay: index * .08, ease: "power2.out",
+      scrollTrigger: { trigger: link, start: "top 90%", once: true },
+    }));
   }
 
   function draw(timeline, paths, at, duration, stagger = 0) {
@@ -161,19 +266,15 @@
           });
         }
       });
-      // Secondary sections have their own motion; reading text never fades out.
-      document.querySelectorAll(".skill-card").forEach((row) => gsap.fromTo(row.querySelectorAll(".tag"), { y: 10 }, {
-        y: 0, stagger: .035, duration: .3, scrollTrigger: { trigger: row, start: "top 90%", once: true },
-      }));
-      document.querySelectorAll(".tl-item").forEach((row) => gsap.fromTo(row.querySelector(".tl-when"), { yPercent: 30 }, {
-        yPercent: 0, ease: "none", scrollTrigger: { trigger: row, start: "top 92%", end: "top 55%", scrub: true },
-      }));
-      gsap.fromTo(".cinema-contact-word span", { yPercent: i => i % 2 ? -45 : 45 }, {
-        yPercent: 0, stagger: .025, ease: "power3.out", scrollTrigger: { trigger: "#contact", start: "top 92%", end: "top 50%", scrub: true },
-      });
+      directSpreads();
       if (desktop) document.querySelectorAll(".archive-project:not(.is-filtered)").forEach((card, i) => gsap.fromTo(card.querySelector(".project-title"), {
         clipPath: i % 2 ? "inset(0 100% 0 0)" : "inset(100% 0 0 0)",
       }, { clipPath: "inset(0% 0% 0% 0%)", duration: .45, scrollTrigger: { trigger: card, start: "top 90%", once: true } }));
+      return () => {
+        const route = document.querySelector(".journey-progress");
+        route?.style.removeProperty("stroke-dasharray");
+        route?.style.removeProperty("stroke-dashoffset");
+      };
     });
     ScrollTrigger.refresh();
   }
@@ -181,7 +282,7 @@
   function refresh() {
     clearTimeout(refreshTimer);
     // Refresh measurements, never reset or replay the reader's current scene.
-    refreshTimer = setTimeout(() => window.ScrollTrigger?.refresh(), 80);
+    refreshTimer = setTimeout(() => { measureJourney(); window.ScrollTrigger?.refresh(); }, 80);
   }
   function filter() {
     document.querySelectorAll(".project-index a").forEach((link) => {
@@ -200,5 +301,6 @@
   });
   window.addEventListener("load", refresh, { once: true });
   document.fonts?.ready.then(refresh);
+  window.addEventListener("resize", refresh, { passive: true });
   mount();
 })();

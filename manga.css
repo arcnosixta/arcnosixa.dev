@@ -102,13 +102,16 @@
 .archive-project .project-links { padding-bottom: 0; }
 [data-design="cinematic"] .labs { margin-top: 60px; border-top: 1px solid #fa8b3470; padding-top: 28px; }
 .spread-word { position: relative; z-index: 1; white-space: pre-line; font: 900 clamp(62px, 10vw, 160px)/.88 Impact, "Arial Narrow", sans-serif; letter-spacing: -.03em; margin: 40px 0 65px; color: #e9e5dc; pointer-events: none; }
-.spread-seam { position: absolute; left: -10%; right: -10%; top: 0; height: 2px; background: #fa8b34; rotate: -9deg; transform-origin: left; pointer-events: none; }
+.spread-seam { position: absolute; left: -10%; right: -10%; top: 0; height: 2px; background: #fa8b34; rotate: -4deg; transform-origin: center; pointer-events: none; }
 [data-design="cinematic"] #about { background: #e9e5dc; color: #171511; padding-top: 100px; padding-bottom: 110px; }
 [data-design="cinematic"] #about .section-head h2, [data-design="cinematic"] #about .section-index { color: #6f4b2d; }
 #about .spread-word { color: #171511; max-width: 9ch; }
 [data-design="cinematic"] .about { grid-template-columns: 1.1fr 1fr; gap: 40px 7%; align-items: start; }
 .author-portrait { grid-column: 2; grid-row: 1 / 3; position: relative; min-height: 590px; height: 100%; background: url("assets/anime-portrait.png") 61% center / cover; clip-path: polygon(12% 0, 100% 0, 88% 100%, 0 100%); }
 .author-portrait span { position: absolute; right: 14%; bottom: 24px; font-size: 8px; background: #080808; padding: 8px; color: #fa8b34; }
+.author-line { display: inline; background: linear-gradient(#fa8b3440, #fa8b3440) left bottom / calc(var(--author-ink, 1) * 100%) 2px no-repeat; }
+#about .stat { position: relative; }
+#about .stat::after { content: ""; position: absolute; top: -1px; left: 0; width: 40%; height: 2px; background: #171511; transform: scaleX(var(--stat-mark, 1)); transform-origin: left; }
 [data-design="cinematic"] .about-text { grid-column: 1; grid-row: 1; }
 [data-design="cinematic"] .about-text p { color: #39352e; font: 14px/1.9 "Manrope", sans-serif; }
 [data-design="cinematic"] .about-text p:first-child { color: #171511; font: 24px/1.55 "Manrope", sans-serif; letter-spacing: -.035em; }
@@ -120,6 +123,8 @@
 #skills .spread-word { color: transparent; -webkit-text-stroke: 1px #fa8b34; margin-left: 8%; }
 [data-design="cinematic"] .skills { display: block; max-width: 1050px; margin-left: auto; }
 [data-design="cinematic"] .skill-card { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px 30px; border-top: 1px solid #ffffff30; padding: 30px 0; margin-left: calc(var(--skill-index) * 1.7%); background: transparent; overflow: visible; }
+.skill-wire { position: absolute; top: -1px; left: 0; right: 0; height: 1px; background: #fa8b34; pointer-events: none; }
+.skill-port { position: absolute; width: 7px; height: 7px; top: -3px; left: 0; background: #fa8b34; }
 [data-design="cinematic"] .skill-card .skill-head { grid-column: 1; grid-row: 1 / 3; align-items: baseline; gap: 14px; }
 [data-design="cinematic"] .skill-card .skill-icon { font-size: 10px; }
 [data-design="cinematic"] .skill-card .skill-title { font: clamp(24px, 3vw, 42px)/1.1 Impact, "Arial Narrow", sans-serif; color: #e9e5dc; letter-spacing: -.01em; }
@@ -128,6 +133,14 @@
 [data-design="cinematic"] #path { background: #080808; padding-top: 120px; }
 #path .spread-word { text-align: right; }
 [data-design="cinematic"] .timeline { max-width: 1100px; margin: 0 auto; }
+.journey-frame { position: relative; max-width: 1100px; margin: 0 auto; }
+.journey-route { position: absolute; top: 0; left: 0; width: 32px; height: 100%; overflow: visible; pointer-events: none; }
+.journey-route path { fill: none; vector-effect: non-scaling-stroke; stroke-width: 1.5; }
+.journey-track { stroke: #ffffff20; }
+.journey-progress { stroke: #fa8b34; }
+[data-design="cinematic"] .journey-frame .timeline { position: relative; padding-left: 48px; }
+.journey-frame .tl-item { position: relative; }
+.journey-stop { position: absolute; left: -29px; top: 39px; width: 12px; height: 12px; border: 1px solid #fa8b34; border-radius: 50%; background: #fa8b34; }
 [data-design="cinematic"] .tl-item { display: grid; grid-template-columns: .8fr 1.2fr; gap: 40px; padding: 45px 0; border-bottom: 1px solid #ffffff30; }
 [data-design="cinematic"] .tl-when { font: clamp(50px, 7vw, 100px)/1 Impact, "Arial Narrow", sans-serif; color: #fa8b34; letter-spacing: -.04em; }
 [data-design="cinematic"] .tl-title { font: 26px/1.15 "Manrope", sans-serif; color: #e9e5dc; }
@@ -141,6 +154,10 @@
 [data-design="cinematic"] #contact .section-head h2 { font: 11px "JetBrains Mono", monospace; letter-spacing: .12em; }
 #contact .spread-seam { background: #171511; }
 [data-design="cinematic"] .cinema-contact-word { font: 900 clamp(64px, 13vw, 220px)/.9 Impact, "Arial Narrow", sans-serif; letter-spacing: -.04em; color: #171511; margin-block: 50px; overflow-wrap: anywhere; }
+.final-rule { display: flex; width: 100%; height: 3px; margin: -15px 0 40px; }
+.final-rule i { width: 50%; height: 100%; background: #171511; }
+#contact .contact-link { position: relative; }
+#contact .contact-link::after { content: ""; position: absolute; top: -1px; left: 0; right: 0; height: 2px; background: #171511; transform: scaleX(var(--contact-line, 1)); transform-origin: left; }
 [data-design="cinematic"] .contact-card { max-width: none; }
 [data-design="cinematic"] .contact-lead { font: 17px/1.8 "Manrope", sans-serif; color: #342416; max-width: 55ch; }
 [data-design="cinematic"] .contact-cta { background: #171511; color: #fa8b34; padding: 18px 24px; border: 1px solid #171511; margin-block: 28px 50px; }
