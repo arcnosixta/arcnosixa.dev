@@ -7,7 +7,8 @@
   const intro = document.getElementById("cinematicIntro"), hero = document.getElementById("home");
   const portrait = hero.querySelector(".cinematic-visual"), replay = document.getElementById("introReplay");
   const motion = window.matchMedia("(prefers-reduced-motion: reduce)");
-  let introTimeline, introTimer, scenes, refreshTimer;
+  let introTimeline, introTimer, introCutTimer, scenes, refreshTimer;
+  let introActive = false;
   let hoverCleanup = () => {};
   const detailTweens = new WeakMap();
   const signalObserver = new IntersectionObserver((entries) => {
@@ -29,7 +30,10 @@
   portrait.append(scroll);
 
   function stopIntro() {
+    const wasActive = introActive;
+    introActive = false;
     clearTimeout(introTimer);
+    clearTimeout(introCutTimer);
     clearTimeout(window.arcIntroFallback);
     introTimeline?.kill();
     introTimeline = null;
@@ -38,15 +42,22 @@
       intro.style.display = "none";
       gsap?.set(intro.querySelectorAll(".intro-slice, .intro-wordmark, .intro-cut"), { clearProps: "transform,opacity" });
     }
+    if (wasActive) emit("intro-end");
   }
   function playIntro() {
     stopIntro();
-    if (motion.matches || !intro) return;
+    if (motion.matches || !intro) { emit("intro-end"); return; }
+    introActive = true;
     try { sessionStorage.setItem("arc-intro-seen", "1"); } catch (_) { /* Optional. */ }
     emit("intro");
     intro.style.display = "block";
+    const rise = Math.tan(3.5 * Math.PI / 180) * window.innerWidth / 2;
+    intro.style.setProperty("--intro-rise", `${rise}px`);
+    const heading = getComputedStyle(hero.querySelector(".hero-title"));
     // Match the actual glyph bounds, not the font's line box, to the cut.
     intro.querySelectorAll(".intro-name").forEach((name) => {
+      name.style.fontFamily = heading.fontFamily;
+      name.style.fontWeight = heading.fontWeight;
       name.removeAttribute("dy");
       const bounds = name.getBBox();
       name.setAttribute("dy", String(450 - bounds.y - bounds.height / 2));
@@ -54,6 +65,7 @@
     if (!gsap) {
       intro.style.removeProperty("display");
       root.classList.add("is-intro-playing");
+      introCutTimer = setTimeout(() => emit("cut"), 750);
       introTimer = setTimeout(stopIntro, 2400);
       return;
     }
@@ -62,13 +74,14 @@
     const top = intro.querySelector(".intro-slice-top"), bottom = intro.querySelector(".intro-slice-bottom");
     const titles = intro.querySelectorAll(".intro-wordmark"), cut = intro.querySelector(".intro-cut");
     introTimeline = gsap.timeline({ defaults: { ease: "power3.inOut" }, onComplete: stopIntro });
-    introTimeline.set([top, bottom], { yPercent: 0 })
+    introTimeline.set([top, bottom], { xPercent: 0, yPercent: 0 })
       .set(titles, { opacity: 0 })
-      .set(cut, { scaleX: 0, opacity: 1, transformOrigin: "left center" })
+      .set(cut, { scaleX: 0, rotation: -3.5, opacity: 1, transformOrigin: "center center" })
       .to(titles, { opacity: 1, duration: .45, ease: "power2.out" }, .05)
+      .call(() => emit("cut"), null, .73)
       .to(cut, { scaleX: 1, duration: .32, ease: "power2.inOut" }, .75)
-      .to(top, { yPercent: -100, duration: 1.15 }, 1.1)
-      .to(bottom, { yPercent: 100, duration: 1.15 }, 1.1)
+      .to(top, { xPercent: 3, yPercent: -100, duration: 1.15 }, 1.1)
+      .to(bottom, { xPercent: -3, yPercent: 100, duration: 1.15 }, 1.1)
       .to(cut, { opacity: 0, duration: .15 }, 1.1);
     introTimer = setTimeout(stopIntro, 2800);
   }
@@ -189,5 +202,5 @@
   let seen = false;
   try { seen = sessionStorage.getItem("arc-intro-seen") === "1"; } catch (_) { /* Optional. */ }
   if (!seen && !location.hash) playIntro();
-  else stopIntro();
+  else { stopIntro(); emit("intro-end"); }
 })();

@@ -1,5 +1,5 @@
 /**
- * Motion: reveal-анимации, разбивка текста, магнитные кнопки, 3D-наклон карточек,
+ * Motion: reveal-анимации, разбивка текста, магнитные кнопки, световой акцент карточек,
  * курсорное свечение, скролл-связанные эффекты.
  *
  * Всё необязательное: без JS и без WebGL страница остаётся читаемой, а при
@@ -18,9 +18,8 @@
   const finePointer = window.matchMedia("(pointer: fine)");
 
   const MAGNET = ".btn, .link:not(.link-ghost), .lang, .burger";
-  const TILT = ".project, .skill-card, .stat, .mini-card, .small-card, .contact-link";
+  const CARDS = ".project, .skill-card, .stat, .mini-card, .small-card, .contact-link";
   const MAGNET_LIMIT = 9;
-  const TILT_LIMIT = 7;
 
   let reduced = motionQuery.matches;
   let fine = finePointer.matches;
@@ -38,7 +37,7 @@
     magnetQueued: false,
   };
   let magnetNode = null;
-  let tiltNode = null;
+  let cardNode = null;
 
   function clamp(value, min, max) {
     return Math.min(Math.max(value, min), max);
@@ -83,15 +82,20 @@
     });
   }
 
-  function markTiltable() {
-    document.querySelectorAll(TILT).forEach((node) => node.classList.add("tiltable"));
+  function markMotionCards() {
+    document.querySelectorAll(CARDS).forEach((node) => {
+      node.classList.remove("tiltable");
+      node.classList.add("motion-card");
+      if (node.querySelector(":scope > .card-cursor-light")) return;
+      const light = document.createElement("span");
+      light.className = "card-cursor-light";
+      light.setAttribute("aria-hidden", "true");
+      node.append(light);
+    });
   }
 
-  function resetTilt(node) {
-    node.style.setProperty("--rx", "0deg");
-    node.style.setProperty("--ry", "0deg");
-    node.style.setProperty("--px", "50%");
-    node.style.setProperty("--py", "50%");
+  function resetCard(node) {
+    node.classList.remove("is-cursor-active");
   }
 
   function applyMagnet(node, x, y) {
@@ -141,44 +145,41 @@
         }
       }
 
-      const card = target.closest(TILT);
-      if (card !== tiltNode) {
-        if (tiltNode) resetTilt(tiltNode);
-        tiltNode = card;
+      const card = target.closest(CARDS);
+      if (card !== cardNode) {
+        if (cardNode) resetCard(cardNode);
+        cardNode = card;
       }
       if (card) {
-        pointer.x = x;
-        pointer.y = y;
+        pointer.cardX = x;
+        pointer.cardY = y;
+        card.classList.add("is-cursor-active");
         if (!pointer.queued) {
           pointer.queued = true;
-          window.requestAnimationFrame(applyTilt);
+          window.requestAnimationFrame(applyCardLight);
         }
       }
     }
   }
 
-  function applyTilt() {
+  function applyCardLight() {
     pointer.queued = false;
-    if (!tiltNode) return;
-    const rect = tiltNode.getBoundingClientRect();
-    const nx = clamp((pointer.x - rect.left) / rect.width, 0, 1);
-    const ny = clamp((pointer.y - rect.top) / rect.height, 0, 1);
-    tiltNode.style.setProperty("--ry", `${((nx - 0.5) * TILT_LIMIT).toFixed(2)}deg`);
-    tiltNode.style.setProperty("--rx", `${((0.5 - ny) * TILT_LIMIT).toFixed(2)}deg`);
-    tiltNode.style.setProperty("--px", `${(nx * 100).toFixed(1)}%`);
-    tiltNode.style.setProperty("--py", `${(ny * 100).toFixed(1)}%`);
+    if (!cardNode) return;
+    const rect = cardNode.getBoundingClientRect();
+    cardNode.style.setProperty("--light-x", `${clamp(pointer.cardX - rect.left, 0, rect.width).toFixed(1)}px`);
+    cardNode.style.setProperty("--light-y", `${clamp(pointer.cardY - rect.top, 0, rect.height).toFixed(1)}px`);
   }
 
   function onPointerOut(event) {
     const target = event.target instanceof Element ? event.target : null;
     if (!target) return;
     if (event.relatedTarget instanceof Node) {
-      const node = target.closest(TILT);
+      const node = target.closest(CARDS);
       if (node && node.contains(event.relatedTarget)) return;
     }
-    if (tiltNode) {
-      resetTilt(tiltNode);
-      tiltNode = null;
+    if (cardNode) {
+      resetCard(cardNode);
+      cardNode = null;
     }
   }
 
@@ -245,7 +246,7 @@
 
   function start() {
     playHeroTitle();
-    markTiltable();
+    markMotionCards();
     if (!reduced) loop();
     else updateTimeline();
   }
@@ -253,7 +254,7 @@
   document.addEventListener("pointermove", onPointerMove, { passive: true });
   document.addEventListener("pointerout", onPointerOut, { passive: true });
   document.addEventListener("portfolio:render", () => {
-    markTiltable();
+    markMotionCards();
     playHeroTitle();
   });
   document.addEventListener("visibilitychange", () => {
@@ -272,7 +273,7 @@
       loopId = 0;
       pointer.magnetQueued = false;
       if (magnetNode) resetMagnet(magnetNode);
-      if (tiltNode) resetTilt(tiltNode);
+      if (cardNode) resetCard(cardNode);
     } else if (!loopId) {
       loop();
     }
@@ -284,9 +285,9 @@
   });
 
   window.addEventListener("blur", () => {
-    if (tiltNode) {
-      resetTilt(tiltNode);
-      tiltNode = null;
+    if (cardNode) {
+      resetCard(cardNode);
+      cardNode = null;
     }
     if (magnetNode) {
       resetMagnet(magnetNode);

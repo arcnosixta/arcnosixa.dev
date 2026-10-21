@@ -156,20 +156,21 @@
 [data-design="cinematic"] .intro-replay:hover { border-color: var(--signal); }
 .is-intro-playing .cinematic-intro { display: block; position: fixed; inset: 0; z-index: 100; pointer-events: none; overflow: hidden; animation: intro-vanish 2.3s both; }
 .intro-slice { position: absolute; inset: 0; background: #000; }
-.intro-slice-top { clip-path: inset(0 0 50% 0); }
-.intro-slice-bottom { clip-path: inset(50% 0 0 0); }
+.cinematic-intro { --intro-rise: 3.06vw; }
+.intro-slice-top { clip-path: polygon(0 0, 100% 0, 100% calc(50% - var(--intro-rise)), 0 calc(50% + var(--intro-rise))); }
+.intro-slice-bottom { clip-path: polygon(0 calc(50% + var(--intro-rise)), 100% calc(50% - var(--intro-rise)), 100% 100%, 0 100%); }
 .intro-wordmark { position: absolute; inset: 0; display: block; width: 100%; height: 100%; fill: #fa8b34; }
-.intro-name { font-family: Impact, "Arial Narrow", sans-serif; font-size: 190px; font-weight: 400; }
+.intro-name { font-family: Impact, "Arial Narrow", "Manrope", sans-serif; font-size: 190px; font-weight: 900; letter-spacing: -.065em; }
 .intro-caption { font-family: "JetBrains Mono", monospace; font-size: 15px; letter-spacing: 4px; }
-.intro-cut { position: absolute; top: calc(50% - 1px); left: 0; width: 100%; height: 2px; background: #fa8b34; transform-origin: left center; }
+.intro-cut { position: absolute; top: calc(50% - 1px); left: -10%; width: 120%; height: 2px; background: #fa8b34; transform: rotate(-3.5deg); transform-origin: center; }
 .is-intro-playing .intro-slice-top { animation: intro-top 2.3s cubic-bezier(.76,0,.24,1) both; }
 .is-intro-playing .intro-slice-bottom { animation: intro-bottom 2.3s cubic-bezier(.76,0,.24,1) both; }
 .is-intro-playing .intro-wordmark { animation: intro-title 2.3s both; }
 .is-intro-playing .intro-cut { animation: intro-cut 2.3s both; }
-@keyframes intro-top { 0%, 48% { transform: translateY(0); } 100% { transform: translateY(-100%); } }
-@keyframes intro-bottom { 0%, 48% { transform: translateY(0); } 100% { transform: translateY(100%); } }
+@keyframes intro-top { 0%, 48% { transform: translate(0, 0); } 100% { transform: translate(3%, -100%); } }
+@keyframes intro-bottom { 0%, 48% { transform: translate(0, 0); } 100% { transform: translate(-3%, 100%); } }
 @keyframes intro-title { 0% { opacity: 0; } 20%, 100% { opacity: 1; } }
-@keyframes intro-cut { 0%, 32% { transform: scaleX(0); opacity: 1; } 47% { transform: scaleX(1); opacity: 1; } 56%, 100% { transform: scaleX(1); opacity: 0; } }
+@keyframes intro-cut { 0%, 32% { transform: rotate(-3.5deg) scaleX(0); opacity: 1; } 47% { transform: rotate(-3.5deg) scaleX(1); opacity: 1; } 56%, 100% { transform: rotate(-3.5deg) scaleX(1); opacity: 0; } }
 @keyframes intro-vanish { 0%, 82% { visibility: visible; } 100% { visibility: hidden; } }
 @media (prefers-reduced-motion: reduce) {
   .is-intro-playing .cinematic-intro { display: none; }
