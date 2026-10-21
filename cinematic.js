@@ -9,6 +9,7 @@
   const motion = window.matchMedia("(prefers-reduced-motion: reduce)");
   let introTimeline, introTimer, introCutTimer, scenes, refreshTimer;
   let introActive = false;
+  let introRunning = false, introVersion = 0;
   let hoverCleanup = () => {};
   const detailTweens = new WeakMap();
   const signalObserver = new IntersectionObserver((entries) => {
@@ -31,59 +32,117 @@
 
   function stopIntro() {
     const wasActive = introActive;
-    introActive = false;
+    const wasRunning = introRunning;
+    introActive = introRunning = false;
+    introVersion++;
     clearTimeout(introTimer);
     clearTimeout(introCutTimer);
     clearTimeout(window.arcIntroFallback);
     introTimeline?.kill();
     introTimeline = null;
-    root.classList.remove("is-intro-waiting", "is-intro-playing", "is-directed-intro");
+    root.classList.remove("is-intro-waiting", "is-intro-playing", "is-directed-intro", "is-awaiting-audio");
     if (intro) {
       intro.style.display = "none";
-      gsap?.set(intro.querySelectorAll(".intro-slice, .intro-wordmark, .intro-cut"), { clearProps: "transform,opacity" });
+      intro.setAttribute("aria-hidden", "true");
+      intro.dataset.stage = "closed";
+      gsap?.set(intro.querySelectorAll(".intro-bed, .intro-slice, .intro-wordmark, .intro-cut, .intro-stain, .ink-drops circle, .intro-controls"), { clearProps: "transform,opacity" });
     }
+    if (wasActive && !wasRunning) window.PortfolioSound?.cancelIntroStart();
     if (wasActive) emit("intro-end");
   }
   function playIntro() {
     stopIntro();
     if (motion.matches || !intro) { emit("intro-end"); return; }
     introActive = true;
-    try { sessionStorage.setItem("arc-intro-seen", "1"); } catch (_) { /* Optional. */ }
-    emit("intro");
+    const version = introVersion;
+    const start = document.getElementById("introStart");
+    const skip = document.getElementById("introSkip");
+    const english = root.lang === "en";
+    start.hidden = true;
+    start.textContent = english ? "Start with sound" : "Начать со звуком";
+    start.dataset.silent = "";
+    skip.textContent = english ? "Skip intro" : "Пропустить";
     intro.style.display = "block";
-    const rise = Math.tan(3.5 * Math.PI / 180) * window.innerWidth / 2;
+    intro.setAttribute("aria-hidden", "false");
+    intro.setAttribute("role", "region");
+    intro.setAttribute("aria-label", english ? "Introduction" : "Вступление");
+    intro.dataset.stage = "waiting";
+    emit("intro");
+    const rise = Math.tan(9 * Math.PI / 180) * window.innerWidth / 2;
     intro.style.setProperty("--intro-rise", `${rise}px`);
     const heading = getComputedStyle(hero.querySelector(".hero-title"));
-    // Match the actual glyph bounds, not the font's line box, to the cut.
     intro.querySelectorAll(".intro-name").forEach((name) => {
+      name.closest("svg").setAttribute("aria-hidden", "true");
       name.style.fontFamily = heading.fontFamily;
       name.style.fontWeight = heading.fontWeight;
       name.removeAttribute("dy");
       const bounds = name.getBBox();
       name.setAttribute("dy", String(450 - bounds.y - bounds.height / 2));
     });
-    if (!gsap) {
-      intro.style.removeProperty("display");
-      root.classList.add("is-intro-playing");
-      introCutTimer = setTimeout(() => emit("cut"), 750);
-      introTimer = setTimeout(stopIntro, 2400);
-      return;
+    const phase = (name) => { intro.dataset.stage = name; emit(name); };
+    if (gsap) {
+      root.classList.add("is-directed-intro");
+      const top = intro.querySelector(".intro-slice-top"), bottom = intro.querySelector(".intro-slice-bottom");
+      const titles = intro.querySelectorAll(".intro-wordmark"), cut = intro.querySelector(".intro-cut");
+      const stain = intro.querySelector(".intro-stain"), bed = intro.querySelector(".intro-bed");
+      gsap.set([top, bottom], { xPercent: 0, yPercent: 0 });
+      gsap.set([titles, bed, intro.querySelector(".intro-controls")], { opacity: 1 });
+      gsap.set(cut, { scaleX: 0, rotation: -9, opacity: 1, transformOrigin: "center center" });
+      gsap.set(stain, { opacity: 0, scale: .03, rotation: -12, transformOrigin: "center center" });
+      introTimeline = gsap.timeline({ paused: true, defaults: { ease: "power3.inOut" }, onComplete: stopIntro });
+      introTimeline.call(() => phase("blade"), null, 1.8)
+        .to(cut, { scaleX: 1, duration: .22, ease: "power2.inOut" }, 1.8)
+        .to(top, { xPercent: 1, yPercent: -1.3, duration: .22 }, 2.02)
+        .to(bottom, { xPercent: -1, yPercent: 1.3, duration: .22 }, 2.02)
+        .to(cut, { opacity: 0, duration: .15 }, 2.15)
+        .to(titles, { opacity: 0, duration: .45 }, 2.35)
+        .call(() => phase("stain"), null, 2.7)
+        .to(stain, { opacity: 1, scale: 1, rotation: 4, duration: .8, ease: "expo.out" }, 2.7)
+        .fromTo(intro.querySelectorAll(".ink-drops circle"), { scale: 0 }, { scale: 1, duration: .45, stagger: .035, ease: "back.out(1.4)" }, 2.8)
+        .to(stain, { scale: 1.12, rotation: 0, duration: .7, ease: "sine.inOut" }, 3.5)
+        .to(stain, { opacity: 0, scale: 2.2, duration: .65, ease: "power2.in" }, 4.45)
+        .to(bed, { opacity: 0, duration: .15 }, 4.6)
+        .call(() => phase("reveal"), null, 4.7)
+        .to(top, { xPercent: 8, yPercent: -100, duration: 1.3 }, 4.7)
+        .to(bottom, { xPercent: -8, yPercent: 100, duration: 1.3 }, 4.7)
+        .to(intro.querySelector(".intro-controls"), { opacity: 0, duration: .15 }, 5.65);
+    } else {
+      root.classList.add("is-directed-intro");
     }
-    root.classList.add("is-directed-intro");
-    intro.style.display = "block";
-    const top = intro.querySelector(".intro-slice-top"), bottom = intro.querySelector(".intro-slice-bottom");
-    const titles = intro.querySelectorAll(".intro-wordmark"), cut = intro.querySelector(".intro-cut");
-    introTimeline = gsap.timeline({ defaults: { ease: "power3.inOut" }, onComplete: stopIntro });
-    introTimeline.set([top, bottom], { xPercent: 0, yPercent: 0 })
-      .set(titles, { opacity: 0 })
-      .set(cut, { scaleX: 0, rotation: -3.5, opacity: 1, transformOrigin: "center center" })
-      .to(titles, { opacity: 1, duration: .45, ease: "power2.out" }, .05)
-      .call(() => emit("cut"), null, .73)
-      .to(cut, { scaleX: 1, duration: .32, ease: "power2.inOut" }, .75)
-      .to(top, { xPercent: 3, yPercent: -100, duration: 1.15 }, 1.1)
-      .to(bottom, { xPercent: -3, yPercent: 100, duration: 1.15 }, 1.1)
-      .to(cut, { opacity: 0, duration: .15 }, 1.1);
-    introTimer = setTimeout(stopIntro, 2800);
+    let beginning = false;
+    async function begin(silent = false) {
+      if (beginning || !introActive || introRunning) return;
+      beginning = true;
+      start.hidden = true;
+      let result;
+      try { result = await window.PortfolioSound?.startIntro(silent); }
+      catch (_) { result = { failed: true }; }
+      beginning = false;
+      if (!introActive || version !== introVersion) return;
+      if (result?.blocked || result?.failed) {
+        root.classList.add("is-awaiting-audio");
+        start.hidden = false;
+        start.dataset.silent = result.failed ? "1" : "";
+        start.textContent = result.failed ? (english ? "Continue without sound" : "Продолжить без звука") : (english ? "Start with sound" : "Начать со звуком");
+        start.focus({ preventScroll: true });
+        return;
+      }
+      root.classList.remove("is-awaiting-audio");
+      introRunning = true;
+      intro.dataset.stage = "playing";
+      try { sessionStorage.setItem("arc-intro-seen", "1"); } catch (_) { /* Optional. */ }
+      emit("intro-start", { duration: 6, musicStarted: Boolean(result?.started) });
+      if (introTimeline) introTimeline.play(0);
+      else {
+        root.classList.remove("is-directed-intro");
+        root.classList.add("is-intro-playing");
+        introCutTimer = setTimeout(() => phase("blade"), 1800);
+      }
+      introTimer = setTimeout(stopIntro, introTimeline ? 6800 : 6000);
+    }
+    start.onclick = () => { void begin(start.dataset.silent === "1"); };
+    skip.onclick = stopIntro;
+    void begin();
   }
   const motifs = {
     ciel: '<path class="signal-path" d="M60 210H230L320 120L410 210H580M230 210L320 300L410 210"/><path class="signal-pulse" d="M60 210H230L320 120L410 210H580"/><circle class="signal-node" cx="60" cy="210" r="9"/><circle class="signal-node" cx="580" cy="210" r="9"/>',
@@ -193,7 +252,16 @@
     portrait.style.removeProperty("--portrait-x");
     portrait.style.removeProperty("--portrait-y");
   });
-  document.addEventListener("visibilitychange", () => root.classList.toggle("is-page-hidden", document.hidden));
+  document.addEventListener("visibilitychange", () => {
+    root.classList.toggle("is-page-hidden", document.hidden);
+    if (!introRunning || !introTimeline) return;
+    clearTimeout(introTimer);
+    if (document.hidden) introTimeline.pause();
+    else {
+      introTimeline.resume();
+      introTimer = setTimeout(stopIntro, (6 - introTimeline.time()) * 1000 + 800);
+    }
+  });
   window.addEventListener("pagehide", stopIntro);
   window.addEventListener("resize", () => { if (introTimeline) stopIntro(); });
   window.addEventListener("load", refresh, { once: true });

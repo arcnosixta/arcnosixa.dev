@@ -1,4 +1,4 @@
-/* The supplied remix plays locally; the intro cut is the playback cue. */
+/* The supplied remix starts first; the director waits for real playback. */
 (() => {
   "use strict";
   if (document.documentElement.dataset.design !== "cinematic") return;
@@ -17,6 +17,7 @@
   let music = false, effects = false, wantsMusic = true, wantsEffects = true;
   let musicVolume = .35, effectsVolume = .45;
   let cutReached = false, blocked = false, fileError = false;
+  let introSession = false;
   let context, effectsBus, noiseBuffer, suspendTimer;
   let autoStartArmed = true, lastEffect = -1, musicRequest = 0;
   try {
@@ -147,9 +148,9 @@
     syncUI();
   }
   function firstInteraction(event) {
-    if (!autoStartArmed || !event.isTrusted || desk.contains(event.target)) return;
+    if (introSession || !autoStartArmed || !event.isTrusted || desk.contains(event.target)) return;
     if (event.type === "keydown" && ["Shift", "Control", "Alt", "Meta", "Escape"].includes(event.key)) return;
-    // Unlock during a gesture, but leave the first musical cue to the cut.
+    // Outside the intro, retry audio after an autoplay block.
     if (cutReached) void requestMusic();
     void resumeEffects();
   }
@@ -195,10 +196,11 @@
     if (now - lastEffect < .08) return;
     lastEffect = now;
     const t = now + .008;
-    if (kind === "cut") {
-      noise(t, .45, .12, 3600, true);
-      tone(33, t + .37, .7, .3, "sine", 30);
-      tone(81, t + .39, .8, .07);
+    if (kind === "blade") {
+      noise(t, .18, .2, 6800, true);
+      tone(101, t + .015, .24, .075, "sine", 1500);
+      tone(88, t + .04, .4, .045, "triangle");
+      tone(40, t + .07, .23, .1, "sine", 44);
     } else if (kind === "chapter") { noise(t, .3, .055, 2200, true); tone(69, t, .5, .035); }
     else if (kind === "open") { tone(64, t, .3, .12); tone(76, t + .07, .4, .065); noise(t, .06, .07, 1600); }
     else if (kind === "hover") tone(88, t, .09, .025);
@@ -226,18 +228,26 @@
   });
   recording.addEventListener("pause", () => { music = false; syncUI(); });
   recording.addEventListener("error", () => { music = false; fileError = true; syncUI(); });
-  document.addEventListener("click", (event) => { if (!desk.contains(event.target) && !event.target.closest(".project-toggle, .intro-replay") && event.target.closest("a, button, summary")) effect("click"); });
+  document.addEventListener("click", (event) => { if (!introSession && !desk.contains(event.target) && !event.target.closest(".project-toggle, .intro-replay") && event.target.closest("a, button, summary")) effect("click"); });
   document.addEventListener("pointerover", (event) => { const card = event.target.closest(".project"); if (event.pointerType === "mouse" && card && !card.contains(event.relatedTarget)) effect("hover"); });
   document.addEventListener("portfolio:render", syncUI);
-  document.addEventListener("portfolio:intro", () => { cutReached = false; pauseMusic(); });
-  document.addEventListener("portfolio:cut", async () => {
-    cutReached = true;
-    // Start the supplied track before the synthetic cut accent.
-    const started = await requestMusic(true);
-    await resumeEffects();
-    if (started || !wantsMusic) effect("cut");
-  });
+  window.PortfolioSound = {
+    async startIntro(silent = false) {
+      introSession = true;
+      cutReached = true;
+      blocked = fileError = false;
+      if (silent) { setPlayback(false, false); return { muted: true }; }
+      pauseMusic();
+      // Resume Web Audio in the same gesture as the MP3, without delaying music.
+      void resumeEffects();
+      const started = await requestMusic(true);
+      return { started, blocked: blocked && wantsMusic, failed: fileError, muted: !wantsMusic };
+    },
+    cancelIntroStart() { pauseMusic(); },
+  };
+  document.addEventListener("portfolio:blade", () => effect("blade"));
   document.addEventListener("portfolio:intro-end", () => {
+    introSession = false;
     if (cutReached) return;
     cutReached = true;
     void requestMusic();

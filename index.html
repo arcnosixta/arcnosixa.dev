@@ -82,8 +82,8 @@
     <link rel="stylesheet" href="styles.css?v=4" />
     <link rel="stylesheet" href="atelier.css?v=8" />
     <link rel="stylesheet" href="studio.css?v=6" />
-    <link rel="stylesheet" href="cinematic.css?v=11" />
-    <link rel="stylesheet" href="cinematic-motion.css?v=4" />
+    <link rel="stylesheet" href="cinematic.css?v=12" />
+    <link rel="stylesheet" href="cinematic-motion.css?v=5" />
     <noscript>
       <style>
         .reveal,
@@ -141,6 +141,7 @@
   </head>
   <body>
     <div class="cinematic-intro" id="cinematicIntro" aria-hidden="true">
+      <div class="intro-bed" aria-hidden="true"></div>
       <div class="intro-slice intro-slice-top">
         <svg class="intro-wordmark" viewBox="0 0 1600 900" focusable="false"><text class="intro-name" x="800" y="450" text-anchor="middle" dominant-baseline="central">ARCNOSIXTA</text><text class="intro-caption" x="800" y="590" text-anchor="middle">CODE / FORM / IMAGINATION</text></svg>
       </div>
@@ -148,6 +149,14 @@
         <svg class="intro-wordmark" viewBox="0 0 1600 900" focusable="false"><text class="intro-name" x="800" y="450" text-anchor="middle" dominant-baseline="central">ARCNOSIXTA</text><text class="intro-caption" x="800" y="590" text-anchor="middle">CODE / FORM / IMAGINATION</text></svg>
       </div>
       <div class="intro-cut"></div>
+      <svg class="intro-stain" viewBox="0 0 600 600" aria-hidden="true" focusable="false">
+        <path d="M298 147C326 143 341 168 361 169C387 171 402 149 416 173C427 194 403 217 423 234C448 254 464 269 446 293C430 314 458 339 434 358C415 373 399 363 391 392C382 422 357 409 339 426C319 445 298 422 279 430C250 443 239 416 217 410C190 403 175 412 168 382C163 357 140 349 150 322C159 299 137 282 151 257C164 235 187 238 186 213C185 181 212 188 228 170C247 148 275 172 298 147Z" />
+        <g class="ink-drops"><circle cx="142" cy="173" r="11"/><circle cx="460" cy="188" r="7"/><circle cx="485" cy="347" r="12"/><circle cx="416" cy="445" r="8"/><circle cx="203" cy="453" r="6"/><circle cx="109" cy="343" r="8"/><circle cx="332" cy="108" r="5"/><circle cx="492" cy="254" r="5"/></g>
+      </svg>
+      <div class="intro-controls">
+        <button class="intro-start" id="introStart" type="button" hidden>Начать со звуком</button>
+        <button class="intro-skip" id="introSkip" type="button">Пропустить</button>
+      </div>
     </div>
     <a class="skip-link" href="#main" data-i18n="a11y.skip">К содержанию</a>
 
@@ -455,7 +464,7 @@
     <script src="app.js?v=8"></script>
     <script src="vendor/gsap.min.js"></script>
     <script src="vendor/ScrollTrigger.min.js"></script>
-    <script src="soundtrack.js?v=5"></script>
-    <script src="cinematic.js?v=12"></script>
+    <script src="soundtrack.js?v=6"></script>
+    <script src="cinematic.js?v=13"></script>
   </body>
 </html>

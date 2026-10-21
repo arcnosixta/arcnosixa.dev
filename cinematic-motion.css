@@ -28,7 +28,7 @@
 .cinema-scroll::after { content: ""; display: block; height: 40%; background: var(--signal); animation: scroll-thread 2.4s ease-in-out infinite; }
 .is-page-hidden .cinema-scroll::after, .is-page-hidden .sound-bars i { animation-play-state: paused; }
 .is-directed-intro .cinematic-intro, .is-directed-intro .cinematic-intro * { animation: none; }
-.is-directed-intro .cinematic-intro { display: block; position: fixed; inset: 0; z-index: 100; pointer-events: none; overflow: hidden; }
+.is-directed-intro .cinematic-intro { display: block; position: fixed; inset: 0; z-index: 100; overflow: hidden; }
 .sound-desk { position: fixed; z-index: 90; right: 24px; bottom: 22px; display: flex; align-items: center; color: #f6f5f2; background: #0b0b0bf2; border: 1px solid #ffffff30; box-shadow: 0 12px 48px #0006; font: 10px "JetBrains Mono", monospace; }
 .sound-desk button { font: inherit; color: inherit; }
 .sound-main { min-height: 44px; padding: 0 16px; display: flex; align-items: center; gap: 12px; }
