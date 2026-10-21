@@ -10,6 +10,12 @@
   recording.loop = true;
   recording.setAttribute("aria-hidden", "true");
   document.body.append(recording);
+  const bladeRecording = document.createElement("audio");
+  bladeRecording.id = "portfolioBlade";
+  bladeRecording.src = "assets/audio/steel-blade-slice.mp3";
+  bladeRecording.preload = "auto";
+  bladeRecording.setAttribute("aria-hidden", "true");
+  document.body.append(bladeRecording);
   const copy = {
     ru: { start: "Включить звук", active: "Звук включён", title: "ЗВУКОВАЯ СЦЕНА", settings: "Настройки звука", close: "Закрыть настройки звука", music: "Музыка", fx: "Эффекты", volume: "Громкость", on: "Вкл", off: "Выкл", hint: "Музыка и эффекты включаются отдельно.", blocked: "Нажмите на страницу, чтобы включить музыку.", error: "Не удалось загрузить музыку. Попробуйте включить её ещё раз." },
     en: { start: "Enable sound", active: "Sound is on", title: "SOUND STAGE", settings: "Sound settings", close: "Close sound settings", music: "Music", fx: "Effects", volume: "Volume", on: "On", off: "Off", hint: "Music and effects have separate controls.", blocked: "Interact with the page to enable music.", error: "Could not load the music. Try enabling it again." },
@@ -26,6 +32,7 @@
     if (Number.isFinite(saved.effects)) effectsVolume = Math.max(0, Math.min(1, saved.effects));
   } catch (_) { /* Optional preferences. */ }
   recording.volume = musicVolume;
+  bladeRecording.volume = effectsVolume * .9;
 
   const desk = document.createElement("aside");
   desk.className = "sound-desk";
@@ -115,6 +122,8 @@
     for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
   }
   function setEffectsGain() {
+    bladeRecording.volume = effects ? effectsVolume * .9 : 0;
+    if (!effects) bladeRecording.pause();
     if (!context) return;
     effectsBus.gain.cancelAndHoldAtTime(context.currentTime);
     effectsBus.gain.linearRampToValueAtTime(effects ? effectsVolume * .55 : 0, context.currentTime + .15);
@@ -162,8 +171,9 @@
   function track(source, nodes) {
     source.onended = () => { source.disconnect(); nodes.forEach((node) => node.disconnect()); };
   }
-  function tone(midi, time, duration, level, type = "sine", endFrequency) {
-    const oscillator = context.createOscillator(), envelope = context.createGain();
+  function tone(midi, time, duration, level, type = "sine", endFrequency, pan = 0) {
+    const oscillator = context.createOscillator(), envelope = context.createGain(), panner = context.createStereoPanner();
+    panner.pan.value = pan;
     oscillator.type = type;
     oscillator.frequency.setValueAtTime(440 * 2 ** ((midi - 69) / 12), time);
     if (endFrequency) oscillator.frequency.exponentialRampToValueAtTime(endFrequency, time + duration);
@@ -171,13 +181,15 @@
     envelope.gain.linearRampToValueAtTime(level, time + .01);
     envelope.gain.exponentialRampToValueAtTime(.0001, time + duration);
     oscillator.connect(envelope);
-    envelope.connect(effectsBus);
-    track(oscillator, [envelope]);
+    envelope.connect(panner);
+    panner.connect(effectsBus);
+    track(oscillator, [envelope, panner]);
     oscillator.start(time);
     oscillator.stop(time + duration + .05);
   }
-  function noise(time, duration, level, frequency, sweep = false) {
-    const source = context.createBufferSource(), filter = context.createBiquadFilter(), envelope = context.createGain();
+  function noise(time, duration, level, frequency, sweep = false, pan = 0) {
+    const source = context.createBufferSource(), filter = context.createBiquadFilter(), envelope = context.createGain(), panner = context.createStereoPanner();
+    panner.pan.value = pan;
     source.buffer = noiseBuffer;
     filter.type = "bandpass";
     filter.Q.value = .7;
@@ -186,11 +198,11 @@
     envelope.gain.setValueAtTime(0, time);
     envelope.gain.linearRampToValueAtTime(level, time + Math.min(.08, duration / 3));
     envelope.gain.exponentialRampToValueAtTime(.0001, time + duration);
-    source.connect(filter); filter.connect(envelope); envelope.connect(effectsBus);
-    track(source, [filter, envelope]);
+    source.connect(filter); filter.connect(envelope); envelope.connect(panner); panner.connect(effectsBus);
+    track(source, [filter, envelope, panner]);
     source.start(time); source.stop(time + duration + .05);
   }
-  function effect(kind) {
+  function effect(kind, variant = 0) {
     if (!effects || context?.state !== "running" || document.hidden) return;
     const now = context.currentTime;
     if (now - lastEffect < .08) return;
@@ -201,10 +213,26 @@
       tone(101, t + .015, .24, .075, "sine", 1500);
       tone(88, t + .04, .4, .045, "triangle");
       tone(40, t + .07, .23, .1, "sine", 44);
+    } else if (kind === "splash") {
+      const index = Math.max(0, Math.min(3, variant));
+      const pan = [-.55, -.18, .22, .55][index];
+      const pitch = [54, 60, 49, 64][index];
+      // A wet impact, dropping liquid resonance, then a smaller trailing drop.
+      noise(t, [.12, .09, .15, .1][index], .13, [1000, 650, 1450, 850][index], true, pan);
+      tone(pitch, t, .13, .095, "sine", 72 + index * 13, pan);
+      tone(pitch + 17, t + .045, .075, .045, "sine", 180 + index * 35, pan);
     } else if (kind === "chapter") { noise(t, .3, .055, 2200, true); tone(69, t, .5, .035); }
     else if (kind === "open") { tone(64, t, .3, .12); tone(76, t + .07, .4, .065); noise(t, .06, .07, 1600); }
     else if (kind === "hover") tone(88, t, .09, .025);
     else { tone(kind === "close" ? 60 : 76, t, .12, .085, "triangle"); noise(t, .035, .04, 2400); }
+  }
+  function playBlade() {
+    if (!effects || document.hidden) return;
+    bladeRecording.currentTime = 0;
+    bladeRecording.volume = effectsVolume * .9;
+    bladeRecording.play().then(() => {
+      if (!effects || document.hidden || !introSession) bladeRecording.pause();
+    }).catch(() => effect("blade"));
   }
 
 
@@ -237,6 +265,7 @@
       cutReached = true;
       blocked = fileError = false;
       if (silent) { setPlayback(false, false); return { muted: true }; }
+      bladeRecording.pause();
       pauseMusic();
       // Resume Web Audio in the same gesture as the MP3, without delaying music.
       void resumeEffects();
@@ -245,8 +274,10 @@
     },
     cancelIntroStart() { pauseMusic(); },
   };
-  document.addEventListener("portfolio:blade", () => effect("blade"));
+  document.addEventListener("portfolio:blade", playBlade);
+  document.addEventListener("portfolio:splash", (event) => effect("splash", event.detail.index));
   document.addEventListener("portfolio:intro-end", () => {
+    bladeRecording.pause();
     introSession = false;
     if (cutReached) return;
     cutReached = true;
@@ -256,6 +287,7 @@
   document.addEventListener("portfolio:project", (event) => effect(event.detail.open ? "open" : "close"));
   document.addEventListener("portfolio:chapter", () => effect("chapter"));
   function pauseForPage() {
+    bladeRecording.pause();
     pauseMusic();
     effects = false;
     context?.suspend().catch(() => {});

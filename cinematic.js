@@ -8,6 +8,7 @@
   const portrait = hero.querySelector(".cinematic-visual"), replay = document.getElementById("introReplay");
   const motion = window.matchMedia("(prefers-reduced-motion: reduce)");
   let introTimeline, introTimer, introCutTimer, scenes, refreshTimer;
+  let introSplashTimers = [];
   let introActive = false;
   let introRunning = false, introVersion = 0;
   let hoverCleanup = () => {};
@@ -37,6 +38,8 @@
     introVersion++;
     clearTimeout(introTimer);
     clearTimeout(introCutTimer);
+    introSplashTimers.forEach(clearTimeout);
+    introSplashTimers = [];
     clearTimeout(window.arcIntroFallback);
     introTimeline?.kill();
     introTimeline = null;
@@ -45,7 +48,7 @@
       intro.style.display = "none";
       intro.setAttribute("aria-hidden", "true");
       intro.dataset.stage = "closed";
-      gsap?.set(intro.querySelectorAll(".intro-bed, .intro-slice, .intro-wordmark, .intro-cut, .intro-stain, .ink-drops circle, .intro-controls"), { clearProps: "transform,opacity" });
+      gsap?.set(intro.querySelectorAll(".intro-bed, .intro-slice, .intro-wordmark, .intro-cut, .intro-splashes, .blood-splash, .intro-controls"), { clearProps: "transform,opacity" });
     }
     if (wasActive && !wasRunning) window.PortfolioSound?.cancelIntroStart();
     if (wasActive) emit("intro-end");
@@ -63,6 +66,7 @@
     start.dataset.silent = "";
     skip.textContent = english ? "Skip intro" : "Пропустить";
     intro.style.display = "block";
+    root.classList.add("is-directed-intro");
     intro.setAttribute("aria-hidden", "false");
     intro.setAttribute("role", "region");
     intro.setAttribute("aria-label", english ? "Introduction" : "Вступление");
@@ -79,28 +83,43 @@
       const bounds = name.getBBox();
       name.setAttribute("dy", String(450 - bounds.y - bounds.height / 2));
     });
+    const bloodLayer = intro.querySelector(".intro-splashes");
+    const bloodMarks = [...intro.querySelectorAll(".blood-splash")];
+    const nameBounds = intro.querySelector(".intro-name").getBBox();
+    const matrix = bloodLayer.getScreenCTM();
+    if (matrix) intro.querySelectorAll(".blood-anchor").forEach((anchor) => {
+      const x = nameBounds.x + nameBounds.width * Number(anchor.dataset.fraction);
+      const screenX = x * matrix.a + matrix.e;
+      const cutY = window.innerHeight / 2 - (screenX - window.innerWidth / 2) * Math.tan(9 * Math.PI / 180);
+      const y = (cutY - matrix.f) / matrix.d + Number(anchor.dataset.offset);
+      anchor.setAttribute("transform", `translate(${x.toFixed(2)} ${y.toFixed(2)})`);
+    });
+    const impacts = [2.22, 2.42, 2.61, 2.8];
     const phase = (name) => { intro.dataset.stage = name; emit(name); };
+    const splash = (index) => { if (index === 0) phase("stain"); emit("splash", { index }); };
     if (gsap) {
       root.classList.add("is-directed-intro");
       const top = intro.querySelector(".intro-slice-top"), bottom = intro.querySelector(".intro-slice-bottom");
       const titles = intro.querySelectorAll(".intro-wordmark"), cut = intro.querySelector(".intro-cut");
-      const stain = intro.querySelector(".intro-stain"), bed = intro.querySelector(".intro-bed");
+      const bed = intro.querySelector(".intro-bed");
       gsap.set([top, bottom], { xPercent: 0, yPercent: 0 });
       gsap.set([titles, bed, intro.querySelector(".intro-controls")], { opacity: 1 });
       gsap.set(cut, { scaleX: 0, rotation: -9, opacity: 1, transformOrigin: "center center" });
-      gsap.set(stain, { opacity: 0, scale: .03, rotation: -12, transformOrigin: "center center" });
+      gsap.set(bloodLayer, { opacity: 1 });
+      bloodMarks.forEach((mark) => gsap.set(mark, { opacity: 0, scale: .04, rotation: Number(mark.dataset.rotation) - 8, transformOrigin: "50% 50%" }));
       introTimeline = gsap.timeline({ paused: true, defaults: { ease: "power3.inOut" }, onComplete: stopIntro });
       introTimeline.call(() => phase("blade"), null, 1.8)
         .to(cut, { scaleX: 1, duration: .22, ease: "power2.inOut" }, 1.8)
         .to(top, { xPercent: 1, yPercent: -1.3, duration: .22 }, 2.02)
         .to(bottom, { xPercent: -1, yPercent: 1.3, duration: .22 }, 2.02)
-        .to(cut, { opacity: 0, duration: .15 }, 2.15)
-        .to(titles, { opacity: 0, duration: .45 }, 2.35)
-        .call(() => phase("stain"), null, 2.7)
-        .to(stain, { opacity: 1, scale: 1, rotation: 4, duration: .8, ease: "expo.out" }, 2.7)
-        .fromTo(intro.querySelectorAll(".ink-drops circle"), { scale: 0 }, { scale: 1, duration: .45, stagger: .035, ease: "back.out(1.4)" }, 2.8)
-        .to(stain, { scale: 1.12, rotation: 0, duration: .7, ease: "sine.inOut" }, 3.5)
-        .to(stain, { opacity: 0, scale: 2.2, duration: .65, ease: "power2.in" }, 4.45)
+        .to(cut, { opacity: 0, duration: .15 }, 2.15);
+      bloodMarks.forEach((mark, index) => {
+        const size = Number(getComputedStyle(mark).getPropertyValue("--splash-scale")) || 1;
+        introTimeline.call(() => splash(index), null, impacts[index])
+          .to(mark, { opacity: 1, scale: size, rotation: Number(mark.dataset.rotation), duration: .24, ease: "expo.out" }, impacts[index])
+          .to(mark, { scale: size * 1.06, duration: .65, ease: "power1.out" }, impacts[index] + .24);
+      });
+      introTimeline.to([titles, bloodLayer], { opacity: 0, duration: .35 }, 4.35)
         .to(bed, { opacity: 0, duration: .15 }, 4.6)
         .call(() => phase("reveal"), null, 4.7)
         .to(top, { xPercent: 8, yPercent: -100, duration: 1.3 }, 4.7)
@@ -137,6 +156,7 @@
         root.classList.remove("is-directed-intro");
         root.classList.add("is-intro-playing");
         introCutTimer = setTimeout(() => phase("blade"), 1800);
+        introSplashTimers = impacts.map((time, index) => setTimeout(() => splash(index), time * 1000));
       }
       introTimer = setTimeout(stopIntro, introTimeline ? 6800 : 6000);
     }
