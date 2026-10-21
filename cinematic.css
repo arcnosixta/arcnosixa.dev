@@ -154,17 +154,22 @@
 /* The public portfolio uses Cinematic; earlier experiments stay at their URLs. */
 [data-design="cinematic"] .intro-replay { display: grid; place-items: center; width: 40px; height: 40px; border: 1px solid var(--line); color: var(--signal); font-size: 24px; }
 [data-design="cinematic"] .intro-replay:hover { border-color: var(--signal); }
-.is-intro-playing .cinematic-intro { display: block; position: fixed; inset: 0; z-index: 100; pointer-events: none; overflow: hidden; animation: intro-vanish 1.9s both; }
+.is-intro-playing .cinematic-intro { display: block; position: fixed; inset: 0; z-index: 100; pointer-events: none; overflow: hidden; animation: intro-vanish 2.3s both; }
 .intro-slice { position: absolute; inset: 0; background: #000; }
-.intro-slice-top { clip-path: polygon(0 0, 100% 0, 100% 37%, 0 63%); animation: intro-top 1.9s cubic-bezier(.76,0,.24,1) both; }
-.intro-slice-bottom { clip-path: polygon(0 63%, 100% 37%, 100% 100%, 0 100%); animation: intro-bottom 1.9s cubic-bezier(.76,0,.24,1) both; }
-.intro-wordmark { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #fa8b34; font-family: Impact, "Arial Narrow", sans-serif; font-size: clamp(42px, 12vw, 180px); letter-spacing: -.045em; animation: intro-title 1.9s both; }
-.intro-wordmark > span { font-family: "JetBrains Mono", monospace; font-size: clamp(8px, 1vw, 13px); letter-spacing: .18em; margin-top: 12px; }
-.intro-cut { position: absolute; top: 50%; left: -10%; width: 120%; height: 2px; background: #fa8b34; transform: rotate(-9deg); animation: intro-cut 1.9s both; }
-@keyframes intro-top { 0%, 44% { transform: translateY(0); } 100% { transform: translateY(-110%); } }
-@keyframes intro-bottom { 0%, 44% { transform: translateY(0); } 100% { transform: translateY(110%); } }
-@keyframes intro-title { 0% { opacity: 0; scale: 1.08; } 20%, 45% { opacity: 1; scale: 1; } 64%, 100% { opacity: 0; scale: .98; } }
-@keyframes intro-cut { 0%, 22% { clip-path: inset(0 100% 0 0); opacity: 0; } 40%, 50% { clip-path: inset(0); opacity: 1; } 74%, 100% { clip-path: inset(0); opacity: 0; } }
+.intro-slice-top { clip-path: inset(0 0 50% 0); }
+.intro-slice-bottom { clip-path: inset(50% 0 0 0); }
+.intro-wordmark { position: absolute; inset: 0; display: block; width: 100%; height: 100%; fill: #fa8b34; }
+.intro-name { font-family: Impact, "Arial Narrow", sans-serif; font-size: 190px; font-weight: 400; }
+.intro-caption { font-family: "JetBrains Mono", monospace; font-size: 15px; letter-spacing: 4px; }
+.intro-cut { position: absolute; top: calc(50% - 1px); left: 0; width: 100%; height: 2px; background: #fa8b34; transform-origin: left center; }
+.is-intro-playing .intro-slice-top { animation: intro-top 2.3s cubic-bezier(.76,0,.24,1) both; }
+.is-intro-playing .intro-slice-bottom { animation: intro-bottom 2.3s cubic-bezier(.76,0,.24,1) both; }
+.is-intro-playing .intro-wordmark { animation: intro-title 2.3s both; }
+.is-intro-playing .intro-cut { animation: intro-cut 2.3s both; }
+@keyframes intro-top { 0%, 48% { transform: translateY(0); } 100% { transform: translateY(-100%); } }
+@keyframes intro-bottom { 0%, 48% { transform: translateY(0); } 100% { transform: translateY(100%); } }
+@keyframes intro-title { 0% { opacity: 0; } 20%, 100% { opacity: 1; } }
+@keyframes intro-cut { 0%, 32% { transform: scaleX(0); opacity: 1; } 47% { transform: scaleX(1); opacity: 1; } 56%, 100% { transform: scaleX(1); opacity: 0; } }
 @keyframes intro-vanish { 0%, 82% { visibility: visible; } 100% { visibility: hidden; } }
 @media (prefers-reduced-motion: reduce) {
   .is-intro-playing .cinematic-intro { display: none; }

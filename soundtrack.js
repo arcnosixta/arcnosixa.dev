@@ -1,33 +1,34 @@
-/* Optional local music file, original fallback score, and synthesized UI effects. */
+/* Official Number One — Bankai stream, plus independently synthesized UI effects. */
 (() => {
   "use strict";
   if (document.documentElement.dataset.design !== "cinematic") return;
+  const VIDEO_ID = "7nQAGywy3Rw";
+  const WATCH_URL = `https://www.youtube.com/watch?v=${VIDEO_ID}`;
   const AudioEngine = window.AudioContext || window.webkitAudioContext;
-  if (!AudioEngine) return;
   const copy = {
-    ru: { start: "Включить звук", active: "Звук включён", title: "ЗВУКОВАЯ СЦЕНА", settings: "Настройки звука", close: "Закрыть настройки звука", music: "Музыка", fx: "Эффекты", volume: "Громкость", on: "Вкл", off: "Выкл", note: "ARC / AFTER HOURS\nЭмбиент · 76 BPM · оригинальная композиция", hint: "Музыка и эффекты включаются отдельно.", error: "Не удалось включить звук. Попробуйте ещё раз." },
-    en: { start: "Enable sound", active: "Sound is on", title: "SOUND STAGE", settings: "Sound settings", close: "Close sound settings", music: "Music", fx: "Effects", volume: "Volume", on: "On", off: "Off", note: "ARC / AFTER HOURS\nAmbient · 76 BPM · original score", hint: "Music and effects have separate controls.", error: "Could not enable audio. Please try again." },
+    ru: { start: "Включить звук", active: "Звук включён", title: "ЗВУКОВАЯ СЦЕНА", settings: "Настройки звука", close: "Скрыть плеер и остановить музыку", music: "Музыка", fx: "Эффекты", volume: "Громкость", on: "Вкл", off: "Выкл", source: "Официальная публикация VIZ ↗", hint: "Музыка и эффекты включаются отдельно.", blocked: "Нажмите ▶ в плеере, чтобы включить музыку.", error: "Плеер недоступен. Открыть трек можно по ссылке выше.", local: "Откройте сайт через localhost или HTTPS, чтобы включить плеер." },
+    en: { start: "Enable sound", active: "Sound is on", title: "SOUND STAGE", settings: "Sound settings", close: "Hide player and stop music", music: "Music", fx: "Effects", volume: "Volume", on: "On", off: "Off", source: "Official VIZ release ↗", hint: "Music and effects have separate controls.", blocked: "Press ▶ in the player to start the music.", error: "Player unavailable. Open the track using the link above.", local: "Open the site on localhost or HTTPS to use the player." },
   };
-  Object.assign(copy.ru, { choose: "Выбрать Number One / TYBW", replace: "Заменить аудиофайл", selected: "Выбранный трек", fileError: "Не удалось воспроизвести файл. Выберите MP3, WAV или OGG.", note: "ARC / AFTER HOURS · эмбиент\nДля Number One / TYBW выберите аудиофайл." });
-  Object.assign(copy.en, { choose: "Choose Number One / TYBW", replace: "Replace audio file", selected: "Selected track", fileError: "Could not play this file. Choose MP3, WAV or OGG.", note: "ARC / AFTER HOURS · ambient\nChoose an audio file for Number One / TYBW." });
-  const recording = new Audio();
-  recording.preload = "none";
-  recording.loop = true;
-  const configuredSource = document.documentElement.dataset.musicSrc;
-  if (configuredSource) recording.src = configuredSource;
-  let fileURL = "", hasRecording = Boolean(configuredSource), fileName = "Number One / Thousand-Year Blood War", fileFailed = false;
-  let music = false, effects = false, musicVolume = .35, effectsVolume = .45;
+  let music = false, effects = false, wantsMusic = true, wantsEffects = true;
+  let musicVolume = .35, effectsVolume = .45;
+  let player, playerReady = false, playerLoading = false, playerError = false, blocked = false;
+  let context, effectsBus, noiseBuffer, suspendTimer, loadTimer;
+  let autoStartArmed = true, lastEffect = -1;
+  let expanded = false;
   try {
     const saved = JSON.parse(localStorage.getItem("arc-sound-levels") || "{}");
     if (Number.isFinite(saved.music)) musicVolume = Math.max(0, Math.min(1, saved.music));
     if (Number.isFinite(saved.effects)) effectsVolume = Math.max(0, Math.min(1, saved.effects));
-  } catch (_) { /* Every visit starts silent. Only levels are remembered. */ }
+  } catch (_) { /* Optional preferences. */ }
+
   const desk = document.createElement("aside");
   desk.className = "sound-desk";
   desk.innerHTML = `<button class="sound-main" type="button" aria-pressed="false"><span class="sound-bars" aria-hidden="true"><i></i><i></i><i></i><i></i></span><span class="sound-label"></span></button>
     <button class="sound-settings" type="button" aria-expanded="false" aria-controls="soundPanel"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M4 7h16M4 17h16"/><circle cx="9" cy="7" r="3" fill="#0b0b0b"/><circle cx="15" cy="17" r="3" fill="#0b0b0b"/></svg></button>
-    <div class="sound-panel" id="soundPanel" hidden><div class="sound-panel-head"><span class="sound-title"></span><button class="sound-close" type="button">×</button></div><p class="sound-track"></p>
-      <button type="button" class="sound-file"></button><input class="sound-file-input" type="file" accept="audio/*,.mp3,.wav,.ogg,.m4a,.flac" hidden />
+    <div class="sound-panel" id="soundPanel" hidden><div class="sound-panel-head"><span class="sound-title"></span><button class="sound-close" type="button">×</button></div>
+      <p class="sound-track">Number One — Bankai<br>Shiro SAGISU · Hazel Fernandes</p>
+      <a class="sound-source" target="_blank" rel="noreferrer" href="${WATCH_URL}"></a>
+      <div id="soundPlayer" class="sound-player"></div>
       <div class="sound-row"><label for="musicVolume" class="music-name"></label><button type="button" class="sound-music" aria-pressed="false"></button><input id="musicVolume" type="range" min="0" max="100" step="1" /></div>
       <div class="sound-row"><label for="effectsVolume" class="effects-name"></label><button type="button" class="sound-effects" aria-pressed="false"></button><input id="effectsVolume" type="range" min="0" max="100" step="1" /></div>
       <p class="sound-status" role="status"></p></div>`;
@@ -38,12 +39,6 @@
   const musicSlider = q("#musicVolume"), effectsSlider = q("#effectsVolume");
   musicSlider.value = String(musicVolume * 100);
   effectsSlider.value = String(effectsVolume * 100);
-  let failed = false, pending = false;
-  let context, musicBus, effectsBus, rhythmBus, noiseBuffer, recordingBus;
-  let scheduler = 0, suspendTimer = 0, nextBeat = 0, beat = 0, inWork = false, lastEffect = -1;
-  const stepTime = 60 / 76 / 2;
-  const chords = [[45, 52, 59, 64], [41, 48, 55, 60], [48, 55, 62, 67], [43, 50, 57, 62]];
-  const musicSources = new Set();
   const words = () => copy[document.documentElement.lang === "en" ? "en" : "ru"];
 
   function syncUI() {
@@ -52,10 +47,12 @@
     main.setAttribute("aria-pressed", String(music || effects));
     q(".sound-label").textContent = music || effects ? t.active : t.start;
     settings.setAttribute("aria-label", t.settings);
+    settings.setAttribute("aria-expanded", String(!panel.hidden && expanded));
+    panel.classList.toggle("is-compact", !expanded);
+    panel.classList.toggle("has-message", playerError || blocked || location.protocol === "file:");
     q(".sound-close").setAttribute("aria-label", t.close);
     q(".sound-title").textContent = t.title;
-    q(".sound-track").textContent = hasRecording ? `${t.selected}\n${fileName}` : t.note;
-    q(".sound-file").textContent = hasRecording ? t.replace : t.choose;
+    q(".sound-source").textContent = t.source;
     q(".music-name").textContent = t.music;
     q(".effects-name").textContent = t.fx;
     musicButton.textContent = music ? t.on : t.off;
@@ -64,73 +61,155 @@
     effectsButton.setAttribute("aria-pressed", String(effects));
     musicButton.setAttribute("aria-label", t.music);
     effectsButton.setAttribute("aria-label", t.fx);
+    effectsButton.disabled = !AudioEngine;
     musicSlider.setAttribute("aria-label", `${t.music}: ${t.volume}`);
     effectsSlider.setAttribute("aria-label", `${t.fx}: ${t.volume}`);
-    q(".sound-status").textContent = fileFailed ? t.fileError : failed ? t.error : t.hint;
-    q(".sound-track").style.whiteSpace = "pre-line";
+    q(".sound-status").textContent = location.protocol === "file:" ? t.local : playerError ? t.error : blocked ? t.blocked : t.hint;
+    const iframe = q("iframe");
+    if (iframe) { iframe.title = "Number One — Bankai / BLEACH: Thousand-Year Blood War / VIZ"; iframe.classList.add("sound-player"); }
   }
-  function ramp(param, value, seconds = .25) {
-    param.cancelAndHoldAtTime(context.currentTime);
-    param.linearRampToValueAtTime(value, context.currentTime + seconds);
+  function showPanel() { panel.hidden = false; syncUI(); }
+  function disarmAutoStart() {
+    autoStartArmed = false;
+    document.removeEventListener("pointerdown", firstInteraction, true);
+    document.removeEventListener("keydown", firstInteraction, true);
   }
-  function build() {
+
+  function createPlayer() {
+    if (player || !window.YT?.Player) return;
+    player = new window.YT.Player("soundPlayer", {
+      width: "100%", height: "200", videoId: VIDEO_ID,
+      host: "https://www.youtube-nocookie.com",
+      playerVars: { playsinline: 1, controls: 1, rel: 0, origin: location.origin, loop: 1, playlist: VIDEO_ID },
+      events: {
+        onReady(event) {
+          clearTimeout(loadTimer);
+          playerReady = true;
+          playerError = false;
+          event.target.setVolume(Math.round(musicVolume * 100));
+          syncUI();
+          if (wantsMusic && !document.hidden) { showPanel(); event.target.playVideo(); }
+        },
+        onStateChange(event) {
+          if (event.data === 1) {
+            if (document.hidden || !wantsMusic) { event.target.pauseVideo(); return; }
+            music = true;
+            blocked = playerError = false;
+            showPanel();
+          } else if (event.data === 2) {
+            if (music && !document.hidden) { wantsMusic = false; disarmAutoStart(); }
+            music = false;
+          } else if (event.data === 0) {
+            music = false;
+            if (wantsMusic && !document.hidden) { event.target.seekTo(0); event.target.playVideo(); }
+          }
+          syncUI();
+        },
+        onAutoplayBlocked() { music = false; blocked = true; syncUI(); },
+        onError() { clearTimeout(loadTimer); music = wantsMusic = false; playerError = true; syncUI(); },
+      },
+    });
+  }
+  function ensurePlayer() {
+    if (playerReady) return;
+    if (window.YT?.Player) { createPlayer(); return; }
+    if (playerLoading) return;
+    playerLoading = true;
+    const previous = window.onYouTubeIframeAPIReady;
+    window.onYouTubeIframeAPIReady = () => { previous?.(); createPlayer(); };
+    const script = document.createElement("script");
+    script.src = "https://www.youtube.com/iframe_api";
+    script.async = true;
+    script.onerror = () => { playerError = true; playerLoading = false; syncUI(); script.remove(); };
+    document.head.append(script);
+    loadTimer = setTimeout(() => { if (!playerReady) { playerError = true; syncUI(); } }, 15000);
+  }
+
+  function buildEffects() {
+    if (!AudioEngine || context) return;
     context = new AudioEngine();
+    effectsBus = context.createGain();
+    effectsBus.gain.value = 0;
     const limiter = context.createDynamicsCompressor();
     limiter.threshold.value = -18;
-    limiter.knee.value = 18;
     limiter.ratio.value = 5;
-    limiter.connect(context.destination);
-    musicBus = context.createGain();
-    recordingBus = context.createGain();
-    effectsBus = context.createGain();
-    rhythmBus = context.createGain();
-    musicBus.gain.value = effectsBus.gain.value = 0;
-    recordingBus.gain.value = 0;
-    rhythmBus.gain.value = inWork ? 1 : .12;
-    musicBus.connect(limiter);
-    recordingBus.connect(limiter);
-    context.createMediaElementSource(recording).connect(recordingBus);
     effectsBus.connect(limiter);
-    rhythmBus.connect(musicBus);
-    const delay = context.createDelay(1), feedback = context.createGain(), echoFilter = context.createBiquadFilter();
-    delay.delayTime.value = stepTime * 1.5;
-    feedback.gain.value = .22;
-    echoFilter.frequency.value = 1700;
-    musicBus.connect(delay);
-    delay.connect(echoFilter);
-    echoFilter.connect(feedback);
-    feedback.connect(delay);
-    echoFilter.connect(limiter);
+    limiter.connect(context.destination);
     noiseBuffer = context.createBuffer(1, context.sampleRate * 2, context.sampleRate);
     const data = noiseBuffer.getChannelData(0);
     for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
   }
-  function track(source, nodes, bus) {
-    if (bus === musicBus || bus === rhythmBus) musicSources.add(source);
-    source.onended = () => {
-      musicSources.delete(source);
-      source.disconnect();
-      nodes.forEach((node) => node.disconnect());
-    };
+  function setEffectsGain() {
+    if (!context) return;
+    effectsBus.gain.cancelAndHoldAtTime(context.currentTime);
+    effectsBus.gain.linearRampToValueAtTime(effects ? effectsVolume * .55 : 0, context.currentTime + .15);
   }
-  function tone(midi, time, duration, level, bus, type = "sine", attack = .015, detune = 0, endFrequency) {
-    const oscillator = context.createOscillator(), envelope = context.createGain(), filter = context.createBiquadFilter();
+  function resumeEffects() {
+    if (!wantsEffects || document.hidden) return;
+    clearTimeout(suspendTimer);
+    try {
+      buildEffects();
+      context?.resume().then(() => {
+        effects = wantsEffects && !document.hidden;
+        setEffectsGain();
+        syncUI();
+      }).catch(() => {});
+    } catch (_) { effects = false; syncUI(); }
+  }
+  function setPlayback(nextMusic, nextEffects, manual = true) {
+    if (manual) disarmAutoStart();
+    wantsMusic = nextMusic;
+    wantsEffects = nextEffects;
+    if (wantsMusic) {
+      blocked = false;
+      showPanel();
+      ensurePlayer();
+      if (playerReady && !document.hidden) { player.setVolume(Math.round(musicVolume * 100)); player.playVideo(); }
+    } else {
+      music = false;
+      if (playerReady) player.pauseVideo();
+    }
+    if (wantsEffects) resumeEffects();
+    else {
+      effects = false;
+      setEffectsGain();
+      clearTimeout(suspendTimer);
+      suspendTimer = setTimeout(() => { if (!wantsEffects) context?.suspend().catch(() => {}); }, 250);
+    }
+    syncUI();
+  }
+  function firstInteraction(event) {
+    if (!autoStartArmed || !event.isTrusted || desk.contains(event.target)) return;
+    if (event.type === "keydown" && ["Shift", "Control", "Alt", "Meta", "Escape"].includes(event.key)) return;
+    disarmAutoStart();
+    setPlayback(true, true, false);
+  }
+  function closePanel(returnFocus = false) {
+    // Keep the official video visible during playback. Closing also pauses music.
+    setPlayback(false, wantsEffects);
+    panel.hidden = true;
+    syncUI();
+    if (returnFocus) settings.focus();
+  }
+
+  function track(source, nodes) {
+    source.onended = () => { source.disconnect(); nodes.forEach((node) => node.disconnect()); };
+  }
+  function tone(midi, time, duration, level, type = "sine", endFrequency) {
+    const oscillator = context.createOscillator(), envelope = context.createGain();
     oscillator.type = type;
     oscillator.frequency.setValueAtTime(440 * 2 ** ((midi - 69) / 12), time);
     if (endFrequency) oscillator.frequency.exponentialRampToValueAtTime(endFrequency, time + duration);
-    oscillator.detune.value = detune;
-    filter.frequency.value = type === "triangle" ? 1100 : 4200;
     envelope.gain.setValueAtTime(0, time);
-    envelope.gain.linearRampToValueAtTime(level, time + attack);
+    envelope.gain.linearRampToValueAtTime(level, time + .01);
     envelope.gain.exponentialRampToValueAtTime(.0001, time + duration);
-    oscillator.connect(filter);
-    filter.connect(envelope);
-    envelope.connect(bus);
-    track(oscillator, [filter, envelope], bus);
+    oscillator.connect(envelope);
+    envelope.connect(effectsBus);
+    track(oscillator, [envelope]);
     oscillator.start(time);
     oscillator.stop(time + duration + .05);
   }
-  function noise(time, duration, level, frequency, bus, sweep = false) {
+  function noise(time, duration, level, frequency, sweep = false) {
     const source = context.createBufferSource(), filter = context.createBiquadFilter(), envelope = context.createGain();
     source.buffer = noiseBuffer;
     filter.type = "bandpass";
@@ -140,176 +219,62 @@
     envelope.gain.setValueAtTime(0, time);
     envelope.gain.linearRampToValueAtTime(level, time + Math.min(.08, duration / 3));
     envelope.gain.exponentialRampToValueAtTime(.0001, time + duration);
-    source.connect(filter);
-    filter.connect(envelope);
-    envelope.connect(bus);
-    track(source, [filter, envelope], bus);
-    source.start(time);
-    source.stop(time + duration + .05);
-  }
-  function schedule() {
-    if (!music || hasRecording || document.hidden || context.state !== "running") return;
-    if (nextBeat < context.currentTime) nextBeat = context.currentTime + .04;
-    while (nextBeat < context.currentTime + .18) {
-      const chord = chords[Math.floor(beat / 32) % chords.length];
-      if (beat % 32 === 0) chord.forEach((note, i) => tone(note, nextBeat + i * .025, stepTime * 35, .045, musicBus, "triangle", 1.7, i % 2 ? 5 : -5));
-      if (beat % 2 === 0) {
-        const pattern = [0, 2, 1, 3, 2, 1, 3, 2];
-        tone(chord[pattern[(beat / 2) % pattern.length]] + 12, nextBeat, 1.8, .045, musicBus);
-      }
-      if (beat % 4 === 0) tone(chord[0] - 12, nextBeat, .5, .18, rhythmBus, "sine", .008, 0, 34);
-      if (beat % 2 === 1) noise(nextBeat, .07, .025, 5800, rhythmBus);
-      beat++;
-      nextBeat += stepTime;
-    }
-  }
-  function updateMix() {
-    if (!context) return;
-    clearTimeout(suspendTimer);
-    ramp(musicBus.gain, music && !hasRecording ? musicVolume * .75 : 0, .6);
-    ramp(recordingBus.gain, music && hasRecording ? musicVolume * .65 : 0, .25);
-    ramp(effectsBus.gain, effects ? effectsVolume * .55 : 0);
-    ramp(rhythmBus.gain, inWork ? 1 : .12, 1.4);
-    if (music && !hasRecording && !scheduler) {
-      musicSources.forEach((source) => { try { source.stop(); } catch (_) { /* Already ended. */ } });
-      musicSources.clear();
-      beat = 0;
-      nextBeat = context.currentTime + .06;
-      scheduler = setInterval(schedule, 80);
-      schedule();
-    } else if (!music || hasRecording) {
-      clearInterval(scheduler);
-      scheduler = 0;
-    }
-    if (!music && !effects) suspendTimer = setTimeout(() => {
-      if (!music && !effects) context.suspend().catch(() => {});
-    }, 800);
-  }
-  async function toggle(nextMusic, nextEffects) {
-    if (pending) return;
-    pending = true;
-    clearTimeout(suspendTimer);
-    try {
-      if (!context) build();
-      if (context.state !== "running") await context.resume();
-      music = nextMusic;
-      effects = nextEffects;
-      failed = false;
-      updateMix();
-      if (music && hasRecording) await recording.play();
-      else recording.pause();
-      fileFailed = false;
-      effect("click");
-    } catch (_) {
-      failed = true;
-      music = false;
-      effects = Boolean(nextEffects && context?.state === "running");
-      recording.pause();
-      updateMix();
-    } finally { pending = false; syncUI(); }
+    source.connect(filter); filter.connect(envelope); envelope.connect(effectsBus);
+    track(source, [filter, envelope]);
+    source.start(time); source.stop(time + duration + .05);
   }
   function effect(kind) {
-    if (!effects || !context || context.state !== "running" || document.hidden) return;
+    if (!effects || context?.state !== "running" || document.hidden) return;
     const now = context.currentTime;
     if (now - lastEffect < .08) return;
     lastEffect = now;
     const t = now + .008;
     if (kind === "intro") {
-      noise(t + .7, .6, .12, 3600, effectsBus, true);
-      tone(33, t + 1.3, .7, .3, effectsBus, "sine", .01, 0, 30);
-      tone(81, t + 1.32, .8, .07, effectsBus);
-    } else if (kind === "chapter") {
-      noise(t, .3, .055, 2200, effectsBus, true);
-      tone(69, t, .5, .035, effectsBus);
-    } else if (kind === "open") {
-      tone(64, t, .3, .12, effectsBus);
-      tone(76, t + .07, .4, .065, effectsBus);
-      noise(t, .06, .07, 1600, effectsBus);
-    } else if (kind === "hover") tone(88, t, .09, .025, effectsBus);
-    else {
-      tone(kind === "close" ? 60 : 76, t, .12, .085, effectsBus, "triangle");
-      noise(t, .035, .04, 2400, effectsBus);
-    }
+      noise(t + .65, .45, .12, 3600, true);
+      tone(33, t + 1.1, .7, .3, "sine", 30);
+      tone(81, t + 1.12, .8, .07);
+    } else if (kind === "chapter") { noise(t, .3, .055, 2200, true); tone(69, t, .5, .035); }
+    else if (kind === "open") { tone(64, t, .3, .12); tone(76, t + .07, .4, .065); noise(t, .06, .07, 1600); }
+    else if (kind === "hover") tone(88, t, .09, .025);
+    else { tone(kind === "close" ? 60 : 76, t, .12, .085, "triangle"); noise(t, .035, .04, 2400); }
   }
-  function setPanel(open, returnFocus = false) {
-    panel.hidden = !open;
-    settings.setAttribute("aria-expanded", String(open));
-    if (open) q(".sound-close").focus();
-    else if (returnFocus) settings.focus();
-  }
-  main.addEventListener("click", () => toggle(!(music || effects), !(music || effects)));
-  q(".sound-file").addEventListener("click", () => q(".sound-file-input").click());
-  q(".sound-file-input").addEventListener("change", async (event) => {
-    const file = event.target.files[0];
-    if (!file) return;
-    recording.pause();
-    if (fileURL) URL.revokeObjectURL(fileURL);
-    fileURL = URL.createObjectURL(file);
-    recording.src = fileURL;
-    hasRecording = true;
-    fileName = file.name.replace(/\.[^.]+$/, "");
-    fileFailed = false;
-    syncUI();
-    await toggle(true, effects);
-    event.target.value = "";
+
+  main.addEventListener("click", () => { const on = !(music || effects); setPlayback(on, on); if (!on) { panel.hidden = true; syncUI(); } });
+  musicButton.addEventListener("click", () => setPlayback(!music, wantsEffects));
+  effectsButton.addEventListener("click", () => setPlayback(wantsMusic, !effects));
+  settings.addEventListener("click", () => {
+    if (panel.hidden || !expanded) { expanded = true; showPanel(); ensurePlayer(); }
+    else { expanded = false; if (!music && !wantsMusic) panel.hidden = true; syncUI(); }
   });
-  recording.addEventListener("error", () => {
-    recording.pause();
-    music = false;
-    fileFailed = true;
-    updateMix();
-    syncUI();
-  });
-  musicButton.addEventListener("click", () => toggle(!music, effects));
-  effectsButton.addEventListener("click", () => toggle(music, !effects));
-  settings.addEventListener("click", () => setPanel(panel.hidden));
-  q(".sound-close").addEventListener("click", () => setPanel(false, true));
-  desk.addEventListener("keydown", (event) => {
-    if (event.key === "Escape" && !panel.hidden) { event.stopPropagation(); setPanel(false, true); }
-  });
-  document.addEventListener("click", (event) => { if (!desk.contains(event.target)) setPanel(false); });
+  q(".sound-close").addEventListener("click", () => closePanel(true));
+  desk.addEventListener("keydown", (event) => { if (event.key === "Escape" && !panel.hidden) { event.stopPropagation(); closePanel(true); } });
+  document.addEventListener("click", (event) => { if (!desk.contains(event.target) && !music && !wantsMusic) { panel.hidden = true; syncUI(); } });
   for (const [slider, channel] of [[musicSlider, "music"], [effectsSlider, "effects"]]) {
     slider.addEventListener("input", () => {
-      if (channel === "music") musicVolume = Number(slider.value) / 100;
-      else effectsVolume = Number(slider.value) / 100;
-      updateMix();
+      if (channel === "music") { musicVolume = Number(slider.value) / 100; if (playerReady) player.setVolume(Math.round(musicVolume * 100)); }
+      else { effectsVolume = Number(slider.value) / 100; setEffectsGain(); }
       try { localStorage.setItem("arc-sound-levels", JSON.stringify({ music: musicVolume, effects: effectsVolume })); } catch (_) { /* Optional. */ }
     });
   }
-  document.addEventListener("click", (event) => {
-    if (desk.contains(event.target) || event.target.closest(".project-toggle, .intro-replay")) return;
-    if (event.target.closest("a, button, summary")) effect("click");
-  });
-  document.addEventListener("pointerover", (event) => {
-    const card = event.target.closest(".project");
-    if (event.pointerType === "mouse" && card && !card.contains(event.relatedTarget)) effect("hover");
-  });
+  document.addEventListener("click", (event) => { if (!desk.contains(event.target) && !event.target.closest(".project-toggle, .intro-replay") && event.target.closest("a, button, summary")) effect("click"); });
+  document.addEventListener("pointerover", (event) => { const card = event.target.closest(".project"); if (event.pointerType === "mouse" && card && !card.contains(event.relatedTarget)) effect("hover"); });
   document.addEventListener("portfolio:render", syncUI);
   document.addEventListener("portfolio:intro", () => effect("intro"));
   document.addEventListener("portfolio:project", (event) => effect(event.detail.open ? "open" : "close"));
-  document.addEventListener("portfolio:chapter", (event) => {
-    inWork = event.detail.id === "work";
-    if (context) ramp(rhythmBus.gain, inWork ? 1 : .12, 1.4);
-    effect("chapter");
-  });
-  async function visibility() {
-    if (!context) return;
-    clearTimeout(suspendTimer);
-    try {
-      if (document.hidden) { recording.pause(); clearInterval(scheduler); scheduler = 0; await context.suspend(); }
-      else if (music || effects) {
-        await context.resume();
-        updateMix();
-        if (music && hasRecording) await recording.play();
-      }
-    } catch (_) { /* The next click can resume interrupted audio. */ }
-  }
-  document.addEventListener("visibilitychange", visibility);
-  window.addEventListener("pagehide", () => {
-    clearInterval(scheduler); scheduler = 0; clearTimeout(suspendTimer);
-    recording.pause();
+  document.addEventListener("portfolio:chapter", () => effect("chapter"));
+  function pauseForPage() {
+    if (playerReady) player.pauseVideo();
+    music = effects = false;
     context?.suspend().catch(() => {});
-  });
-  window.addEventListener("pageshow", visibility);
+    syncUI();
+  }
+  function resumeForPage() { setPlayback(wantsMusic, wantsEffects, false); }
+  document.addEventListener("visibilitychange", () => { if (document.hidden) pauseForPage(); else resumeForPage(); });
+  window.addEventListener("pagehide", pauseForPage);
+  window.addEventListener("pageshow", (event) => { if (event.persisted) resumeForPage(); });
+  document.addEventListener("pointerdown", firstInteraction, { capture: true, passive: true });
+  document.addEventListener("keydown", firstInteraction, true);
   syncUI();
+  ensurePlayer();
+  resumeEffects();
 })();
