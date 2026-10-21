@@ -201,26 +201,6 @@
     if (!gsap || !ScrollTrigger) return;
     gsap.registerPlugin(ScrollTrigger);
     scenes = gsap.matchMedia();
-    scenes.add({ desktop: "(min-width: 681px)", mobile: "(max-width: 680px)", reduce: "(prefers-reduced-motion: reduce)" }, (scope) => {
-      if (scope.conditions.reduce) return;
-      const mobile = scope.conditions.mobile;
-      gsap.fromTo(".chapter-word", { xPercent: 12 }, { xPercent: -8, ease: "none", scrollTrigger: { trigger: "#work", start: "top bottom", end: "top top", scrub: .8 } });
-      document.querySelectorAll(".section").forEach((section) => {
-        gsap.fromTo(section.querySelector(".section-head"), { "--chapter-line": 0 }, {
-          "--chapter-line": 1, duration: 1.1, ease: "power3.out",
-          scrollTrigger: { trigger: section, start: "top 78%", once: true },
-        });
-      });
-      gsap.from(".cinema-contact-word span", {
-        yPercent: 110, rotation: 6, opacity: 0, stagger: .035, duration: .75, ease: "power3.out",
-        scrollTrigger: { trigger: "#contact", start: "top 80%", once: true },
-      });
-      const skillCards = document.querySelectorAll(".skill-card");
-      if (skillCards.length) gsap.from(skillCards, {
-        x: mobile ? 12 : 32, stagger: .07, duration: .7, ease: "power3.out",
-        scrollTrigger: { trigger: "#skills", start: "top 75%", once: true },
-      });
-    });
     scenes.add("all", () => {
       document.querySelectorAll("main > section").forEach((section) => {
         ScrollTrigger.create({ trigger: section, start: "top 55%", end: "bottom 55%", onEnter: () => emit("chapter", { id: section.id }), onEnterBack: () => emit("chapter", { id: section.id }) });

@@ -797,7 +797,7 @@ function playFlip(cards, before, after, duration = 520) {
 
 function withFlip(cards, mutate, animateDetails = false) {
   const grid = document.querySelector(".work-grid");
-  if (grid?.closest(".work-gallery")) { mutate(); return; }
+  if (grid?.classList.contains("manga-scenes")) { mutate(); return; }
   const before = captureRects(cards);
   cards.forEach((card) => {
     const running = projectLayoutAnimations.get(card);
@@ -1273,7 +1273,7 @@ function renderProjects() {
   });
 
   grid.addEventListener("keydown", (event) => {
-    const toggles = cards
+    const toggles = [...grid.querySelectorAll(".project")]
       .filter((card) => !card.classList.contains("is-filtered"))
       .map((card) => card.querySelector(".project-toggle"));
     const index = toggles.indexOf(document.activeElement);
