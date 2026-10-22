@@ -1,4 +1,4 @@
-/* The supplied remix starts first; the director waits for real playback. */
+/* Attempt the supplied remix automatically; retry denied playback on interaction. */
 (() => {
   "use strict";
   if (document.documentElement.dataset.design !== "cinematic") return;
@@ -157,10 +157,10 @@
     syncUI();
   }
   function firstInteraction(event) {
-    if (introSession || !autoStartArmed || !event.isTrusted || desk.contains(event.target)) return;
+    if (!autoStartArmed || !event.isTrusted || desk.contains(event.target)) return;
     if (event.type === "keydown" && ["Shift", "Control", "Alt", "Meta", "Escape"].includes(event.key)) return;
-    // Outside the intro, retry audio after an autoplay block.
-    if (cutReached) void requestMusic();
+    // Retry during the intro as well, without restarting already playing music.
+    if (cutReached && !music && !fileError) void requestMusic();
     void resumeEffects();
   }
   function setPanel(open, focus = false) {

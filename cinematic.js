@@ -7,7 +7,7 @@
   const intro = document.getElementById("cinematicIntro"), hero = document.getElementById("home");
   const replay = document.getElementById("introReplay");
   const motion = window.matchMedia("(prefers-reduced-motion: reduce)");
-  let introTimeline, introTimer, introCutTimer, scenes, refreshTimer;
+  let introTimeline, introTimer, introCutTimer, introAudioTimer, scenes, refreshTimer;
   let introSplashTimers = [];
   let introActive = false;
   let introRunning = false, introVersion = 0;
@@ -29,12 +29,13 @@
     introVersion++;
     clearTimeout(introTimer);
     clearTimeout(introCutTimer);
+    clearTimeout(introAudioTimer);
     introSplashTimers.forEach(clearTimeout);
     introSplashTimers = [];
     clearTimeout(window.arcIntroFallback);
     introTimeline?.kill();
     introTimeline = null;
-    root.classList.remove("is-intro-waiting", "is-intro-playing", "is-directed-intro", "is-awaiting-audio");
+    root.classList.remove("is-intro-waiting", "is-intro-playing", "is-directed-intro");
     if (intro) {
       intro.style.display = "none";
       intro.setAttribute("aria-hidden", "true");
@@ -49,12 +50,8 @@
     if (motion.matches || !intro) { emit("intro-end"); return; }
     introActive = true;
     const version = introVersion;
-    const start = document.getElementById("introStart");
     const skip = document.getElementById("introSkip");
     const english = root.lang === "en";
-    start.hidden = true;
-    start.textContent = english ? "Start with sound" : "Начать со звуком";
-    start.dataset.silent = "";
     skip.textContent = english ? "Skip intro" : "Пропустить";
     intro.style.display = "block";
     root.classList.add("is-directed-intro");
@@ -122,24 +119,21 @@
       root.classList.add("is-directed-intro");
     }
     let beginning = false;
-    async function begin(silent = false) {
+    async function begin() {
       if (beginning || !introActive || introRunning) return;
       beginning = true;
-      start.hidden = true;
-      let result;
-      try { result = await window.PortfolioSound?.startIntro(silent); }
+      let result, audioTimer;
+      try {
+        result = await Promise.race([
+          window.PortfolioSound?.startIntro(),
+          new Promise(resolve => { introAudioTimer = audioTimer = setTimeout(() => resolve({ pending: true }), 1200); }),
+        ]);
+      }
       catch (_) { result = { failed: true }; }
+      clearTimeout(audioTimer);
       beginning = false;
       if (!introActive || version !== introVersion) return;
-      if (result?.blocked || result?.failed) {
-        root.classList.add("is-awaiting-audio");
-        start.hidden = false;
-        start.dataset.silent = result.failed ? "1" : "";
-        start.textContent = result.failed ? (english ? "Continue without sound" : "Продолжить без звука") : (english ? "Start with sound" : "Начать со звуком");
-        start.focus({ preventScroll: true });
-        return;
-      }
-      root.classList.remove("is-awaiting-audio");
+      // A denied or slow audio request must never hold the visual introduction.
       introRunning = true;
       intro.dataset.stage = "playing";
       emit("intro-start", { duration: 8, musicStarted: Boolean(result?.started) });
@@ -152,7 +146,6 @@
       }
       introTimer = setTimeout(stopIntro, introTimeline ? 8800 : 8000);
     }
-    start.onclick = () => { void begin(start.dataset.silent === "1"); };
     skip.onclick = stopIntro;
     void begin();
   }

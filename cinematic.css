@@ -173,7 +173,6 @@ html.is-directed-intro, html.is-intro-playing { overflow: hidden; }
 .intro-controls { position: absolute; left: 0; right: 0; bottom: max(30px, 6svh); display: flex; justify-content: center; align-items: center; gap: 20px; }
 .intro-controls button { min-height: 44px; padding: 12px 18px; font: 11px "JetBrains Mono", monospace; }
 .intro-controls button[hidden] { display: none; }
-.intro-start { color: #000; background: #fa8b34; border: 1px solid #fa8b34; }
 .intro-skip { color: #a6a19c; border: 1px solid #ffffff30; background: #000; }
 .intro-controls :focus-visible { outline: 2px solid #fff; outline-offset: 4px; }
 .is-intro-playing .intro-bed { animation: intro-bed 6s both; }
