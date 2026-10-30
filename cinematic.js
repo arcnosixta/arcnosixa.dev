@@ -232,5 +232,6 @@
   window.addEventListener("load", refresh, { once: true });
   document.fonts?.ready.then(refresh);
   buildScenes();
-  playIntro();
+  if (window.arcReturnFromVoid) stopIntro();
+  else playIntro();
 })();

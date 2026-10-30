@@ -1,0 +1,24 @@
+.hero-actions .void-entry {
+  display: inline-flex; position: relative; align-items: center; justify-content: center; gap: 12px;
+  align-self: center; min-height: 44px; padding: 12px 14px; color: var(--paper, #e9e5dc);
+  font: 9px/1.4 "JetBrains Mono", monospace; letter-spacing: .16em; text-transform: uppercase;
+  isolation: isolate; transition: color .6s, letter-spacing .6s, background .6s, box-shadow .6s;
+}
+.void-entry svg { width: 19px; height: 19px; flex: none; fill: currentColor; transform: rotate(-18deg); }
+.void-entry::after { content: ""; position: absolute; height: 1px; bottom: 4px; left: 14px; right: 14px; background: #a6a6b0; transform: scaleX(.15); opacity: 0; transition: transform .7s, opacity .7s; }
+.hero-actions .void-entry:hover, .hero-actions .void-entry:focus-visible { color: #f5f5f5; background: #08080b; letter-spacing: .2em; box-shadow: 0 0 25px 12px #08080b60; }
+.void-entry:hover::after, .void-entry:focus-visible::after { transform: scaleX(1); opacity: 1; }
+.void-veil { position: fixed; inset: 0; z-index: 10000; background: #000; pointer-events: none; opacity: 0; overflow: hidden; }
+.void-veil.is-travelling { pointer-events: auto; }
+.void-veil::after { content: ""; position: absolute; left: -20%; top: 49%; width: 140%; height: 2px; background: #f5f5f5; box-shadow: 0 0 12px 2px #bdc7dc80; transform: rotate(-22deg) scaleX(0); }
+.void-veil.is-travelling { animation: void-close 1.2s both; }
+.void-veil.is-travelling::after { animation: void-cut .5s .64s both; }
+.void-veil.is-returning::after { animation-direction: reverse; }
+.void-veil.is-arriving { opacity: 1; animation: void-arrive 1.05s both; }
+@keyframes void-close { 0% { opacity: 0; } 55%, 100% { opacity: 1; } }
+@keyframes void-cut { 0% { transform: rotate(-22deg) scaleX(0); opacity: 0; } 15% { opacity: 1; } 65% { transform: rotate(-22deg) scaleX(1); opacity: 1; } 100% { transform: rotate(-22deg) scaleX(1); opacity: 0; } }
+@keyframes void-arrive { 0%, 20% { opacity: 1; } 100% { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) {
+  .hero-actions .void-entry { transition: none; }
+  .void-veil { display: none; }
+}

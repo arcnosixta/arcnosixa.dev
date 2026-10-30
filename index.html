@@ -49,9 +49,13 @@
     </style>
     <script>
       var requestedDesign = new URLSearchParams(location.search).get("design");
+      try {
+        window.arcReturnFromVoid = sessionStorage.getItem("arc-void-return") === "1";
+        sessionStorage.removeItem("arc-void-return");
+      } catch (e) { window.arcReturnFromVoid = false; }
       document.documentElement.dataset.design = ["atelier", "studio"].includes(requestedDesign) ? requestedDesign : "cinematic";
       if (document.documentElement.dataset.design === "cinematic") {
-        if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+        if (!window.arcReturnFromVoid && !window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
           document.documentElement.classList.add("is-intro-waiting");
           // Reveal the page even if a later script fails to load.
           window.arcIntroFallback = setTimeout(function () {
@@ -83,6 +87,7 @@
     <link rel="stylesheet" href="cinematic.css?v=15" />
     <link rel="stylesheet" href="cinematic-motion.css?v=7" />
     <link rel="stylesheet" href="manga.css?v=4" />
+    <link rel="stylesheet" href="void-transition.css?v=1" />
     <noscript>
       <style>
         .reveal,
@@ -293,6 +298,10 @@
                 />
               </svg>
             </a>
+            <a class="void-entry" href="fate/" data-void-enter>
+              <svg viewBox="0 0 40 40" aria-hidden="true"><path d="M30 2C-8 10 0 37 35 36C7 32 5 12 30 2Z" /></svg>
+              <span>ENTER THE VOID</span>
+            </a>
           </div>
 
           </div>
@@ -471,5 +480,6 @@
     <script src="soundtrack.js?v=8"></script>
     <script src="cinematic.js?v=19"></script>
     <script src="manga.js?v=4"></script>
+    <script src="void-transition.js?v=1"></script>
   </body>
 </html>
