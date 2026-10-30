@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#000000" />
+  <meta name="color-scheme" content="dark" />
+  <meta name="description" content="A blade cuts the darkness. A child emerges from the void. A thousand hands rise. An original cinematic scroll experience by ARCNOSIXTA." />
+  <meta property="og:title" content="FATE — THE ASCENSION · ARCNOSIXTA" />
+  <meta property="og:description" content="A blade. A child. A thousand hands. An original story told through light and motion." />
+  <meta property="og:image" content="https://arcnosixta.github.io/arcnosixa.dev/assets/fate/congregation.png" />
+  <link rel="canonical" href="https://arcnosixta.github.io/arcnosixa.dev/fate/" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Cpath d='M30 2C-8 10 0 37 35 36C7 32 5 12 30 2Z' fill='%23f5f5f5'/%3E%3C/svg%3E" />
+  <title>FATE — THE ASCENSION · ARCNOSIXTA</title>
+  <link rel="stylesheet" href="fate.css?v=1" />
+  <link rel="stylesheet" href="../void-transition.css?v=1" />
+  <noscript><style>.still-toggle { display: none; }</style></noscript>
+</head>
+<body>
+  <a class="skip-story" href="#written-story">Read the story without motion</a>
+  <header class="fate-hud">
+    <a class="reality-link" href="../" data-void-return aria-label="Return to the portfolio">
+      <svg viewBox="0 0 40 40" aria-hidden="true"><path d="M30 2C-8 10 0 37 35 36C7 32 5 12 30 2Z" /></svg>
+      <span>Reality</span>
+    </a>
+    <button class="still-toggle" type="button" aria-pressed="false">Still version</button>
+  </header>
+
+  <main>
+    <h1 class="sr-only">FATE — THE ASCENSION</h1>
+    <div id="experience" aria-label="A scroll-directed cinematic story">
+      <div id="stage" class="stage">
+        <canvas id="fate-canvas" aria-hidden="true"></canvas>
+        <div class="grain" aria-hidden="true"></div>
+        <div class="vignette" aria-hidden="true"></div>
+        <div class="film-edge film-edge-top" aria-hidden="true"></div>
+        <div class="film-edge film-edge-bottom" aria-hidden="true"></div>
+        <div class="captions" aria-hidden="true">
+          <p class="caption silence">Before everything,<br class="mobile-break" /> there was silence.</p>
+          <p class="caption cut">Even fate<br /><em>can be cut.</em></p>
+          <p class="caption depths">In the depths of nothingness…</p>
+          <p class="caption born">A child was born.</p>
+          <p class="caption first-hand">One hand reached.</p>
+          <p class="caption another-hand">Then another.</p>
+          <p class="caption thousand">A thousand<br /><em>hands.</em></p>
+          <p class="caption divine">Not all ascensions<br /><em>are divine.</em></p>
+          <p class="caption written">Some are written by fate.</p>
+        </div>
+        <div class="whiteout" aria-hidden="true"></div>
+        <div class="revelation" aria-hidden="true" inert>
+          <svg class="final-crescent" viewBox="0 0 100 100" aria-hidden="true"><path d="M74 5C-15 22 0 88 85 93C17 80 7 29 74 5Z" /></svg>
+          <p class="reveal-name">ARCNOSIXTA</p>
+          <p class="reveal-will">The will to create.</p>
+          <p class="reveal-end">The end is only the beginning.</p>
+          <a class="return-link" data-void-return href="../">Return to reality <span aria-hidden="true">↗</span></a>
+        </div>
+        <div class="scroll-invitation" aria-hidden="true"><span>Scroll to descend</span><i></i></div>
+        <div class="chapter-marker" aria-hidden="true"><span class="chapter-number">01</span><span class="chapter-name">Silence</span></div>
+        <div class="story-progress" aria-hidden="true"><span></span></div>
+      </div>
+    </div>
+
+    <!-- This is the default, useful document. WebGL progressively enhances it. -->
+    <article id="written-story" class="written-story" tabindex="-1" aria-label="FATE — the complete story">
+      <figure class="still-scene still-silence">
+        <figcaption>Before everything, there was silence.</figcaption>
+        <span class="still-scroll" aria-hidden="true">Scroll to descend ↓</span>
+      </figure>
+      <figure class="still-scene still-cut">
+        <svg viewBox="0 0 800 800" role="img" aria-label="A long silver blade tears a crescent through the darkness"><path d="M570 50C-100 160 20 700 650 750C120 630 100 200 570 50Z" fill="currentColor" /></svg>
+        <figcaption>Even fate can be cut.</figcaption>
+      </figure>
+      <figure class="still-scene still-child">
+        <img src="../assets/fate/child.png" width="1024" height="1536" loading="lazy" alt="A small dark-haired child in a pale tunic, alone in a vast black void, looking up toward the light." />
+        <figcaption>In the depths of nothingness…<br />A child was born.</figcaption>
+      </figure>
+      <figure class="still-scene still-hands">
+        <img class="still-sea" src="../assets/fate/congregation.png" width="1672" height="941" loading="lazy" alt="Hundreds of sculptural hands emerge from darkness, palms raised toward a child at their summit." />
+        <img class="still-supported-child" src="../assets/fate/child.png" width="1024" height="1536" loading="lazy" alt="" />
+        <figcaption>One hand reached. Then another.<br /><em>A thousand hands.</em></figcaption>
+      </figure>
+      <figure class="still-scene still-ascension">
+        <div class="still-light" aria-hidden="true"></div>
+        <img src="../assets/fate/child.png" width="1024" height="1536" loading="lazy" alt="The child rises into a column of pale light, becoming a luminous silhouette." />
+        <figcaption>Not all ascensions are divine.<br />Some are written by fate.</figcaption>
+      </figure>
+      <div class="still-scene still-ending">
+        <svg class="final-crescent" viewBox="0 0 100 100" aria-hidden="true"><path d="M74 5C-15 22 0 88 85 93C17 80 7 29 74 5Z" /></svg>
+        <p class="reveal-name">ARCNOSIXTA</p><p class="reveal-will">The will to create.</p>
+        <p class="reveal-end">The end is only the beginning.</p>
+        <a class="return-link" data-void-return href="../">Return to reality <span aria-hidden="true">↗</span></a>
+      </div>
+    </article>
+  </main>
+
+  <aside class="sound-control" aria-label="Soundtrack controls" hidden>
+    <button id="sound-play" class="sound-play" type="button" aria-label="Play soundtrack" aria-pressed="false">
+      <svg viewBox="0 0 20 20" aria-hidden="true"><path class="play-icon" d="m7 4 9 6-9 6Z" /><path class="pause-icon" d="M5 4h3v12H5zm7 0h3v12h-3z" /></svg>
+      <span class="sound-state">Enable sound</span>
+    </button>
+    <div class="sound-details">
+      <span class="sound-title">Fate <span>— Shiro Sagisu</span></span>
+      <button id="sound-mute" type="button" aria-label="Mute soundtrack" aria-pressed="false">Mute</button>
+      <label class="sr-only" for="sound-volume">Soundtrack volume</label>
+      <input id="sound-volume" type="range" min="0" max="100" value="55" aria-label="Soundtrack volume" />
+    </div>
+  </aside>
+  <p id="sound-status" class="sound-status" role="status"></p>
+  <script src="../vendor/gsap.min.js"></script>
+  <script src="../vendor/ScrollTrigger.min.js"></script>
+  <script src="audio-config.js?v=1"></script>
+  <script src="audio.js?v=1"></script>
+  <script src="../void-transition.js?v=1"></script>
+  <script src="fate.js?v=1"></script>
+</body>
+</html>
