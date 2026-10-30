@@ -1,0 +1,13 @@
+{
+  "name": "arcnosixta-portfolio",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Buildless portfolio and FATE cinematic experience",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "check": "node scripts/check.mjs",
+    "test": "node --test tests/build.test.mjs",
+    "preview": "node scripts/serve.mjs"
+  },
+  "engines": { "node": ">=20" }
+}
