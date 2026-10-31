@@ -15,11 +15,15 @@ The musical recording has separate provenance: it was provided locally by the si
 
 ### Runtime silhouette treatment
 
-The generated PNG remains unchanged. A smooth alpha threshold removes its original soft halo; the Three.js material renders a flat black silhouette, with three white apertures aligned to the newborn's pose. During scroll progress 0.715–0.795 the fill becomes fully white and the eye/mouth apertures dissolve into it. A separate animated smoke pass samples the same contour, following the infant's breathing and rise. The still/reduced-motion version uses the same alpha silhouette through SVG filters and preserves both narrative states. No additional image generation was needed for this treatment.
+The generated PNG remains unchanged. A smooth alpha threshold removes its original soft halo; the Three.js material renders a flat black silhouette, with three white apertures aligned to the newborn's pose. During score 71.5–79.5 (on the complete 0–160 score) the fill becomes fully white and the eye/mouth apertures dissolve into it. A separate animated smoke pass samples the same contour, following the infant's breathing and rise. The still/reduced-motion version uses the same alpha silhouette through SVG filters and preserves both narrative states. No additional image generation was needed for this treatment.
 
 ### Runtime spectral hands
 
 The original hand atlas remains unchanged. Its alpha channel defines the poses; no skin, veins or original lighting are sampled. Each instance is filled with slowly moving ink-blue noise and smoke strands. Nearby alpha samples soften the contour into vapor, while restrained edge light feeds the shared bloom pass. Lower forearms dissolve into the void, and slight vertex drift preserves the supporting fingertips. The distant congregation uses a blurred luminance threshold as its shape, recolored in dark blue smoke. The static/reduced-motion scene uses an SVG mask, solid blue fill and diffused rim, keeping the same direction without WebGL or animation. FATE retains its separate soundtrack and cold, oppressive atmosphere; these effects do not load on the Creation homepage.
+
+### Chapter II — Awakening (procedural, 2026-11-01)
+
+No new raster assets or external models were used. The first chapter retains its score positions 0–85; the full scroll score now extends to 160. After the white flash and Russian chapter card, noise dissolves the spectral hands. A seeded sample of their atlas alpha supplies ash origins; the ash vertex shader shares the dissolution field and follows reversible scroll trajectories. The newborn remains featureless white, with a slow cold aura pulse. The circular crescent stretches into an almond contour as a shader-built eye appears: radial noise fibers, a dark pupil, ink-black sclera, pale lid light and drifting blue-grey mist. The lid aperture closes as the child fades, leaving a small TO BE CONTINUED card in darkness. Inline SVG symbols preserve the eye and every narrative beat in the static version. The supplied FATE recording remains unchanged and plays independently of chapter and scroll position.
 
 ### Newborn — current character
 
