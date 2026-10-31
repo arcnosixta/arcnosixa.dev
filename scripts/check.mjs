@@ -1,6 +1,6 @@
 import { readdir } from "node:fs/promises";
 import { spawnSync } from "node:child_process";
-for (const folder of [".", "fate", "scripts"]) {
+for (const folder of [".", "fate", "scripts", "tests"]) {
   for (const entry of await readdir(folder, { withFileTypes: true })) {
     if (!entry.isFile() || !/\.(m?js)$/.test(entry.name)) continue;
     const path = `${folder}/${entry.name}`;
