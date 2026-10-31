@@ -3,6 +3,8 @@ import assert from "node:assert/strict";
 import { readFile, stat } from "node:fs/promises";
 import { spawn } from "node:child_process";
 import { resolve, join } from "node:path";
+import { createHash } from "node:crypto";
+import { runInNewContext } from "node:vm";
 
 const root = resolve("dist");
 test("production contains all 3 portfolio designs and the standalone FATE route", async () => {
@@ -22,9 +24,20 @@ test("production contains all 3 portfolio designs and the standalone FATE route"
     }
   }
 });
-test("unlicensed recording and QA fixtures never enter the public build", async () => {
-  assert.match(await readFile(join(root, "fate/audio-config.js"), "utf8"), /"available":false/);
-  await assert.rejects(stat(join(root, "assets/audio/fate.mp3")), { code: "ENOENT" });
+test("production includes the supplied recording and enables autoplay only on FATE", async () => {
+  const scope = { window: {} };
+  runInNewContext(await readFile(join(root, "fate/audio-config.js"), "utf8"), scope);
+  assert.equal(scope.window.FATE_AUDIO.available, true);
+  assert.equal(scope.window.FATE_AUDIO.autoplay, true);
+  const recording = await readFile(resolve(root, "fate", scope.window.FATE_AUDIO.src));
+  const supplied = await readFile("assets/audio/fate.mp3");
+  const hash = data => createHash("sha256").update(data).digest("hex");
+  assert.equal(hash(recording), hash(supplied));
+  assert.ok(recording.length > 100000);
+  assert.doesNotMatch(await readFile(join(root, "index.html"), "utf8"), /fate\/audio(?:-config)?\.js|assets\/audio\/fate\.mp3/);
+});
+
+test("QA fixtures and development files never enter the public build", async () => {
   for (const name of ["tests", "scripts", ".git", ".qa", "package.json"]) {
     await assert.rejects(stat(join(root, name)), { code: "ENOENT" });
   }
@@ -39,7 +52,7 @@ test("all narrative assets are real files with portable browser URLs", async () 
     assert.doesNotMatch(await readFile(join(root, "fate", name), "utf8"), /[A-Z]:\\|file:\/\//);
   }
 });
-test("direct route, slash redirect, JS and artwork work under the GitHub Pages base", async () => {
+test("direct route, artwork and soundtrack streaming work under the GitHub Pages base", async () => {
   const server = spawn(process.execPath, ["scripts/serve.mjs"], {
     env: { ...process.env, PORT: "4178", BASE_PATH: "/arcnosixa.dev/" }, stdio: ["ignore", "pipe", "pipe"]
   });
@@ -59,6 +72,14 @@ test("direct route, slash redirect, JS and artwork work under the GitHub Pages b
       assert.equal(response.status, 200, path);
       await response.arrayBuffer();
     }
-    assert.equal((await fetch(base + "assets/audio/fate.mp3")).status, 404);
+    const audio = await fetch(base + "assets/audio/fate.mp3", { method: "HEAD" });
+    assert.equal(audio.status, 200);
+    assert.equal(audio.headers.get("content-type"), "audio/mpeg");
+    const recording = await readFile(join(root, "assets/audio/fate.mp3"));
+    assert.equal(Number(audio.headers.get("content-length")), recording.length);
+    const range = await fetch(base + "assets/audio/fate.mp3", { headers: { Range: "bytes=0-1023" } });
+    assert.equal(range.status, 206);
+    assert.equal(range.headers.get("content-range"), `bytes 0-1023/${recording.length}`);
+    assert.deepEqual(Buffer.from(await range.arrayBuffer()), recording.subarray(0, 1024));
   } finally { server.kill(); }
 });

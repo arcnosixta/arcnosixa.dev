@@ -13,8 +13,6 @@ npm-debug.log*
 .vscode/
 *.swp
 
-# Supplied soundtrack: local use until distribution rights are confirmed.
-assets/audio/fate.mp3
 dist/
 node_modules/
 .qa/

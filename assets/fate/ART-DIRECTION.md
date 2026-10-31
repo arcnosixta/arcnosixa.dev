@@ -9,7 +9,7 @@ Created for this repository with the built-in Imagegen tool on 2026-10-31. These
 
 The scene uses image plates in a Three.js perspective camera, 72 or 192 instanced hand quads, procedural blade geometry, GLSL reveal/edge glow, particles and atmospheric light. The figures are not fully rigged 3D models; view angles are intentionally restrained to preserve the artwork. This is a deliberate depth-layered art direction, not a claim of 1,000 individually modeled hands.
 
-The musical recording has separate provenance: it was provided locally by the site owner and is excluded from Git and public builds by default. See the project README for the publication opt-in.
+The musical recording has separate provenance: it was provided locally by the site owner and is included unchanged in the repository and site build at their request. Playback is scoped to FATE. See the project README for autoplay behavior.
 
 ## Exact generation prompts
 

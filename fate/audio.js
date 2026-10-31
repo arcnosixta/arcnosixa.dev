@@ -57,13 +57,14 @@
   }
   function disarm() {
     waitingForGesture = false;
-    document.removeEventListener("pointerdown", resumeOnGesture, true);
+    document.removeEventListener("click", resumeOnGesture, true);
     document.removeEventListener("keydown", resumeOnGesture, true);
   }
   function arm() {
     if (waitingForGesture) return;
     waitingForGesture = true;
-    document.addEventListener("pointerdown", resumeOnGesture, true);
+    // Click follows touch release too, when mobile browsers grant activation.
+    document.addEventListener("click", resumeOnGesture, true);
     document.addEventListener("keydown", resumeOnGesture, true);
   }
   function resumeOnGesture(event) {

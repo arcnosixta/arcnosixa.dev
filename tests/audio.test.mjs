@@ -54,13 +54,13 @@ test("blocked autoplay waits for a page gesture; manual pause prevents future ge
   await flush();
   assert.equal(h.audios[0].paused, true);
   assert.equal(h.controls["sound-status"].textContent, "");
-  h.document.dispatch("pointerdown");
+  h.document.dispatch("click");
   await flush();
   assert.equal(h.audios[0].playCalls, 2);
   assert.equal(h.audios[0].paused, false);
   h.controls["sound-play"].dispatch("click");
   h.finishTimers();
-  h.document.dispatch("pointerdown");
+  h.document.dispatch("click");
   h.document.dispatch("keydown", { key: "ArrowDown" });
   await flush();
   assert.equal(h.audios[0].playCalls, 2);
@@ -78,7 +78,7 @@ test("hidden-page entry waits for visibility; hiding after playback stops withou
   await flush();
   assert.equal(h.audios[0].playCalls, 1);
 });
-test("page exit stops playback and silent public builds create no audio element", async () => {
+test("page exit stops playback and disabled audio creates no audio element", async () => {
   const h = harness();
   await flush();
   h.window.dispatch("pagehide", { persisted: false });
