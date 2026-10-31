@@ -7,16 +7,21 @@
   const story = document.getElementById("written-story");
   const revelation = document.querySelector(".revelation");
   const reduced = matchMedia("(prefers-reduced-motion: reduce)");
+  const scoreLength = 160;
   const chapters = [
-    { at: 0, name: "Silence" }, { at: .105, name: "The cut" },
-    { at: .30, name: "The child" }, { at: .425, name: "The thousand hands" },
-    { at: .715, name: "Ascension" }, { at: .875, name: "The beginning" }
+    { at: 0, name: "Silence" }, { at: 10.5, name: "The cut" },
+    { at: 30, name: "The child" }, { at: 42.5, name: "The thousand hands" },
+    { at: 71.5, name: "Ascension" }, { at: 88, name: "Пробуждение" },
+    { at: 96, name: "Ashes" }, { at: 110, name: "Alone" },
+    { at: 119, name: "The eye" }, { at: 135, name: "Fate" },
+    { at: 145, name: "The closing" }, { at: 153, name: "To be continued" }
   ];
   let manualStill = false;
   try { manualStill = localStorage.getItem("fate-still") === "1"; } catch { /* optional */ }
   let scene, timeline, intro, raf = 0, lastFrame = 0, version = 0, unavailable = false;
   let activeChapter = -1, pageVisible = !document.hidden, starting = false;
   let state = { progress: 0 };
+  let resizeProgress = null;
   const scripts = new Map();
   const assetVersion = new URL(document.currentScript.src).search;
   const sizeObserver = new ResizeObserver(() => scene?.resize());
@@ -40,21 +45,21 @@
     try { scene.render(state.progress, delta); }
     catch { fallback(true); return; }
     // The final black frame is static. Scrubbing backward wakes rendering again.
-    if (state.progress < .88) raf = requestAnimationFrame(frame);
+    if (state.progress * scoreLength < 152) raf = requestAnimationFrame(frame);
   }
   function wake() { if (scene && pageVisible && !raf) raf = requestAnimationFrame(frame); }
   function updateUI() {
-    const p = state.progress;
+    const p = state.progress, score = p * scoreLength;
     document.querySelector(".story-progress span").style.transform = `scaleX(${p})`;
     let chapter = 0;
-    chapters.forEach((item, i) => { if (p >= item.at) chapter = i; });
+    chapters.forEach((item, i) => { if (score >= item.at) chapter = i; });
     if (activeChapter !== chapter) {
       activeChapter = chapter;
-      document.querySelector(".chapter-number").textContent = String(chapter + 1).padStart(2, "0");
+      document.querySelector(".chapter-number").textContent = score >= 88 ? "II" : "I";
       document.querySelector(".chapter-name").textContent = chapters[chapter].name;
-      stage.dataset.chapter = String(chapter + 1);
+      stage.dataset.chapter = score >= 88 ? "2" : "1";
     }
-    const revealed = p > .925;
+    const revealed = score >= 153;
     revelation.inert = !revealed;
     revelation.setAttribute("aria-hidden", String(!revealed));
     wake();
@@ -70,12 +75,19 @@
       defaults: { ease: "none" }, onUpdate: updateUI,
       scrollTrigger: {
         id: "fate-story", trigger: "#experience", pin: stage,
-        start: "top top", end: () => `+=${Math.round(stage.clientHeight * 9.5)}`,
-        scrub: .85, anticipatePin: 1, invalidateOnRefresh: true
+        start: "top top", end: () => `+=${Math.round(stage.clientHeight * 15.2)}`,
+        scrub: .85, anticipatePin: 1, invalidateOnRefresh: true,
+        onRefresh(self) {
+          if (resizeProgress === null) return;
+          const progress = resizeProgress;
+          resizeProgress = null;
+          window.scrollTo(0, self.start + (self.end - self.start) * progress);
+          self.animation.progress(progress);
+        }
       }
     });
-    chapters.forEach((c) => timeline.addLabel(c.name, c.at * 100));
-    timeline.to(state, { progress: 1, duration: 100 }, 0);
+    chapters.forEach((c) => timeline.addLabel(c.name, c.at));
+    timeline.to(state, { progress: 1, duration: scoreLength }, 0);
     timeline.to(".silence", { autoAlpha: 0, duration: 3.5 }, 6);
     timeline.to(".scroll-invitation", { autoAlpha: 0, duration: 3 }, 3.5);
     timeline.to(".chapter-marker", { autoAlpha: 1, duration: 4 }, 7);
@@ -95,8 +107,12 @@
     timeline.to(".whiteout", { opacity: 0, duration: 1.4 }, 28.7);
     timeline.to(".whiteout", { opacity: 1, duration: 1 }, 82.9);
     timeline.to(".whiteout", { opacity: 0, duration: 2.3 }, 84.1);
-    timeline.to(".revelation", { autoAlpha: 1, duration: 4.5 }, 89);
-    timeline.fromTo(".revelation .reveal-name, .revelation .reveal-will", { y: 12 }, { y: 0, duration: 5, immediateRender: false }, 89);
+    line(".awakening-title", 88, 94.5, 2.5);
+    line(".awakening-alone", 110, 118, 2);
+    line(".awakening-claim", 135, 143.5, 2.5);
+    timeline.fromTo(".awakening-taken", { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 2, immediateRender: false }, 137);
+    timeline.to(".revelation", { autoAlpha: 1, duration: 3 }, 153);
+    timeline.fromTo(".revelation .reveal-name, .revelation .reveal-will", { y: 12 }, { y: 0, duration: 3, immediateRender: false }, 153);
     intro = gsap.timeline();
     intro.fromTo(".captions", { opacity: 0 }, { opacity: 1, duration: 2.8 }, .4);
     // Only the invitation's entrance uses clock time. The story never autoplays.
@@ -107,6 +123,7 @@
   function teardown() {
     version++;
     starting = false;
+    resizeProgress = null;
     stopFrames();
     intro?.kill(); intro = null;
     timeline?.scrollTrigger?.kill();
@@ -127,12 +144,16 @@
     if (stillToggle.disabled) stillToggle.textContent = "Still version";
   }
   function fallback(failed = false) {
-    const chapter = Math.max(0, activeChapter);
+    const score = state.progress * scoreLength;
     const wasEnhanced = root.classList.contains("enhanced");
     unavailable = failed;
     teardown();
     syncToggle();
-    if (wasEnhanced) story.children[chapter]?.scrollIntoView({ behavior: "instant" });
+    if (wasEnhanced) {
+      const scenes = [...story.querySelectorAll("[data-story-at]")];
+      const current = scenes.filter(el => Number(el.dataset.storyAt) <= score).at(-1) || scenes[0];
+      current?.scrollIntoView({ behavior: "instant" });
+    }
   }
   async function start(progress = 0) {
     syncToggle();
@@ -153,7 +174,7 @@
       scene.resize();
       window.ScrollTrigger.refresh();
       if (progress > 0) {
-        window.scrollTo(0, timeline.scrollTrigger.start + timeline.scrollTrigger.end * progress);
+        window.scrollTo(0, timeline.scrollTrigger.start + (timeline.scrollTrigger.end - timeline.scrollTrigger.start) * progress);
         timeline.progress(progress);
       }
       wake();
@@ -171,8 +192,8 @@
     try { localStorage.setItem("fate-still", manualStill ? "1" : "0"); } catch { /* optional */ }
     if (manualStill) fallback();
     else {
-      const index = [...story.children].findIndex((el) => el.getBoundingClientRect().bottom > innerHeight * .5);
-      void start(chapters[Math.max(0, index)].at);
+      const current = [...story.querySelectorAll("[data-story-at]")].find(el => el.getBoundingClientRect().bottom > innerHeight * .5);
+      void start(Number(current?.dataset.storyAt || 0) / scoreLength);
     }
   });
   document.querySelector(".skip-story").addEventListener("click", (event) => {
@@ -186,7 +207,10 @@
     if (reduced.matches) fallback();
     else void start();
   });
-  window.addEventListener("resize", () => scene?.resize(), { passive: true });
+  window.addEventListener("resize", () => {
+    if (scene && timeline) resizeProgress ??= state.progress;
+    scene?.resize();
+  }, { passive: true });
   document.addEventListener("visibilitychange", () => {
     pageVisible = !document.hidden;
     if (pageVisible) wake(); else stopFrames();

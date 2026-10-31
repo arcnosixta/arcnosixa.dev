@@ -43,12 +43,19 @@ button:disabled { opacity: .4; cursor: default; }
 .thousand { left: 9%; top: 29%; font-size: clamp(40px, 5.6vw, 86px); line-height: 1.04; letter-spacing: -.04em; }
 .divine { left: 65%; top: 35%; font-size: clamp(22px, 2.7vw, 43px); line-height: 1.3; }
 .written { width: 100%; text-align: center; top: 70%; font-size: clamp(16px, 1.65vw, 24px); letter-spacing: .05em; }
+.awakening-title { top: 42%; width: 100%; padding: 0 24px; text-align: center; }
+.awakening-title small, .awakening-folio { display: block; margin: 0 0 26px; color: #9298a7; font: 9px/1.8 Arial, sans-serif; letter-spacing: .36em; }
+.awakening-title strong { display: block; font: 400 clamp(28px, 4.5vw, 64px)/1.3 Georgia, serif; letter-spacing: .09em; }
+.awakening-alone { bottom: 15%; width: 100%; padding: 0 24px; text-align: center; font-size: clamp(14px, 1.5vw, 21px); color: #a5adbf; letter-spacing: .08em; }
+.awakening-claim { bottom: 13%; width: 100%; padding: 0 24px; text-align: center; font-size: clamp(21px, 3.1vw, 46px); line-height: 1.55; letter-spacing: -.025em; color: #b8c0d1; }
+.awakening-taken { color: #f1f2f7; }
 .whiteout { inset: 0; z-index: 9; background: #f5f5f5; opacity: 0; }
 .revelation { position: absolute; inset: 0; z-index: 10; display: flex; flex-direction: column; align-items: center; justify-content: center; opacity: 0; visibility: hidden; text-align: center; padding: 24px; }
 .final-crescent { width: clamp(45px, 6vw, 74px); height: auto; fill: #dddde5; margin-bottom: 38px; transform: rotate(-12deg); filter: drop-shadow(0 0 8px #bdc7dc55); }
-.reveal-name { font: 400 clamp(24px, 4.5vw, 68px)/1.1 Arial, sans-serif; letter-spacing: .19em; padding-left: .19em; margin: 0; }
-.reveal-will { margin: 22px 0 0; font-size: clamp(13px, 1.5vw, 19px); font-style: italic; color: #b8b8c4; }
-.reveal-end { margin: 66px 0 0; font: 9px/1.8 Arial, sans-serif; letter-spacing: .25em; text-transform: uppercase; color: #9a9aa7; }
+.final-eye { width: clamp(160px, 26vw, 310px); height: auto; margin-bottom: 44px; opacity: .65; }
+.reveal-name { font: 400 clamp(10px, 1.1vw, 14px)/1.8 Arial, sans-serif; letter-spacing: .35em; padding-left: .35em; margin: 0; }
+.reveal-will { margin: 22px 0 0; font: 8px/1.8 Arial, sans-serif; letter-spacing: .22em; color: #7d8291; }
+.reveal-end { margin: 44px 0 0; font: italic 12px/1.8 Georgia, serif; letter-spacing: .04em; color: #9a9aa7; }
 .return-link { display: inline-flex; align-items: center; gap: 32px; margin-top: 30px; padding: 16px 0; border-bottom: 1px solid #45454b; font: 9px/1.5 Arial, sans-serif; letter-spacing: .18em; text-transform: uppercase; transition: border-color .4s, color .4s; }
 .return-link:hover { border-color: #fff; color: #fff; }
 .return-link span { font-size: 16px; }
@@ -89,6 +96,25 @@ button:disabled { opacity: .4; cursor: default; }
 .still-supported-child { position: absolute; width: clamp(135px, 21vw, 260px); bottom: 57%; }
 .still-ascension .still-infant { width: min(68vw, 340px); margin-bottom: 40px; }
 .still-light { position: absolute; inset: 0; background: radial-gradient(ellipse at 50% 0, #b8bbd333, transparent 70%); }
+.still-awakening-title h2 { margin: 0; font: 400 clamp(27px, 4.5vw, 60px)/1.4 Georgia, serif; letter-spacing: .07em; }
+.still-ash { justify-content: flex-end; padding-bottom: 13svh; }
+.still-ash .still-sea { height: 62%; bottom: -8%; opacity: .36; mask-image: linear-gradient(transparent, #0008 48%, #000); }
+.still-ash > .still-infant { position: absolute; width: min(66vw, 300px); top: 23%; z-index: 1; }
+.still-ash-field { position: absolute; inset: 14% 0 0; width: 100%; height: 75%; opacity: .65; }
+.still-ash figcaption { color: #a4adbf; font-size: clamp(16px, 1.8vw, 24px); }
+.still-alone { gap: 55px; }
+.still-alone .still-infant { width: min(66vw, 320px); position: relative; z-index: 1; }
+.still-pulse { position: absolute; width: min(78vw, 520px); aspect-ratio: 1; border: 1px solid #859ac71f; border-radius: 50%; box-shadow: 0 0 60px #1c33521f, inset 0 0 50px #1c33521f; }
+.still-pulse::before, .still-pulse::after { content: ""; position: absolute; inset: 12%; border: 1px solid #859ac71a; border-radius: 50%; }
+.still-pulse::after { inset: -12%; border-color: #859ac70a; }
+.still-alone figcaption { color: #a5adbf; font-size: clamp(16px, 1.8vw, 24px); }
+.awakened-eye { display: block; width: min(86vw, 950px); height: auto; overflow: visible; filter: drop-shadow(0 0 35px #2b456755); }
+.still-eye .awakened-eye { margin-bottom: 42px; }
+.still-eye figcaption { color: #a5adbf; font-size: clamp(16px, 1.8vw, 24px); }
+.still-claim { gap: 20px; }
+.still-claim .awakened-eye { width: min(80vw, 760px); opacity: .72; }
+.still-claim figcaption { font-size: clamp(23px, 3.1vw, 43px); color: #bbc3d3; }
+.still-claim figcaption em { color: #f1f2f7; }
 .is-still .still-toggle { color: #eee; }
 @keyframes appear { to { opacity: 1; } }
 @media (max-width: 700px) {
@@ -104,15 +130,28 @@ button:disabled { opacity: .4; cursor: default; }
   .divine { left: auto; width: 100%; top: 12%; text-align: center; font-size: 27px; }
   .written { top: 73%; font-size: 15px; padding: 0 24px; }
   .chapter-name { display: none; }
-  .reveal-name { font-size: clamp(21px, 6vw, 40px); letter-spacing: .14em; }
-  .reveal-end { margin-top: 50px; font-size: 8px; letter-spacing: .16em; }
+  .awakening-title { top: 43%; padding-inline: 18px; }
+  .awakening-title strong { font-size: clamp(24px, 7vw, 40px); letter-spacing: .045em; }
+  .awakening-title small { margin-bottom: 22px; font-size: 8px; }
+  .awakening-claim { bottom: 15%; font-size: clamp(21px, 6vw, 30px); }
+  .awakening-alone { bottom: 17%; font-size: 13px; }
+  .reveal-name { font-size: 10px; letter-spacing: .25em; }
+  .reveal-end { margin-top: 36px; font-size: 11px; }
+  .final-eye { width: 58vw; margin-bottom: 34px; }
   .still-sea { width: 210%; max-width: none; }
   .still-scene figcaption { font-size: 17px; }
   .still-silence figcaption { font-size: 9px; }
+  .still-awakening-title h2 { font-size: clamp(23px, 6.8vw, 36px); }
+  .still-claim figcaption { font-size: 23px; }
 }
 @media (max-height: 500px) and (orientation: landscape) {
   .revelation .final-crescent { width: 33px; margin-bottom: 16px; }
-  .reveal-name { font-size: 30px; }
+  .revelation .final-eye { width: 160px; margin-bottom: 16px; }
+  .awakening-title { top: 36%; }
+  .awakening-title strong { font-size: 28px; }
+  .awakening-title small { margin-bottom: 10px; }
+  .awakening-claim { bottom: 16%; font-size: 21px; line-height: 1.3; }
+  .reveal-name { font-size: 11px; }
   .reveal-will { margin-top: 14px; }
   .reveal-end { margin-top: 22px; }
   .return-link { margin-top: 12px; }

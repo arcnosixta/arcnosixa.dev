@@ -319,7 +319,7 @@
       this.postScene.add(this.postQuad);
     }
     makeChild(texture) {
-      this.childUniforms = { uMap: { value: texture }, uTime: { value: 0 }, uAlpha: { value: 0 }, uLight: { value: 0 } };
+      this.childUniforms = { uMap: { value: texture }, uTime: { value: 0 }, uAlpha: { value: 0 }, uLight: { value: 0 }, uPulse: { value: 0 } };
       const material = this.material({
         uniforms: this.childUniforms,
         vertexShader: infantVertex,
@@ -347,7 +347,7 @@
       });
       const auraMaterial = this.material({
         uniforms: this.childUniforms, vertexShader: infantVertex,
-        fragmentShader: `varying vec2 vUv;uniform sampler2D uMap;uniform float uTime,uAlpha,uLight;
+        fragmentShader: `varying vec2 vUv;uniform sampler2D uMap;uniform float uTime,uAlpha,uLight,uPulse;
           ${noiseGLSL} ${infantMaskGLSL}
           void main(){
             vec2 uv=(vUv-.5)*1.8+.5;
@@ -362,7 +362,7 @@
             }
             nearGlow/=12.;farGlow/=12.;
             float outside=1.-infantMask(uv);
-            float breath=.94+.06*sin(uTime*.9);
+            float breath=.94+.06*sin(uTime*.9)+uPulse*(.12+.12*sin(uTime*1.8));
             float light=(nearGlow*.85+farGlow*(.32+smoke*.8))*outside*breath;
             vec3 color=mix(vec3(.32,.39,.53),vec3(.86,.93,1.),uLight);
             gl_FragColor=vec4(color,light*uAlpha*(.8+uLight*1.9));
@@ -516,8 +516,9 @@
           } while (alpha < 180 && ++tries < 40);
           if (alpha < 180) continue;
           const lx = (x - .5) * hand.height, ly = y * hand.height;
-          positions.push(hand.x + lx * Math.cos(hand.rotation) - ly * Math.sin(hand.rotation),
-            hand.tip - hand.height + lx * Math.sin(hand.rotation) + ly * Math.cos(hand.rotation), hand.z);
+          // Match the column-major rotation used by the hand vertex shader.
+          positions.push(hand.x + lx * Math.cos(hand.rotation) + ly * Math.sin(hand.rotation),
+            hand.tip - hand.height - lx * Math.sin(hand.rotation) + ly * Math.cos(hand.rotation), hand.z);
           seeds.push(random(), random(), random());
           const shade = hand.shade * smooth(-10, 2, hand.z) * .7 + hand.shade * .3;
           local.push(x, y, shade);
@@ -576,19 +577,23 @@
       if (this.disposed) return;
       this.progress = progress;
       this.time += Math.min(.05, delta);
-      const p = progress, time = this.time;
+      // Chapter I retains its original score; II continues from its final pose.
+      const score = progress * 160, p = Math.min(score / 100, .835), time = this.time;
       const emerge = smooth(.285, .34, p), approach = smooth(.30, .44, p);
       const rise = smooth(.54, .805, p) * 4.2;
       const ascend = smooth(.67, .815, p);
-      const exit = 1 - smooth(.836, .87, p);
+      const awakening = smooth(96, 98, score) * (1 - smooth(147, 152, score));
+      const exit = (1 - smooth(83.6, 87, score)) + awakening;
+      const alone = smooth(98, 120, score), morph = smooth(119, 132, score);
+      const dissolve = smooth(98, 110, score);
       let z = mix(23, 31, smooth(.265, .3, p));
       z = mix(z, 17.8, approach);
       z = mix(z, 25.8, ascend);
-      this.camera.position.set(Math.sin(p * 7) * .4 * emerge, mix(0, 1.3, emerge) + rise * .79, z);
-      this.target.set(0, mix(0, 1.2, emerge) + rise * .8, 0);
+      this.camera.position.set(Math.sin(p * 7) * .4 * emerge * (1 - alone), mix(mix(0, 1.3, emerge) + rise * .79, 5.1, alone), mix(z, 23.5, alone));
+      this.target.set(0, mix(mix(0, 1.2, emerge) + rise * .8, 5.1, alone), 0);
       this.camera.lookAt(this.target);
       this.fog.uniforms.uTime.value = time;
-      this.fog.uniforms.uLight.value = (emerge * .07 + ascend * .5) * exit;
+      this.fog.uniforms.uLight.value = mix(emerge * .07 + ascend * .5, .012, smooth(96, 108, score)) * exit;
       this.bladeUniforms.uTime.value = time;
       const reveal = smooth(.105, .215, p) * 1.02;
       const portal = smooth(.24, .293, p);
@@ -601,30 +606,41 @@
       this.blade.visible = p > .1 && p < .3;
       this.sparkUniforms.uReveal.value = reveal;
       this.sparkUniforms.uAlpha.value = this.bladeUniforms.uAlpha.value;
-      this.moon.position.set(0, 5.3 + rise * .7, -1.8);
+      this.moon.position.set(0, mix(5.3 + rise * .7, 6.8, morph), -1.8);
+      this.moon.scale.set(mix(.37, this.mobile ? .9 : 1.65, morph), mix(.37, this.mobile ? .37 : .68, morph), .37);
+      this.moon.rotation.z = mix(-.18, 0, morph);
       this.moonUniforms.uTime.value = time;
-      this.moonUniforms.uAlpha.value = emerge * exit;
-      this.moonUniforms.uPower.value = .85 + ascend * 1.4;
-      this.moon.visible = p > .285 && p < .87;
+      this.moonUniforms.uAlpha.value = emerge * exit * (1 - smooth(122, 132, score));
+      this.moonUniforms.uPower.value = mix(.85 + ascend * 1.4, .85, awakening);
+      this.moon.visible = score > 28.5 && score < 132;
+      this.eyeUniforms.uTime.value = time;
+      this.eyeUniforms.uAlpha.value = smooth(121, 131, score) * (1 - smooth(150, 152, score));
+      this.eyeUniforms.uOpen.value = smooth(119, 130, score) * (1 - smooth(145, 151, score));
+      this.eye.position.set(0, 6.8, -2);
+      this.eye.scale.setScalar(this.mobile ? .52 : .95);
+      this.eye.visible = score > 119 && score < 152;
       this.ashUniforms.uTime.value = time;
       this.ashUniforms.uRise.value = ascend;
-      this.ashUniforms.uAlpha.value = (.025 + smooth(.08, .15, p) * .2 + ascend * .45) * exit;
+      this.ashUniforms.uAlpha.value = mix(.025 + smooth(.08, .15, p) * .2 + ascend * .45, .025, smooth(96, 110, score)) * exit;
       this.ashUniforms.uSplit.value = smooth(.16, .23, p) * (1 - emerge) * .7;
       if (this.ready) {
-        this.child.position.set(0, 1.05 + rise, .65);
-        this.childUniforms.uAlpha.value = emerge * exit;
+        this.child.position.set(0, mix(1.05 + rise, 2.9, alone), .65);
+        this.childUniforms.uAlpha.value = emerge * exit * (1 - smooth(142, 148, score));
         this.childUniforms.uTime.value = time;
         this.childUniforms.uLight.value = smooth(.715, .795, p);
-        this.child.visible = p > .285 && p < .87;
+        this.childUniforms.uPulse.value = smooth(108, 116, score);
+        this.child.visible = score > 28.5 && score < 148;
         this.handUniforms.uTime.value = time;
         this.handUniforms.uProgress.value = p;
         this.handUniforms.uRise.value = rise;
         this.handUniforms.uAlpha.value = exit;
-        this.hands.visible = p > .425 && p < .87;
+        this.handUniforms.uDissolve.value = dissolve;
+        this.hands.visible = score > 42.5 && score < 111;
+        this.handAsh.visible = score > 98 && score < 111;
         this.sea.position.y = rise - 3.8 - (1 - smooth(.54, .67, p)) * 5;
-        this.seaUniforms.uAlpha.value = smooth(.55, .675, p) * exit * .9;
+        this.seaUniforms.uAlpha.value = smooth(.55, .675, p) * exit * .9 * (1 - dissolve);
         this.seaUniforms.uTime.value = time;
-        this.sea.visible = p > .54 && p < .87;
+        this.sea.visible = score > 54 && score < 110;
       }
       this.renderer.setRenderTarget(this.sceneTarget);
       this.renderer.render(this.scene, this.camera);
@@ -640,7 +656,7 @@
       this.renderer.setRenderTarget(this.glowB);
       this.renderer.render(this.postScene, this.postCamera);
       this.composite.uniforms.uTime.value = time;
-      this.composite.uniforms.uAura.value = smooth(.1, .16, p) * exit * (.7 + ascend * .8);
+      this.composite.uniforms.uAura.value = smooth(.1, .16, p) * exit * mix(.7 + ascend * .8, 1.05, awakening);
       this.postQuad.material = this.composite;
       this.renderer.setRenderTarget(null);
       this.renderer.render(this.postScene, this.postCamera);
@@ -666,8 +682,8 @@
       this.scene.clear();
       this.postScene.clear();
       this.renderer.dispose();
-      const context = this.renderer.getContext();
-      if (!context.isContextLost()) context.getExtension("WEBGL_lose_context")?.loseContext();
+      // The same canvas is reused by Motion version. Disposing owned GPU
+      // resources is sufficient; explicitly losing its context prevents restart.
     }
   }
   window.FateScene = FateScene;

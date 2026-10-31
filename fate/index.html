@@ -5,9 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#000000" />
   <meta name="color-scheme" content="dark" />
-  <meta name="description" content="A blade cuts the darkness. A child emerges from the void. A thousand hands rise. An original cinematic scroll experience by ARCNOSIXTA." />
+  <meta name="description" content="A child rises from the void. A thousand hands turn to ash. In Chapter II — Awakening, the eye of fate opens. An original cinematic scroll experience by ARCNOSIXTA." />
   <meta property="og:title" content="FATE — THE ASCENSION · ARCNOSIXTA" />
-  <meta property="og:description" content="A blade. A child. A thousand hands. An original story told through light and motion." />
+  <meta property="og:description" content="The Ascension continues in Chapter II — Awakening. Hands become ash. The eye of fate opens." />
   <meta property="og:image" content="https://arcnosixta.github.io/arcnosixa.dev/assets/fate/congregation.png" />
   <link rel="canonical" href="https://arcnosixta.github.io/arcnosixa.dev/fate/" />
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Cpath d='M30 2C-8 10 0 37 35 36C7 32 5 12 30 2Z' fill='%23f5f5f5'/%3E%3C/svg%3E" />
@@ -53,6 +53,34 @@
       <symbol id="radiant-newborn" viewBox="0 0 1536 1024">
         <image href="../assets/fate/newborn.png" width="1536" height="1024" filter="url(#infant-light)" />
       </symbol>
+      <radialGradient id="awakening-iris">
+        <stop offset="0" stop-color="#020306" /><stop offset=".35" stop-color="#0a1528" />
+        <stop offset=".66" stop-color="#273e60" /><stop offset=".83" stop-color="#8d9dbb" />
+        <stop offset=".96" stop-color="#29344b" /><stop offset="1" stop-color="#06080e" />
+      </radialGradient>
+      <filter id="awakening-glow" x="-30%" y="-60%" width="160%" height="220%">
+        <feGaussianBlur stdDeviation="5" /><feMerge><feMergeNode /><feMergeNode in="SourceGraphic" /></feMerge>
+      </filter>
+      <clipPath id="awakening-aperture"><path d="M30 150Q300-105 570 150Q300 405 30 150Z" /></clipPath>
+      <symbol id="awakened-eye" viewBox="0 0 600 300">
+        <path d="M30 150Q300-105 570 150Q300 405 30 150Z" fill="#070a12" stroke="#7889a6" stroke-width="1.8" filter="url(#awakening-glow)" />
+        <g clip-path="url(#awakening-aperture)">
+          <circle cx="300" cy="150" r="126" fill="url(#awakening-iris)" />
+          <g fill="none" stroke="#9baecb" stroke-width="1" opacity=".55">
+            <circle cx="300" cy="150" r="119" /><circle cx="300" cy="150" r="103" stroke-dasharray="1 5" />
+            <circle cx="300" cy="150" r="79" stroke-dasharray="1 3" />
+            <path d="M300 27V99M300 201V273M177 150H249M351 150H423M213 63L264 114M336 186L387 237M213 237L264 186M336 114L387 63" />
+            <path d="M253 37L280 102M320 198L347 263M187 103L252 130M348 170L413 197M187 197L252 170M348 130L413 103M253 263L280 198M320 102L347 37" />
+            <path d="M276 31L289 95M311 205L324 269M181 126L245 139M355 161L419 174M181 174L245 161M355 139L419 126M276 269L289 205M311 95L324 31" opacity=".5" />
+          </g>
+          <circle cx="300" cy="150" r="52" fill="#000" stroke="#b0bed7" stroke-width="1.4" />
+          <circle cx="300" cy="150" r="58" fill="none" stroke="#476284" stroke-width="2" opacity=".65" />
+        </g>
+        <path d="M30 150Q300-105 570 150" fill="none" stroke="#bdc7dc" stroke-width="2.2" filter="url(#awakening-glow)" />
+      </symbol>
+      <symbol id="closed-eye" viewBox="0 0 600 110">
+        <path d="M30 35Q300 130 570 35" fill="none" stroke="#8594af" stroke-width="1.6" filter="url(#awakening-glow)" />
+      </symbol>
     </defs>
   </svg>
   <a class="skip-story" href="#written-story">Read the story without motion</a>
@@ -83,13 +111,16 @@
           <p class="caption thousand">A thousand<br /><em>hands.</em></p>
           <p class="caption divine">Not all ascensions<br /><em>are divine.</em></p>
           <p class="caption written">Some are written by fate.</p>
+          <p class="caption awakening-title" lang="ru"><small>ГЛАВА II</small><strong>ПРОБУЖДЕНИЕ</strong></p>
+          <p class="caption awakening-alone">Only one remained.</p>
+          <p class="caption awakening-claim" lang="ru">Судьбу не получают.<br /><em class="awakening-taken">Её забирают.</em></p>
         </div>
         <div class="whiteout" aria-hidden="true"></div>
         <div class="revelation" aria-hidden="true" inert>
-          <svg class="final-crescent" viewBox="0 0 100 100" aria-hidden="true"><path d="M14.55 43.75A36 36 0 1 1 14.55 56.25A31 31 0 1 0 14.55 43.75Z" /></svg>
-          <p class="reveal-name">ARCNOSIXTA</p>
-          <p class="reveal-will">The will to create.</p>
-          <p class="reveal-end">The end is only the beginning.</p>
+          <svg class="final-eye" viewBox="0 0 600 110" aria-hidden="true"><use href="#closed-eye" /></svg>
+          <p class="reveal-name">TO BE CONTINUED</p>
+          <p class="reveal-will">ARCNOSIXTA / FATE</p>
+          <p class="reveal-end">The eye remembers.</p>
           <a class="return-link" data-void-return href="../">Return to reality <span aria-hidden="true">↗</span></a>
         </div>
         <div class="scroll-invitation" aria-hidden="true"><span>Scroll to descend</span><i></i></div>
@@ -100,32 +131,55 @@
 
     <!-- This is the default, useful document. WebGL progressively enhances it. -->
     <article id="written-story" class="written-story" tabindex="-1" aria-label="FATE — the complete story">
-      <figure class="still-scene still-silence">
+      <figure class="still-scene still-silence" data-story-at="0">
         <figcaption>Before everything, there was silence.</figcaption>
         <span class="still-scroll" aria-hidden="true">Scroll to descend ↓</span>
       </figure>
-      <figure class="still-scene still-cut">
+      <figure class="still-scene still-cut" data-story-at="10.5">
         <svg viewBox="0 0 100 100" role="img" aria-label="A nearly circular crescent, its dark body surrounded by a luminous silver aura"><path d="M14.55 43.75A36 36 0 1 1 14.55 56.25A31 31 0 1 0 14.55 43.75Z" /></svg>
         <figcaption>Even fate can be cut.</figcaption>
       </figure>
-      <figure class="still-scene still-child">
+      <figure class="still-scene still-child" data-story-at="30">
         <svg class="still-infant shadow-infant" viewBox="0 0 1536 1024" role="img" aria-label="A newborn is a completely black silhouette: only two eyes and a small mouth shine through a smoky silver aura."><use href="#shadow-newborn" /></svg>
         <figcaption>In the depths of nothingness…<br />A child was born.</figcaption>
       </figure>
-      <figure class="still-scene still-hands">
+      <figure class="still-scene still-hands" data-story-at="42.5">
         <img class="still-sea" src="../assets/fate/congregation.png" width="1672" height="941" loading="lazy" alt="Hundreds of spectral hands formed from deep blue smoke rise from the void, their luminous edges supporting a newborn." />
         <svg class="still-infant shadow-infant still-supported-child" viewBox="0 0 1536 1024" role="img" aria-label="Hands of blue energy cradle the black newborn silhouette, its eyes and mouth glowing within a dark aura."><use href="#shadow-newborn" /></svg>
         <figcaption>One hand reached. Then another.<br /><em>A thousand hands.</em></figcaption>
       </figure>
-      <figure class="still-scene still-ascension">
+      <figure class="still-scene still-ascension" data-story-at="71.5">
         <div class="still-light" aria-hidden="true"></div>
         <svg class="still-infant radiant-infant" viewBox="0 0 1536 1024" role="img" aria-label="The newborn has become a brilliant white silhouette without facial features, surrounded by a radiant white aura."><use href="#radiant-newborn" /></svg>
         <figcaption>Not all ascensions are divine.<br />Some are written by fate.</figcaption>
       </figure>
-      <div class="still-scene still-ending">
-        <svg class="final-crescent" viewBox="0 0 100 100" aria-hidden="true"><path d="M14.55 43.75A36 36 0 1 1 14.55 56.25A31 31 0 1 0 14.55 43.75Z" /></svg>
-        <p class="reveal-name">ARCNOSIXTA</p><p class="reveal-will">The will to create.</p>
-        <p class="reveal-end">The end is only the beginning.</p>
+      <section class="still-scene still-awakening-title" data-story-at="88" lang="ru" aria-labelledby="awakening-heading">
+        <p class="awakening-folio">ГЛАВА II</p><h2 id="awakening-heading">ПРОБУЖДЕНИЕ</h2>
+        <span class="still-scroll" aria-hidden="true">Продолжай ↓</span>
+      </section>
+      <figure class="still-scene still-ash" data-story-at="99">
+        <img class="still-sea" src="../assets/fate/congregation.png" width="1672" height="941" loading="lazy" alt="The blue congregation dissolves into darkness; broken outlines of hands become ash beneath the radiant newborn." />
+        <svg class="still-ash-field" viewBox="0 0 600 500" aria-hidden="true"><g fill="#6e83ac"><path d="m70 220 3-2 2 4-4 2Zm44 90 2-4 4 2-2 4Zm65-158 4-2 1 4-4 2Zm38 204 3-3 3 3-3 3Zm56-132 3 1-1 4-3-1Zm59-112 3-3 2 4-3 2Zm42 185 2-4 4 2-2 4Zm45-106 4-1 1 4-4 1Zm60 140 3-3 3 3-3 3Zm46-94 3-2 2 4-4 2Z"/><circle cx="97" cy="173" r="1"/><circle cx="153" cy="260" r="1.5"/><circle cx="239" cy="181" r="1"/><circle cx="306" cy="301" r="1.5"/><circle cx="371" cy="201" r="1"/><circle cx="464" cy="132" r="1.5"/><circle cx="514" cy="283" r="1"/></g></svg>
+        <svg class="still-infant radiant-infant" viewBox="0 0 1536 1024" role="img" aria-label="A featureless white newborn remains suspended above the dissolving hands."><use href="#radiant-newborn" /></svg>
+        <figcaption>The hands became ash.</figcaption>
+      </figure>
+      <figure class="still-scene still-alone" data-story-at="110">
+        <div class="still-pulse" aria-hidden="true"></div>
+        <svg class="still-infant radiant-infant" viewBox="0 0 1536 1024" role="img" aria-label="The newborn floats alone in blackness, its featureless white silhouette enclosed by cold concentric aura rings."><use href="#radiant-newborn" /></svg>
+        <figcaption>Only one remained.</figcaption>
+      </figure>
+      <figure class="still-scene still-eye" data-story-at="126">
+        <svg class="awakened-eye" viewBox="0 0 600 300" role="img" aria-label="The crescent has become an immense cold silver eye with a dark blue radial iris and a bottomless black pupil."><use href="#awakened-eye" /></svg>
+        <figcaption>The void opened its eye.</figcaption>
+      </figure>
+      <figure class="still-scene still-claim" data-story-at="138" lang="ru">
+        <svg class="awakened-eye" viewBox="0 0 600 300" role="img" aria-label="Огромный глаз судьбы смотрит из тёмной ауры."><use href="#awakened-eye" /></svg>
+        <figcaption>Судьбу не получают.<br /><em>Её забирают.</em></figcaption>
+      </figure>
+      <div class="still-scene still-ending" data-story-at="151">
+        <svg class="final-eye" viewBox="0 0 600 110" role="img" aria-label="The eye has closed, leaving only a thin silver seam."><use href="#closed-eye" /></svg>
+        <p class="reveal-name">TO BE CONTINUED</p><p class="reveal-will">ARCNOSIXTA / FATE</p>
+        <p class="reveal-end">The eye remembers.</p>
         <a class="return-link" data-void-return href="../">Return to reality <span aria-hidden="true">↗</span></a>
       </div>
     </article>
