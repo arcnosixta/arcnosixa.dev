@@ -216,7 +216,8 @@
         x: () => -(track.scrollWidth - frame.clientWidth), ease: "none",
         scrollTrigger: {
           id: "motion-path", trigger: frame, start: "top 15%", end: () => `+=${Math.max(track.scrollWidth - frame.clientWidth, 1)}`,
-          pin: true, scrub: true, invalidateOnRefresh: true, anticipatePin: 1,
+          // Creation is priority 100; this pin must precede contact measurements.
+          refreshPriority: 50, pin: true, scrub: true, invalidateOnRefresh: true, anticipatePin: 1,
         },
       });
     } else {

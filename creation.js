@@ -63,7 +63,8 @@
       const timeline = gsap.timeline({ onUpdate: paintAccent, scrollTrigger: {
         id: "creation-chapter", trigger: chapter, pin: stage, start: "top top",
         end: () => `+=${Math.round(innerHeight * 1.05)}`, scrub: .55,
-        anticipatePin: 1, invalidateOnRefresh: true
+        // Measure this upstream pin before every project and section below it.
+        refreshPriority: 100, anticipatePin: 1, invalidateOnRefresh: true
       }});
       draw(timeline, chapter.querySelector(".creation-thread"), 0, .28);
       projects.forEach((project, index) => {
