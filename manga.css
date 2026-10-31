@@ -140,6 +140,7 @@
 .journey-progress { stroke: #fa8b34; }
 [data-design="cinematic"] .journey-frame .timeline { position: relative; padding-left: 48px; }
 .journey-frame .tl-item { position: relative; }
+.journey-frame .timeline::before, .journey-frame .timeline::after, .journey-frame .tl-item::before { content: none; }
 .journey-stop { position: absolute; left: -29px; top: 39px; width: 12px; height: 12px; border: 1px solid #fa8b34; border-radius: 50%; background: #fa8b34; }
 .scroll-scene { position: relative; background: #080808; }
 .scroll-scene[data-scene="skills"] { overflow: clip; }

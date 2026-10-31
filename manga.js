@@ -186,6 +186,17 @@
     route.querySelectorAll("path").forEach(path => path.setAttribute("d", d));
   }
 
+  // Child cues use layout offsets, not bounds distorted by a moving parent spread.
+  function contentCue(section, element, start = "92%", end = "55%") {
+    const top = () => {
+      let y = 0, node = element;
+      while (node && node !== section) { y += node.offsetTop; node = node.offsetParent; }
+      return y;
+    };
+    return { trigger: section.parentElement, start: () => `top+=${top()} ${start}`,
+      end: () => `top+=${top()} ${end}`, scrub: true, invalidateOnRefresh: true };
+  }
+
   function directSpreads(desktop) {
     const about = document.getElementById("about");
     const skills = document.getElementById("skills");
@@ -199,14 +210,25 @@
       clipPath: "polygon(0 0%, 100% 0, 100% 100%, 0 100%)", scale: 1, rotation: 0, ease: "none",
       scrollTrigger: { id: "motion-about", trigger: about.parentElement, start: "top 95%", end: "top 35%", scrub: true },
     });
+    gsap.fromTo(about.querySelectorAll(".author-line"), { color: "#6b6257", "--author-ink": 0 }, {
+      color: "#171511", "--author-ink": 1, duration: 1, stagger: .35, ease: "none",
+      scrollTrigger: { id: "spread-author", ...contentCue(about, about.querySelector(".about-text"), "90%", "48%") },
+    });
+    about.querySelectorAll(".stat").forEach((stat, i) => gsap.fromTo(stat, { "--stat-mark": 0 }, {
+      "--stat-mark": 1, ease: "none",
+      scrollTrigger: { id: `spread-stat-${i}`, ...contentCue(about, stat, "92%", "70%") },
+    }));
     gsap.fromTo(skills.querySelector(".spread-word"), { xPercent: 35 }, {
       xPercent: 0, ease: "none", scrollTrigger: { id: "motion-skills", trigger: skills.parentElement, start: "top 95%", end: "top 25%", scrub: true },
     });
     skills.querySelectorAll(".skill-card").forEach((row, index) => {
-      gsap.fromTo(row, { x: () => (index % 2 ? 1 : -1) * innerWidth * (desktop ? .3 : .15), rotation: index % 2 ? 4 : -4, scale: .9 }, {
-        x: 0, rotation: 0, scale: 1, ease: "none",
-        scrollTrigger: { id: `motion-skill-${index}`, trigger: row.parentElement, start: "top 100%", end: "top 60%", scrub: true, invalidateOnRefresh: true },
-      });
+      const tl = gsap.timeline({ scrollTrigger: { id: `motion-skill-${index}`, trigger: row.parentElement,
+        start: "top 100%", end: "top 45%", scrub: true, invalidateOnRefresh: true } });
+      tl.fromTo(row, { x: () => (index % 2 ? 1 : -1) * innerWidth * (desktop ? .3 : .15), rotation: index % 2 ? 4 : -4, scale: .9 },
+        { x: 0, rotation: 0, scale: 1, duration: .65, ease: "none" }, 0)
+        .fromTo(row.querySelector(".skill-wire"), { scaleX: 0, transformOrigin: "left" }, { scaleX: 1, duration: .65, ease: "none" }, .1)
+        .fromTo(row.querySelector(".skill-port"), { rotation: 0 }, { rotation: 90, duration: .3 }, .55)
+        .fromTo(row.querySelectorAll(".tag"), { x: i => i % 2 ? 14 : -14, y: 8 }, { x: 0, y: 0, duration: .3, stagger: .04, ease: "power2.out" }, .45);
     });
     const frame = path.querySelector(".journey-frame");
     const track = path.querySelector("#timeline");
@@ -221,15 +243,42 @@
         },
       });
     } else {
-      path.querySelectorAll(".tl-item").forEach((row, index) => gsap.fromTo(row, { xPercent: index % 2 ? 12 : -12, scale: .82, rotation: index % 2 ? 3 : -3 }, {
-        xPercent: 0, scale: 1, rotation: 0, ease: "none",
-        scrollTrigger: { id: `motion-path-${index}`, trigger: frame, start: () => `top+=${row.offsetTop} 100%`, end: () => `top+=${row.offsetTop} 55%`, scrub: true, invalidateOnRefresh: true },
-      }));
+      measureJourney();
+      const route = frame.querySelector(".journey-progress"), ink = { progress: 0 };
+      let length = route.getTotalLength();
+      const paintRoute = () => {
+        route.style.strokeDasharray = String(length);
+        route.style.strokeDashoffset = String(length * (1 - ink.progress));
+      };
+      gsap.to(ink, { progress: 1, ease: "none", onUpdate: paintRoute,
+        scrollTrigger: { id: "spread-journey", trigger: frame, start: "top 85%", end: "bottom 65%", scrub: true,
+          onRefresh: () => { length = route.getTotalLength(); paintRoute(); } },
+      });
+      path.querySelectorAll(".tl-item").forEach((row, index) => {
+        const tl = gsap.timeline({ scrollTrigger: { id: `motion-path-${index}`, trigger: frame,
+          start: () => `top+=${row.offsetTop} 100%`, end: () => `top+=${row.offsetTop} 55%`, scrub: true, invalidateOnRefresh: true } });
+        tl.fromTo(row, { xPercent: index % 2 ? 12 : -12, scale: .88, rotation: index % 2 ? 3 : -3 },
+          { xPercent: 0, scale: 1, rotation: 0, duration: 1, ease: "none" }, 0)
+          .fromTo(row.querySelector(".journey-stop"), { scale: .5, backgroundColor: "#080808" },
+            { scale: 1, backgroundColor: "#fa8b34", duration: .6, ease: "none" }, .4);
+      });
     }
     gsap.fromTo(contact, { scale: .65, borderRadius: "180px 180px 0 0", y: 120, transformOrigin: "center top" }, {
       scale: 1, borderRadius: "0px 0px 0 0", y: 0, ease: "none",
       scrollTrigger: { id: "motion-contact", trigger: contact.parentElement, start: "top 100%", end: "top 28%", scrub: true },
     });
+    const word = contact.querySelector(".cinema-contact-word");
+    const finale = gsap.timeline({ scrollTrigger: { id: "spread-finale", ...contentCue(contact, word, "95%", "55%") } });
+    finale.fromTo(word.querySelectorAll("span"), { scaleY: .25, transformOrigin: "center bottom" },
+      { scaleY: 1, duration: .5, stagger: .035, ease: "back.out(1.15)" }, 0)
+      .fromTo(contact.querySelector(".final-left"), { scaleX: 0, transformOrigin: "right" }, { scaleX: 1, duration: .5, ease: "none" }, .2)
+      .fromTo(contact.querySelector(".final-right"), { scaleX: 0, transformOrigin: "left" }, { scaleX: 1, duration: .5, ease: "none" }, .2);
+    contact.querySelectorAll(".contact-link").forEach((link, i) => gsap.fromTo(link, { "--contact-line": 0 }, {
+      "--contact-line": 1, ease: "none", scrollTrigger: { id: `spread-contact-${i}`, ...contentCue(contact, link, "95%", "70%") },
+    }));
+    document.querySelectorAll(".spread-seam").forEach((seam, i) => gsap.fromTo(seam, { scaleX: 0 }, {
+      scaleX: 1, ease: "none", scrollTrigger: { id: `spread-seam-${i}`, trigger: seam.closest(".scroll-scene"), start: "top 100%", end: "top 65%", scrub: true },
+    }));
     return () => frame.classList.remove("journey-camera");
   }
 
@@ -250,8 +299,6 @@
     media.add({ desktop: "(min-width: 1000px) and (min-height: 700px)", mobile: "(max-width: 999px), (max-height: 699px)", reduce: "(prefers-reduced-motion: reduce)" }, (scope) => {
       if (scope.conditions.reduce) return;
       const desktop = scope.conditions.desktop;
-      gsap.to(".cover-name", { xPercent: -10, ease: "none", scrollTrigger: { trigger: "#home", start: "top top", end: "bottom top", scrub: true } });
-      gsap.fromTo(".cinematic-slash", { scaleY: .15 }, { scaleY: 1, ease: "none", scrollTrigger: { trigger: "#home", start: "top top", end: "bottom 35%", scrub: true } });
       document.querySelectorAll(".story-project:not(.is-filtered)").forEach((card) => {
         const key = card.dataset.key;
         const art = card.querySelector(".scene-art");
@@ -284,7 +331,7 @@
         }
       });
       const cleanupSpreads = directSpreads(desktop);
-      if (desktop) document.querySelectorAll(".archive-project:not(.is-filtered)").forEach((card, i) => gsap.fromTo(card.querySelector(".project-title"), {
+      document.querySelectorAll(".archive-project:not(.is-filtered)").forEach((card, i) => gsap.fromTo(card.querySelector(".project-title"), {
         clipPath: i % 2 ? "inset(0 100% 0 0)" : "inset(100% 0 0 0)",
       }, { clipPath: "inset(0% 0% 0% 0%)", duration: .45, scrollTrigger: { trigger: card, start: "top 90%", once: true } }));
       return () => {
