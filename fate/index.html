@@ -17,6 +17,33 @@
   <noscript><style>.still-toggle { display: none; }</style></noscript>
 </head>
 <body>
+  <svg class="infant-definitions" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <filter id="infant-ink">
+        <feColorMatrix type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 1 0" />
+        <feComponentTransfer><feFuncA type="table" tableValues="0 0 0 0 0 0 .05 .35 .77 .98 1" /></feComponentTransfer>
+      </filter>
+      <filter id="infant-light">
+        <feColorMatrix type="matrix" values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 1 0" />
+        <feComponentTransfer><feFuncA type="table" tableValues="0 0 0 0 0 0 .05 .35 .77 .98 1" /></feComponentTransfer>
+      </filter>
+      <filter id="infant-eye-glow" x="-100%" y="-100%" width="300%" height="300%">
+        <feGaussianBlur stdDeviation="9" />
+        <feMerge><feMergeNode /><feMergeNode in="SourceGraphic" /></feMerge>
+      </filter>
+      <symbol id="shadow-newborn" viewBox="0 0 1536 1024">
+        <image href="../assets/fate/newborn.png" width="1536" height="1024" filter="url(#infant-ink)" />
+        <g fill="#eef5ff" filter="url(#infant-eye-glow)">
+          <ellipse cx="401" cy="350" rx="34" ry="13" transform="rotate(-47 401 350)" />
+          <ellipse cx="495" cy="263" rx="26" ry="11" transform="rotate(-35 495 263)" />
+          <ellipse cx="549" cy="380" rx="19" ry="26" transform="rotate(33 549 380)" />
+        </g>
+      </symbol>
+      <symbol id="radiant-newborn" viewBox="0 0 1536 1024">
+        <image href="../assets/fate/newborn.png" width="1536" height="1024" filter="url(#infant-light)" />
+      </symbol>
+    </defs>
+  </svg>
   <a class="skip-story" href="#written-story">Read the story without motion</a>
   <header class="fate-hud">
     <a class="reality-link" href="../" data-void-return aria-label="Return to the portfolio">
@@ -71,17 +98,17 @@
         <figcaption>Even fate can be cut.</figcaption>
       </figure>
       <figure class="still-scene still-child">
-        <img src="../assets/fate/newborn.png" width="1536" height="1024" loading="lazy" alt="A tiny sleeping newborn wrapped in an ivory swaddle, lying peacefully in the dark, with a delicate silver aura." />
+        <svg class="still-infant shadow-infant" viewBox="0 0 1536 1024" role="img" aria-label="A newborn is a completely black silhouette: only two eyes and a small mouth shine through a smoky silver aura."><use href="#shadow-newborn" /></svg>
         <figcaption>In the depths of nothingness…<br />A child was born.</figcaption>
       </figure>
       <figure class="still-scene still-hands">
         <img class="still-sea" src="../assets/fate/congregation.png" width="1672" height="941" loading="lazy" alt="Hundreds of sculptural hands emerge from darkness, palms raised toward a child at their summit." />
-        <img class="still-supported-child" src="../assets/fate/newborn.png" width="1536" height="1024" loading="lazy" alt="A newborn lies cradled on the raised palms." />
+        <svg class="still-infant shadow-infant still-supported-child" viewBox="0 0 1536 1024" role="img" aria-label="Raised palms cradle the black newborn silhouette, its eyes and mouth glowing within a dark aura."><use href="#shadow-newborn" /></svg>
         <figcaption>One hand reached. Then another.<br /><em>A thousand hands.</em></figcaption>
       </figure>
       <figure class="still-scene still-ascension">
         <div class="still-light" aria-hidden="true"></div>
-        <img src="../assets/fate/newborn.png" width="1536" height="1024" loading="lazy" alt="The swaddled newborn rises into pale light, surrounded by a luminous aura." />
+        <svg class="still-infant radiant-infant" viewBox="0 0 1536 1024" role="img" aria-label="The newborn has become a brilliant white silhouette without facial features, surrounded by a radiant white aura."><use href="#radiant-newborn" /></svg>
         <figcaption>Not all ascensions are divine.<br />Some are written by fate.</figcaption>
       </figure>
       <div class="still-scene still-ending">

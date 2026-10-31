@@ -73,17 +73,21 @@ button:disabled { opacity: .4; cursor: default; }
 #sound-volume { grid-row: 2; grid-column: 1; min-width: 0; width: 100%; accent-color: #c2c2ce; height: 22px; cursor: pointer; }
 .sound-status { position: fixed; z-index: 30; bottom: 65px; right: var(--edge); max-width: min(290px, 80vw); font: 11px/1.6 Arial, sans-serif; color: var(--silver); }
 .sound-status:empty { display: none; }
+.infant-definitions { position: absolute; width: 0; height: 0; overflow: hidden; pointer-events: none; }
+.still-infant { display: block; height: auto; overflow: visible; }
+.shadow-infant { filter: drop-shadow(0 0 2px #bdc7dc90) drop-shadow(0 0 13px #8a9bb299) drop-shadow(0 0 28px #69788d55); }
+.radiant-infant { filter: drop-shadow(0 0 5px #fff) drop-shadow(0 0 20px #dce7ffcc) drop-shadow(0 0 48px #c7d5f3aa); }
 .written-story { margin: 0; }
 .still-scene { position: relative; min-height: 100svh; padding: 90px 24px; margin: 0; display: flex; flex-direction: column; justify-content: center; align-items: center; overflow: hidden; text-align: center; }
 .still-scene figcaption { position: relative; z-index: 2; font-size: clamp(18px, 2.2vw, 32px); line-height: 1.8; font-weight: 400; }
 .still-silence figcaption { font: 10px/2.2 Arial, sans-serif; letter-spacing: .22em; text-transform: uppercase; color: #c2c2cc; }
 .still-scroll { position: absolute; bottom: 10%; color: #85858e; font: 9px Arial, sans-serif; letter-spacing: .2em; text-transform: uppercase; }
 .still-cut svg { width: min(74vw, 440px); height: auto; max-height: 60svh; fill: #08080b; filter: drop-shadow(0 0 2px #f5f5f5) drop-shadow(0 0 16px #bdc7dca0) drop-shadow(0 0 40px #bdc7dc60); margin-bottom: 20px; }
-.still-child img { width: min(68vw, 360px); height: auto; margin-bottom: 60px; filter: grayscale(1) drop-shadow(0 0 12px #bdc7dc70) drop-shadow(0 0 30px #bdc7dc30); }
+.still-child .still-infant { width: min(68vw, 360px); margin-bottom: 60px; }
 .still-hands { min-height: 110svh; justify-content: flex-start; padding-top: 16svh; }
 .still-sea { position: absolute; width: 100%; height: 85%; bottom: 0; object-fit: cover; object-position: center; }
-.still-supported-child { position: absolute; width: clamp(135px, 21vw, 260px); height: auto; bottom: 57%; filter: grayscale(1) drop-shadow(0 0 13px #bdc7dc80); }
-.still-ascension img { width: min(68vw, 340px); height: auto; filter: grayscale(1) brightness(1.45) drop-shadow(0 0 18px #bdc7dc90) drop-shadow(0 0 42px #bdc7dc70); margin-bottom: 40px; }
+.still-supported-child { position: absolute; width: clamp(135px, 21vw, 260px); bottom: 57%; }
+.still-ascension .still-infant { width: min(68vw, 340px); margin-bottom: 40px; }
 .still-light { position: absolute; inset: 0; background: radial-gradient(ellipse at 50% 0, #b8bbd333, transparent 70%); }
 .is-still .still-toggle { color: #eee; }
 @keyframes appear { to { opacity: 1; } }

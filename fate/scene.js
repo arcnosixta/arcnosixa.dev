@@ -19,6 +19,17 @@
   `;
   const planeVertex = `varying vec2 vUv;
     void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}`;
+  // Use only the newborn plate's silhouette. Its RGB (skin, face and cloth)
+  // never enters the character shader, including during transfiguration.
+  const infantMaskGLSL = `
+    float infantMask(vec2 uv){
+      if(uv.x<0.||uv.y<0.||uv.x>1.||uv.y>1.) return 0.;
+      return smoothstep(.55,.93,texture2D(uMap,uv).a);
+    }
+  `;
+  const infantVertex = `varying vec2 vUv; uniform float uTime;
+    void main(){vUv=uv;vec3 p=position;p.y+=sin(uTime*.9)*.009;
+      gl_Position=projectionMatrix*modelViewMatrix*vec4(p,1.);}`;
 
   class FateScene {
     constructor(canvas, onFailure) {
@@ -275,17 +286,60 @@
       this.childUniforms = { uMap: { value: texture }, uTime: { value: 0 }, uAlpha: { value: 0 }, uLight: { value: 0 } };
       const material = this.material({
         uniforms: this.childUniforms,
-        vertexShader: `varying vec2 vUv; uniform float uTime;
-          void main(){vUv=uv;vec3 p=position; p.x+=sin(uv.y*8.+uTime*.55)*.012*(1.-uv.y);p.y+=sin(uTime*.9)*.009;
-          gl_Position=projectionMatrix*modelViewMatrix*vec4(p,1.);}`,
-        fragmentShader: `varying vec2 vUv; uniform sampler2D uMap; uniform float uAlpha,uLight;
-          void main(){ vec4 c=texture2D(uMap,vUv);float l=dot(c.rgb,vec3(.299,.587,.114));
-          vec3 rgb=mix(vec3(l)*.8,vec3(.97,.97,1.),uLight);
-          gl_FragColor=vec4(rgb,c.a*uAlpha); }`,
+        vertexShader: infantVertex,
+        fragmentShader: `varying vec2 vUv; uniform sampler2D uMap; uniform float uTime,uAlpha,uLight;
+          ${infantMaskGLSL}
+          float aperture(vec2 p,vec2 center,vec2 radius,float angle){
+            vec2 d=p-center;float c=cos(angle),s=sin(angle);
+            vec2 q=vec2(c*d.x+s*d.y,-s*d.x+c*d.y)/radius;
+            float r=length(q);
+            return (1.-smoothstep(.65,1.12,r))+exp(-r*r*.55)*.38;
+          }
+          void main(){
+            float shape=infantMask(vUv);
+            vec2 p=vec2(vUv.x,1.-vUv.y)*vec2(1536.,1024.);
+            // Eye and mouth apertures follow the three-quarter infant pose.
+            float eyes=aperture(p,vec2(401.,350.),vec2(34.,13.),-.82)
+                      +aperture(p,vec2(495.,263.),vec2(26.,11.),-.61);
+            float mouth=aperture(p,vec2(549.,380.),vec2(19.,26.),.58);
+            float breath=.94+.06*sin(uTime*.9);
+            vec3 rgb=vec3(.97,.985,1.)*uLight;
+            rgb+=vec3(.86,.92,1.)*(eyes+mouth)*breath*(1.-uLight);
+            gl_FragColor=vec4(rgb,shape*uAlpha);
+          }`,
         transparent: true, depthWrite: false, side: T.DoubleSide
       });
-      this.child = new T.Mesh(this.own(new T.PlaneGeometry(3.05, 2.033, 12, 8)), material);
-      this.child.renderOrder = 3;
+      const auraMaterial = this.material({
+        uniforms: this.childUniforms, vertexShader: infantVertex,
+        fragmentShader: `varying vec2 vUv;uniform sampler2D uMap;uniform float uTime,uAlpha,uLight;
+          ${noiseGLSL} ${infantMaskGLSL}
+          void main(){
+            vec2 uv=(vUv-.5)*1.8+.5;
+            float smoke=fbm(uv*vec2(13.,9.)+vec2(uTime*.06,-uTime*.13));
+            vec2 drift=vec2(smoke-.5,noise(uv*11.-uTime*.07)-.5)*.025;
+            float nearGlow=0.,farGlow=0.;
+            for(int i=0;i<12;i++){
+              float angle=float(i)*.52359878;
+              vec2 direction=vec2(cos(angle),sin(angle))*vec2(1.,1.5);
+              nearGlow+=infantMask(uv+direction*.027+drift*.3);
+              farGlow+=infantMask(uv+direction*(.065+smoke*.055)+drift);
+            }
+            nearGlow/=12.;farGlow/=12.;
+            float outside=1.-infantMask(uv);
+            float breath=.94+.06*sin(uTime*.9);
+            float light=(nearGlow*.85+farGlow*(.32+smoke*.8))*outside*breath;
+            vec3 color=mix(vec3(.32,.39,.53),vec3(.86,.93,1.),uLight);
+            gl_FragColor=vec4(color,light*uAlpha*(.8+uLight*1.9));
+          }`,
+        transparent: true, blending: T.AdditiveBlending, depthWrite: false
+      });
+      const body = new T.Mesh(this.own(new T.PlaneGeometry(3.05, 2.033)), material);
+      body.renderOrder = 3;
+      const aura = new T.Mesh(this.own(new T.PlaneGeometry(3.05 * 1.8, 2.033 * 1.8)), auraMaterial);
+      aura.position.z = -.025;
+      aura.renderOrder = 2;
+      this.child = new T.Group();
+      this.child.add(aura, body);
       this.scene.add(this.child);
     }
     makeCongregation(texture) {
@@ -424,7 +478,7 @@
         this.child.position.set(0, 1.05 + rise, .65);
         this.childUniforms.uAlpha.value = emerge * exit;
         this.childUniforms.uTime.value = time;
-        this.childUniforms.uLight.value = smooth(.74, .831, p) * .94;
+        this.childUniforms.uLight.value = smooth(.715, .795, p);
         this.child.visible = p > .285 && p < .87;
         this.handUniforms.uTime.value = time;
         this.handUniforms.uProgress.value = p;
