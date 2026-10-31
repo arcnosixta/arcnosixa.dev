@@ -614,6 +614,22 @@ function localizeProjects(target) {
 
 const studioDesign = document.documentElement.dataset.design === "studio";
 const cinematicDesign = document.documentElement.dataset.design === "cinematic";
+Object.assign(I18N.ru, {
+  "creation.chapter": "ГЛАВА I — СОЗИДАНИЕ",
+  "creation.line1": "У каждой идеи", "creation.line2": "должна появиться", "creation.line3": "форма.",
+  "creation.note": "Приложения, ИИ-агенты и системы. От замысла — к работающему коду.",
+  "creation.atlas": "Проекты в линиях", "creation.ciel": "Человек. Агент. Диалог.",
+  "creation.rigforge": "Каждая деталь — на своём месте.", "creation.osint": "Разрозненное становится связанным.",
+  "creation.work": "Перейти к работам", "creation.scroll": "Прокрути, чтобы придать форму"
+});
+Object.assign(I18N.en, {
+  "creation.chapter": "CHAPTER I — CREATION",
+  "creation.line1": "Every idea", "creation.line2": "deserves to take", "creation.line3": "form.",
+  "creation.note": "Applications, AI agents and systems. From the first thought to working code.",
+  "creation.atlas": "Projects drawn in lines", "creation.ciel": "Human. Agent. Conversation.",
+  "creation.rigforge": "Every part has its place.", "creation.osint": "Scattered pieces become connected.",
+  "creation.work": "Explore the work", "creation.scroll": "Scroll to give it form"
+});
 I18N.ru["nav.design"] = "Дизайны";
 I18N.en["nav.design"] = "Designs";
 I18N.ru["design.main"] = "Основной";
