@@ -348,10 +348,21 @@
         uniforms: this.seaUniforms,
         vertexShader: `varying vec2 vUv; uniform float uTime;
           void main(){vUv=uv;vec3 p=position;p.y+=sin(uv.x*8.+uTime*.2)*.06;gl_Position=projectionMatrix*modelViewMatrix*vec4(p,1.);}`,
-        fragmentShader: `varying vec2 vUv; uniform sampler2D uMap; uniform float uAlpha;
-          void main(){vec3 c=texture2D(uMap,vUv).rgb;float l=dot(c,vec3(.299,.587,.114));
-          float edge=smoothstep(0.,.12,vUv.x)*smoothstep(0.,.12,1.-vUv.x)*smoothstep(0.,.1,vUv.y);
-          gl_FragColor=vec4(vec3(l*.89,l*.91,l*.97),uAlpha*edge);}`,
+        fragmentShader: `varying vec2 vUv; uniform sampler2D uMap; uniform float uAlpha,uTime; ${noiseGLSL}
+          float mass(vec2 uv){
+            vec3 c=texture2D(uMap,uv).rgb*.4;
+            c+=(texture2D(uMap,uv+vec2(.002,0.)).rgb+texture2D(uMap,uv-vec2(.002,0.)).rgb
+              +texture2D(uMap,uv+vec2(0.,.003)).rgb+texture2D(uMap,uv-vec2(0.,.003)).rgb)*.15;
+            return smoothstep(.025,.14,dot(c,vec3(.299,.587,.114)));
+          }
+          void main(){
+            float smoke=fbm(vUv*vec2(18.,12.)+vec2(uTime*.025,-uTime*.055));
+            vec2 drift=vec2(smoke-.5,noise(vUv*25.+uTime*.04)-.5)*.004;
+            float shape=mass(vUv+drift);
+            float edge=smoothstep(0.,.12,vUv.x)*smoothstep(0.,.12,1.-vUv.x)*smoothstep(0.,.1,vUv.y);
+            vec3 color=mix(vec3(.005,.017,.05),vec3(.016,.07,.20),smoke);
+            gl_FragColor=vec4(color*shape,uAlpha*edge);
+          }`,
         transparent: true, blending: T.AdditiveBlending, depthWrite: false
       });
       this.sea = new T.Mesh(this.own(new T.PlaneGeometry(27, 15.2, 30, 16)), material);
@@ -401,16 +412,40 @@
             float col=mod(aForm.z,2.),row=1.-floor(aForm.z/2.);
             vLocal=uv; vUv=(clamp(uv,.006,.994)+vec2(col,row))*.5;
             vec3 p=position; p.y+=.5;p.xy*=aForm.x;
+            p.x+=sin(uv.y*12.-uTime*.42+aForm.w*16.)*.035*uv.y*(1.-uv.y);
             float angle=aForm.y+sin(uTime*.28+aForm.w*20.)*.012;
             p.xy=mat2(cos(angle),-sin(angle),sin(angle),cos(angle))*p.xy;
             p+=aOffset;p.y+=uRise-(1.-born)*5.;p.z+=sin(uTime*.17+aForm.w*40.)*.04;
             gl_Position=projectionMatrix*modelViewMatrix*vec4(p,1.);
             vAlpha=born; vShade=aFate.y*smoothstep(-10.,2.,aOffset.z)*.7+aFate.y*.3;
           }`,
-        fragmentShader: `uniform sampler2D uMap;uniform float uAlpha;varying vec2 vUv,vLocal;varying float vAlpha,vShade;
-          void main(){vec4 c=texture2D(uMap,vUv);float gray=dot(c.rgb,vec3(.299,.587,.114));
-          float alpha=c.a*vAlpha*uAlpha*smoothstep(.015,.27,vLocal.y);if(alpha<.003)discard;
-          gl_FragColor=vec4(vec3(gray)*vShade,alpha);}`,
+        // Skin RGB is never sampled: alpha supplies anatomy, procedural smoke
+        // supplies the material. Shared bloom carries the blue light outward.
+        fragmentShader: `uniform sampler2D uMap;uniform float uAlpha,uTime,uProgress;varying vec2 vUv,vLocal;varying float vAlpha,vShade;
+          ${noiseGLSL}
+          float hand(vec2 uv){
+            vec2 tile=floor(vUv*2.)*.5;
+            return texture2D(uMap,clamp(uv,tile+.003,tile+.497)).a;
+          }
+          void main(){
+            float smoke=fbm(vLocal*vec2(8.,15.)+vec2(uTime*.04,-uTime*.15)+vShade*13.);
+            vec2 uv=vUv+vec2(smoke-.5,noise(vLocal*13.-uTime*.07)-.5)*.003;
+            float a=hand(uv);
+            float born=vAlpha*uAlpha*smoothstep(.015,.30,vLocal.y);
+            vec4 nearby=vec4(hand(uv+vec2(.006,0.)),hand(uv-vec2(.006,0.)),
+              hand(uv+vec2(0.,.006)),hand(uv-vec2(0.,.006)));
+            float vapor=max(a,dot(nearby,vec4(.25)));
+            if(vapor*born<.003)discard;
+            float inside=min(min(nearby.x,nearby.y),min(nearby.z,nearby.w));
+            float rim=clamp((vapor-inside)*1.3,0.,1.);
+            float wisps=pow(fbm(vLocal*vec2(24.,4.)+vec2(smoke*.7,-uTime*.12)),3.);
+            vec3 ink=vec3(.012,.027,.065);
+            vec3 mist=vec3(.05,.14,.32)*(smoke*.9+wisps*1.8);
+            vec3 edge=vec3(.035,.13,.35)*rim*(.3+smoke*.9);
+            float power=(.48+vShade)*(1.+smoothstep(.72,.81,uProgress)*.3);
+            float density=vapor*(.66+smoke*.3)*born;
+            gl_FragColor=vec4((ink+mist+edge)*power,density);
+          }`,
         transparent: true, depthWrite: false, side: T.DoubleSide
       });
       this.hands = new T.Mesh(geometry, material);

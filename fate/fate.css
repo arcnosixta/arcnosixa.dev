@@ -85,7 +85,7 @@ button:disabled { opacity: .4; cursor: default; }
 .still-cut svg { width: min(74vw, 440px); height: auto; max-height: 60svh; fill: #08080b; filter: drop-shadow(0 0 2px #f5f5f5) drop-shadow(0 0 16px #bdc7dca0) drop-shadow(0 0 40px #bdc7dc60); margin-bottom: 20px; }
 .still-child .still-infant { width: min(68vw, 360px); margin-bottom: 60px; }
 .still-hands { min-height: 110svh; justify-content: flex-start; padding-top: 16svh; }
-.still-sea { position: absolute; width: 100%; height: 85%; bottom: 0; object-fit: cover; object-position: center; }
+.still-sea { position: absolute; width: 100%; height: 85%; bottom: 0; object-fit: cover; object-position: center; filter: url(#spectral-hands); }
 .still-supported-child { position: absolute; width: clamp(135px, 21vw, 260px); bottom: 57%; }
 .still-ascension .still-infant { width: min(68vw, 340px); margin-bottom: 40px; }
 .still-light { position: absolute; inset: 0; background: radial-gradient(ellipse at 50% 0, #b8bbd333, transparent 70%); }

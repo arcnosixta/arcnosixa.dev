@@ -31,6 +31,17 @@
         <feGaussianBlur stdDeviation="9" />
         <feMerge><feMergeNode /><feMergeNode in="SourceGraphic" /></feMerge>
       </filter>
+      <filter id="spectral-hands" x="-10%" y="-10%" width="120%" height="120%" color-interpolation-filters="sRGB">
+        <feGaussianBlur in="SourceGraphic" stdDeviation="1.6" />
+        <feColorMatrix type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  .299 .587 .114 0 0" />
+        <feComponentTransfer result="mass"><feFuncA type="table" tableValues="0 .65 .95 1 1 1 1 1 1 1 1" /></feComponentTransfer>
+        <feMorphology in="mass" operator="dilate" radius="2" result="expanded" />
+        <feComposite in="expanded" in2="mass" operator="out" result="edge" />
+        <feFlood flood-color="#386fdf" /><feComposite in2="edge" operator="in" result="rim" />
+        <feGaussianBlur in="rim" stdDeviation="5" result="glow" />
+        <feFlood flood-color="#102751" /><feComposite in2="mass" operator="in" result="body" />
+        <feMerge><feMergeNode in="glow" /><feMergeNode in="body" /><feMergeNode in="rim" /></feMerge>
+      </filter>
       <symbol id="shadow-newborn" viewBox="0 0 1536 1024">
         <image href="../assets/fate/newborn.png" width="1536" height="1024" filter="url(#infant-ink)" />
         <g fill="#eef5ff" filter="url(#infant-eye-glow)">
@@ -102,8 +113,8 @@
         <figcaption>In the depths of nothingness…<br />A child was born.</figcaption>
       </figure>
       <figure class="still-scene still-hands">
-        <img class="still-sea" src="../assets/fate/congregation.png" width="1672" height="941" loading="lazy" alt="Hundreds of sculptural hands emerge from darkness, palms raised toward a child at their summit." />
-        <svg class="still-infant shadow-infant still-supported-child" viewBox="0 0 1536 1024" role="img" aria-label="Raised palms cradle the black newborn silhouette, its eyes and mouth glowing within a dark aura."><use href="#shadow-newborn" /></svg>
+        <img class="still-sea" src="../assets/fate/congregation.png" width="1672" height="941" loading="lazy" alt="Hundreds of spectral hands formed from deep blue smoke rise from the void, their luminous edges supporting a newborn." />
+        <svg class="still-infant shadow-infant still-supported-child" viewBox="0 0 1536 1024" role="img" aria-label="Hands of blue energy cradle the black newborn silhouette, its eyes and mouth glowing within a dark aura."><use href="#shadow-newborn" /></svg>
         <figcaption>One hand reached. Then another.<br /><em>A thousand hands.</em></figcaption>
       </figure>
       <figure class="still-scene still-ascension">

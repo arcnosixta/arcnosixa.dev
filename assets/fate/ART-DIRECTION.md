@@ -4,8 +4,8 @@ Created for this repository with the built-in Imagegen tool on 2026-10-31. These
 
 - `newborn.png` — 1536 × 1024 RGBA; sleeping newborn wrapped in ivory linen; current character silhouette source. Only its alpha channel is rendered: the character starts as solid black with emissive eyes and mouth, then becomes featureless white light. Skin, face and fabric RGB are never shown.
 - `child.png` — 1024 × 1536 RGBA; earlier standing-child concept, retained for provenance and no longer used in the page.
-- `hands-atlas.png` — 1254 × 1254 RGBA; four distinct sculptural hand poses in a 2 × 2 atlas, 0.77 MB.
-- `congregation.png` — 1672 × 941 RGB; distant hand congregation, 1.73 MB.
+- `hands-atlas.png` — 1254 × 1254 RGBA; four distinct sculptural hand poses in a 2 × 2 atlas, 0.77 MB. Only alpha is rendered; skin RGB is replaced with procedural deep-blue smoke.
+- `congregation.png` — 1672 × 941 RGB; distant hand congregation, 1.73 MB. Blurred, thresholded luminance supplies a mass mask for dark blue mist, suppressing anatomical shading.
 
 The scene uses image plates in a Three.js perspective camera, 72 or 192 instanced hand quads, procedural blade geometry, GLSL reveal/edge glow, particles and atmospheric light. The figures are not fully rigged 3D models; view angles are intentionally restrained to preserve the artwork. This is a deliberate depth-layered art direction, not a claim of 1,000 individually modeled hands.
 
@@ -16,6 +16,10 @@ The musical recording has separate provenance: it was provided locally by the si
 ### Runtime silhouette treatment
 
 The generated PNG remains unchanged. A smooth alpha threshold removes its original soft halo; the Three.js material renders a flat black silhouette, with three white apertures aligned to the newborn's pose. During scroll progress 0.715–0.795 the fill becomes fully white and the eye/mouth apertures dissolve into it. A separate animated smoke pass samples the same contour, following the infant's breathing and rise. The still/reduced-motion version uses the same alpha silhouette through SVG filters and preserves both narrative states. No additional image generation was needed for this treatment.
+
+### Runtime spectral hands
+
+The original hand atlas remains unchanged. Its alpha channel defines the poses; no skin, veins or original lighting are sampled. Each instance is filled with slowly moving ink-blue noise and smoke strands. Nearby alpha samples soften the contour into vapor, while restrained edge light feeds the shared bloom pass. Lower forearms dissolve into the void, and slight vertex drift preserves the supporting fingertips. The distant congregation uses a blurred luminance threshold as its shape, recolored in dark blue smoke. The static/reduced-motion scene uses an SVG mask, solid blue fill and diffused rim, keeping the same direction without WebGL or animation. FATE retains its separate soundtrack and cold, oppressive atmosphere; these effects do not load on the Creation homepage.
 
 ### Newborn — current character
 
