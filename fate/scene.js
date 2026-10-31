@@ -55,6 +55,7 @@
       this.resolution = new T.Vector2(1, 1);
       this.makeAtmosphere();
       this.makeBlade();
+      this.makeEye();
       this.makeAsh();
       this.makeAuraPass();
       this.resize();
@@ -220,6 +221,41 @@
         transparent: true, blending: T.AdditiveBlending, depthWrite: false
       });
       this.blade.add(new T.Points(g, material));
+    }
+    makeEye() {
+      this.eyeUniforms = { uTime: { value: 0 }, uAlpha: { value: 0 }, uOpen: { value: 0 } };
+      const material = this.material({
+        uniforms: this.eyeUniforms, vertexShader: planeVertex,
+        fragmentShader: `varying vec2 vUv;uniform float uTime,uAlpha,uOpen;${noiseGLSL}
+          void main(){
+            vec2 p=(vUv-.5)*vec2(2.4,1.5);
+            float width=max(0.,1.-p.x*p.x);
+            float aperture=.43*pow(width,.68)*uOpen;
+            float lid=abs(p.y)-aperture;
+            float fill=(1.-smoothstep(-.008,.008,lid))*step(abs(p.x),1.);
+            float radius=length(p),angle=atan(p.y,p.x);
+            float strands=fbm(vec2(angle*31.+sin(radius*74.)*.3-uTime*.018,radius*39.));
+            float fibers=pow(.5+.5*sin(angle*119.+strands*9.),3.);
+            float iris=(1.-smoothstep(.325,.342,radius))*smoothstep(.116,.135,radius);
+            float pupil=smoothstep(.108,.125,radius+sin(uTime*1.3)*.003);
+            vec3 ink=vec3(.006,.01,.018);
+            vec3 silver=mix(vec3(.065,.10,.16),vec3(.38,.43,.50),strands);
+            vec3 color=ink+iris*(silver*(.35+fibers*.65)+vec3(.045,.075,.12)*strands);
+            color*=pupil;
+            float ring=exp(-abs(radius-.333)*260.)*.32+exp(-abs(radius-.128)*190.)*.12;
+            color+=vec3(.36,.43,.55)*ring*fill;
+            float n=fbm(p*vec2(8.,13.)+vec2(uTime*.04,-uTime*.07));
+            float rim=exp(-abs(lid)*165.)*(1.-smoothstep(.88,1.04,abs(p.x)));
+            float mist=exp(-abs(lid+(n-.5)*.08)*27.)*(1.-smoothstep(.8,1.12,abs(p.x)))*(.3+n*.5);
+            float closing=smoothstep(0.,.12,uOpen);
+            vec3 light=vec3(.48,.57,.72)*(rim*.65+mist*.24)*closing;
+            gl_FragColor=vec4(color*fill+light,uAlpha*max(fill,(rim+mist)*closing));
+          }`, transparent: true, depthWrite: false, blending: T.NormalBlending
+      });
+      this.eye = new T.Mesh(this.own(new T.PlaneGeometry(19.2, 12)), material);
+      this.eye.renderOrder = 0;
+      this.eye.visible = false;
+      this.scene.add(this.eye);
     }
     makeAsh() {
       const random = randomSource(69), positions = [], seeds = [];
@@ -402,7 +438,7 @@
       geometry.setAttribute("aForm", new T.InstancedBufferAttribute(new Float32Array(form), 4));
       geometry.setAttribute("aFate", new T.InstancedBufferAttribute(new Float32Array(fate), 2));
       geometry.instanceCount = count;
-      this.handUniforms = { uMap: { value: texture }, uProgress: { value: 0 }, uRise: { value: 0 }, uTime: { value: 0 }, uAlpha: { value: 0 } };
+      this.handUniforms = { uMap: { value: texture }, uProgress: { value: 0 }, uRise: { value: 0 }, uTime: { value: 0 }, uAlpha: { value: 0 }, uDissolve: { value: 0 } };
       const material = this.material({
         uniforms: this.handUniforms,
         vertexShader: `attribute vec3 aOffset; attribute vec4 aForm; attribute vec2 aFate;
@@ -421,7 +457,7 @@
           }`,
         // Skin RGB is never sampled: alpha supplies anatomy, procedural smoke
         // supplies the material. Shared bloom carries the blue light outward.
-        fragmentShader: `uniform sampler2D uMap;uniform float uAlpha,uTime,uProgress;varying vec2 vUv,vLocal;varying float vAlpha,vShade;
+        fragmentShader: `uniform sampler2D uMap;uniform float uAlpha,uTime,uProgress,uDissolve;varying vec2 vUv,vLocal;varying float vAlpha,vShade;
           ${noiseGLSL}
           float hand(vec2 uv){
             vec2 tile=floor(vUv*2.)*.5;
@@ -444,6 +480,11 @@
             vec3 edge=vec3(.035,.13,.35)*rim*(.3+smoke*.9);
             float power=(.48+vShade)*(1.+smoothstep(.72,.81,uProgress)*.3);
             float density=vapor*(.66+smoke*.3)*born;
+            float field=fbm(vLocal*vec2(10.,18.)+vShade*9.);
+            float keep=1.-smoothstep(field-.025,field+.025,uDissolve);
+            float ember=exp(-abs(field-uDissolve)*95.)*step(.01,uDissolve);
+            density*=keep;
+            edge+=vec3(.08,.19,.32)*ember;
             gl_FragColor=vec4((ink+mist+edge)*power,density);
           }`,
         transparent: true, depthWrite: false, side: T.DoubleSide
@@ -452,6 +493,65 @@
       this.hands.frustumCulled = false;
       this.hands.renderOrder = 1;
       this.scene.add(this.hands);
+      this.makeHandAsh(texture, data);
+    }
+    makeHandAsh(texture, hands) {
+      // Sample the existing alpha mask once. Every mote starts on a hand,
+      // then follows a scroll-driven trajectory; reverse scrolling reassembles it.
+      const mask = document.createElement("canvas");
+      mask.width = mask.height = 256;
+      const ctx = mask.getContext("2d", { willReadFrequently: true });
+      ctx.drawImage(texture.image, 0, 0, 256, 256);
+      const pixels = ctx.getImageData(0, 0, 256, 256).data;
+      const random = randomSource(904), positions = [], seeds = [], local = [];
+      const perHand = this.quality < 1 ? 18 : 24;
+      hands.forEach(hand => {
+        for (let i = 0; i < perHand; i++) {
+          let x, y, alpha, tries = 0;
+          do {
+            x = random(); y = .12 + random() * .87;
+            const px = (hand.variant % 2) * 128 + Math.floor(x * 127);
+            const py = Math.floor(hand.variant / 2) * 128 + Math.floor((1 - y) * 127);
+            alpha = pixels[(py * 256 + px) * 4 + 3];
+          } while (alpha < 180 && ++tries < 40);
+          if (alpha < 180) continue;
+          const lx = (x - .5) * hand.height, ly = y * hand.height;
+          positions.push(hand.x + lx * Math.cos(hand.rotation) - ly * Math.sin(hand.rotation),
+            hand.tip - hand.height + lx * Math.sin(hand.rotation) + ly * Math.cos(hand.rotation), hand.z);
+          seeds.push(random(), random(), random());
+          const shade = hand.shade * smooth(-10, 2, hand.z) * .7 + hand.shade * .3;
+          local.push(x, y, shade);
+        }
+      });
+      const geometry = this.own(new T.BufferGeometry());
+      geometry.setAttribute("position", new T.Float32BufferAttribute(positions, 3));
+      geometry.setAttribute("aSeed", new T.Float32BufferAttribute(seeds, 3));
+      geometry.setAttribute("aLocal", new T.Float32BufferAttribute(local, 3));
+      this.handAshUniforms = { uDissolve: this.handUniforms.uDissolve, uRise: this.handUniforms.uRise,
+        uAlpha: this.handUniforms.uAlpha, uPixel: { value: this.renderer.getPixelRatio() } };
+      const material = this.material({
+        uniforms: this.handAshUniforms,
+        vertexShader: `attribute vec3 aSeed,aLocal;uniform float uDissolve,uRise,uPixel;varying float vAlpha;${noiseGLSL}
+          void main(){
+            float field=fbm(aLocal.xy*vec2(10.,18.)+aLocal.z*9.);
+            float age=max(0.,uDissolve-field+.025);
+            vec3 p=position;
+            p.y+=uRise+age*(5.+aSeed.y*8.);
+            p.x+=sin(aSeed.z*30.+age*6.)*age*(1.+aSeed.x*5.);
+            p.z+=age*(aSeed.x-.5)*5.;
+            vec4 mv=modelViewMatrix*vec4(p,1.);gl_Position=projectionMatrix*mv;
+            gl_PointSize=clamp((.5+aSeed.y*1.5)*uPixel*20./-mv.z,.7,3.5);
+            vAlpha=smoothstep(0.,.035,age)*(1.-smoothstep(.14,.43,age))*(1.-smoothstep(.94,1.,uDissolve));
+          }`,
+        fragmentShader: `uniform float uAlpha;varying float vAlpha;void main(){
+          float alpha=1.-smoothstep(.08,.5,length(gl_PointCoord-.5));
+          gl_FragColor=vec4(.25,.39,.65,alpha*vAlpha*uAlpha*.8);
+        }`, transparent: true, depthWrite: false, blending: T.AdditiveBlending
+      });
+      this.handAsh = new T.Points(geometry, material);
+      this.handAsh.frustumCulled = false;
+      this.handAsh.renderOrder = 2;
+      this.scene.add(this.handAsh);
     }
     resize() {
       if (this.disposed) return;
@@ -470,6 +570,7 @@
       this.fog.uniforms.uAspect.value = Math.min(2, width / height);
       this.ashUniforms.uPixel.value = this.renderer.getPixelRatio();
       this.sparkUniforms.uPixel.value = this.renderer.getPixelRatio();
+      if (this.handAshUniforms) this.handAshUniforms.uPixel.value = this.renderer.getPixelRatio();
     }
     render(progress, delta = 1 / 60) {
       if (this.disposed) return;
