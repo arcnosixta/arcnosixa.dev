@@ -36,7 +36,7 @@ button:disabled { opacity: .4; cursor: default; }
 .caption em { font-weight: 400; }
 .silence { top: 48%; width: 100%; padding: 0 28px; text-align: center; color: #c2c2cc; font: 10px/2.2 Arial, sans-serif; letter-spacing: .25em; text-transform: uppercase; }
 .mobile-break { display: none; }
-.cut { left: 62%; top: 41%; font-size: clamp(25px, 3.5vw, 56px); line-height: 1.22; letter-spacing: -.025em; }
+.cut { left: 68%; top: 41%; font-size: clamp(25px, 3.5vw, 56px); line-height: 1.22; letter-spacing: -.025em; }
 .depths, .born { width: 100%; text-align: center; bottom: 18%; font-size: clamp(14px, 1.3vw, 19px); letter-spacing: .08em; color: #c8c8cf; }
 .first-hand, .another-hand { left: 20%; top: 43%; font-size: clamp(16px, 1.6vw, 25px); color: #c8c8cf; }
 .another-hand { left: auto; right: 19%; top: 47%; }
@@ -45,7 +45,7 @@ button:disabled { opacity: .4; cursor: default; }
 .written { width: 100%; text-align: center; top: 70%; font-size: clamp(16px, 1.65vw, 24px); letter-spacing: .05em; }
 .whiteout { inset: 0; z-index: 9; background: #f5f5f5; opacity: 0; }
 .revelation { position: absolute; inset: 0; z-index: 10; display: flex; flex-direction: column; align-items: center; justify-content: center; opacity: 0; visibility: hidden; text-align: center; padding: 24px; }
-.final-crescent { width: clamp(45px, 6vw, 74px); height: auto; fill: #dddde5; margin-bottom: 38px; transform: rotate(-23deg); }
+.final-crescent { width: clamp(45px, 6vw, 74px); height: auto; fill: #dddde5; margin-bottom: 38px; transform: rotate(-12deg); filter: drop-shadow(0 0 8px #bdc7dc55); }
 .reveal-name { font: 400 clamp(24px, 4.5vw, 68px)/1.1 Arial, sans-serif; letter-spacing: .19em; padding-left: .19em; margin: 0; }
 .reveal-will { margin: 22px 0 0; font-size: clamp(13px, 1.5vw, 19px); font-style: italic; color: #b8b8c4; }
 .reveal-end { margin: 66px 0 0; font: 9px/1.8 Arial, sans-serif; letter-spacing: .25em; text-transform: uppercase; color: #9a9aa7; }
@@ -78,12 +78,12 @@ button:disabled { opacity: .4; cursor: default; }
 .still-scene figcaption { position: relative; z-index: 2; font-size: clamp(18px, 2.2vw, 32px); line-height: 1.8; font-weight: 400; }
 .still-silence figcaption { font: 10px/2.2 Arial, sans-serif; letter-spacing: .22em; text-transform: uppercase; color: #c2c2cc; }
 .still-scroll { position: absolute; bottom: 10%; color: #85858e; font: 9px Arial, sans-serif; letter-spacing: .2em; text-transform: uppercase; }
-.still-cut svg { width: min(62vw, 420px); height: auto; max-height: 60svh; filter: drop-shadow(0 0 16px #fff4); margin-bottom: 20px; }
-.still-child img { height: 36svh; width: auto; margin-bottom: 60px; }
+.still-cut svg { width: min(74vw, 440px); height: auto; max-height: 60svh; fill: #08080b; filter: drop-shadow(0 0 2px #f5f5f5) drop-shadow(0 0 16px #bdc7dca0) drop-shadow(0 0 40px #bdc7dc60); margin-bottom: 20px; }
+.still-child img { width: min(68vw, 360px); height: auto; margin-bottom: 60px; filter: grayscale(1) drop-shadow(0 0 12px #bdc7dc70) drop-shadow(0 0 30px #bdc7dc30); }
 .still-hands { min-height: 110svh; justify-content: flex-start; padding-top: 16svh; }
 .still-sea { position: absolute; width: 100%; height: 85%; bottom: 0; object-fit: cover; object-position: center; }
-.still-supported-child { position: absolute; height: 22svh; width: auto; bottom: 56%; }
-.still-ascension img { height: 32svh; width: auto; filter: brightness(1.7); margin-bottom: 40px; }
+.still-supported-child { position: absolute; width: clamp(135px, 21vw, 260px); height: auto; bottom: 57%; filter: grayscale(1) drop-shadow(0 0 13px #bdc7dc80); }
+.still-ascension img { width: min(68vw, 340px); height: auto; filter: grayscale(1) brightness(1.45) drop-shadow(0 0 18px #bdc7dc90) drop-shadow(0 0 42px #bdc7dc70); margin-bottom: 40px; }
 .still-light { position: absolute; inset: 0; background: radial-gradient(ellipse at 50% 0, #b8bbd333, transparent 70%); }
 .is-still .still-toggle { color: #eee; }
 @keyframes appear { to { opacity: 1; } }
@@ -92,12 +92,12 @@ button:disabled { opacity: .4; cursor: default; }
   .film-edge { height: 32px; }
   .silence { font-size: 9px; letter-spacing: .2em; }
   .mobile-break { display: inline; }
-  .cut { left: 52%; top: 50%; font-size: 31px; }
+  .cut { left: 0; top: auto; bottom: 15%; width: 100%; text-align: center; font-size: 28px; }
   .depths, .born { bottom: 23%; padding: 0 24px; line-height: 1.7; font-size: 13px; }
   .first-hand { left: 9%; top: 29%; font-size: 16px; }
   .another-hand { right: 9%; top: 30%; font-size: 16px; }
-  .thousand { left: 8%; top: 23%; font-size: 44px; }
-  .divine { left: auto; width: 100%; top: 19%; text-align: center; font-size: 27px; }
+  .thousand { left: 8%; top: 10%; font-size: 36px; }
+  .divine { left: auto; width: 100%; top: 12%; text-align: center; font-size: 27px; }
   .written { top: 73%; font-size: 15px; padding: 0 24px; }
   .chapter-name { display: none; }
   .reveal-name { font-size: clamp(21px, 6vw, 40px); letter-spacing: .14em; }

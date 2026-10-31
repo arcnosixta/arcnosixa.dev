@@ -37,6 +37,6 @@ for (const entry of await readdir(root, { withFileTypes: true })) {
   else await cp(src, dest);
   count++;
 }
-await writeFile(join(output, "fate/audio-config.js"), `window.FATE_AUDIO = ${JSON.stringify({ available: includeAudio, src: "../assets/audio/fate.mp3" })};\n`);
+await writeFile(join(output, "fate/audio-config.js"), `window.FATE_AUDIO = ${JSON.stringify({ available: includeAudio, autoplay: includeAudio, src: "../assets/audio/fate.mp3" })};\n`);
 await writeFile(join(output, ".nojekyll"), "");
 console.log(`Built ${count} files in dist/. FATE recording: ${includeAudio ? "included (rights confirmed by FATE_AUDIO_LICENSED=1)" : "excluded; silent public edition"}.`);

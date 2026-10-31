@@ -45,6 +45,7 @@
       this.makeAtmosphere();
       this.makeBlade();
       this.makeAsh();
+      this.makeAuraPass();
       this.resize();
       this.onContextLost = (event) => { event.preventDefault(); this.onFailure(); };
       canvas.addEventListener("webglcontextlost", this.onContextLost);
@@ -65,7 +66,7 @@
           resolve(texture);
         }, undefined, reject);
       });
-      const [child, hands, sea] = await Promise.all([load("child"), load("hands-atlas"), load("congregation")]);
+      const [child, hands, sea] = await Promise.all([load("newborn"), load("hands-atlas"), load("congregation")]);
       if (this.disposed) return;
       this.makeChild(child);
       this.makeHands(hands);
@@ -100,7 +101,7 @@
         const t = i / 240;
         this.bladeCurve.getPoint(t, point);
         this.bladeCurve.getTangent(t, tangent);
-        const width = Math.pow(Math.sin(Math.PI * t), 1.45) * (halo ? 1.65 : .37) + .003;
+        const width = Math.pow(Math.sin(Math.PI * t), 1.35) * (halo ? 2.15 : .78) + .003;
         const normal = new T.Vector3(-tangent.y, tangent.x, 0).normalize();
         for (const side of [-1, 1]) {
           const p = point.clone().addScaledVector(normal, width * side * (side < 0 ? .66 : 1));
@@ -116,14 +117,48 @@
       return g;
     }
     makeBlade() {
-      this.bladeCurve = new T.CubicBezierCurve3(new T.Vector3(2.7, 5.8, 0), new T.Vector3(-6.7, 4.3, 0), new T.Vector3(-5.8, -5.1, 0), new T.Vector3(3.3, -4.8, 0));
-      this.bladeUniforms = { uTime: { value: 0 }, uReveal: { value: 0 }, uAlpha: { value: 0 }, uPower: { value: 1 } };
+      // A 340-degree circular sweep, open at the left. Width tapers independently
+      // of the circular centreline: this is a crescent, not an elliptical arch.
+      this.bladeCurve = {
+        getPoint(t, out = new T.Vector3()) {
+          const angle = Math.PI * 17 / 18 - t * Math.PI * 17 / 9;
+          return out.set(Math.cos(angle) * 4.25, Math.sin(angle) * 4.25, 0);
+        },
+        getTangent(t, out = new T.Vector3()) {
+          const angle = Math.PI * 17 / 18 - t * Math.PI * 17 / 9;
+          return out.set(Math.sin(angle), -Math.cos(angle), 0);
+        }
+      };
+      this.bladeUniforms = { uTime: { value: 0 }, uReveal: { value: 0 }, uAlpha: { value: 0 }, uPower: { value: 1 }, uInk: { value: 0 } };
       this.blade = new T.Group();
       this.scene.add(this.blade);
+      const corona = this.material({
+        uniforms: this.bladeUniforms, vertexShader: planeVertex,
+        fragmentShader: `varying vec2 vUv; uniform float uTime,uReveal,uAlpha,uPower,uInk; ${noiseGLSL}
+          void main(){
+            vec2 p=(vUv-.5)*14.; float radius=length(p), angle=atan(p.y,p.x);
+            float along=mod(2.96705973-angle+6.28318531,6.28318531)/5.93411946;
+            float sweep=(1.-smoothstep(uReveal-.04,uReveal+.02,along));
+            float tips=smoothstep(0.,.03,along)*(1.-smoothstep(.97,1.,along));
+            float n=fbm(p*.93+vec2(uTime*.055,-uTime*.08));
+            float curl=fbm(p*2.1+vec2(-uTime*.11,uTime*.06));
+            float d=abs(radius-4.25+(n-.5)*.9);
+            float ring=exp(-d*2.9)*(.6+n*.7);
+            float smoke=exp(-pow((radius-4.45)/1.65,2.))*smoothstep(.24,.76,n)*(.3+curl);
+            float inside=exp(-radius*radius/12.)*.1*smoothstep(.5,.95,uReveal);
+            float boundary=1.-smoothstep(5.7,6.85,radius);
+            float light=((ring*.6+smoke*.85)*sweep*tips+inside)*(1.+uInk*.35)*boundary;
+            gl_FragColor=vec4(vec3(.79,.85,.95)*light*sqrt(uPower),uAlpha);
+          }`, transparent: true, blending: T.AdditiveBlending, depthWrite: false
+      });
+      const aura = new T.Mesh(this.own(new T.PlaneGeometry(14, 14)), corona);
+      aura.position.z = -.03;
+      aura.renderOrder = -5;
+      this.blade.add(aura);
       for (const halo of [true, false]) {
         const mat = this.material({
           uniforms: this.bladeUniforms, vertexShader: planeVertex,
-          fragmentShader: `varying vec2 vUv; uniform float uTime,uReveal,uAlpha,uPower; ${noiseGLSL}
+          fragmentShader: `varying vec2 vUv; uniform float uTime,uReveal,uAlpha,uPower,uInk; ${noiseGLSL}
             void main(){
               float reveal=1.-smoothstep(uReveal-.008,uReveal+.003,vUv.x);
               float edge=abs(vUv.y-.5)*2.;
@@ -131,19 +166,20 @@
               float alpha=${halo ? "pow(max(0.,1.-edge),3.)*.28" : "1.-smoothstep(.73-tear,1.-tear,edge)"};
               float tip=exp(-abs(vUv.x-uReveal)*170.)*.8;
               vec3 color=mix(vec3(.65,.72,.86),vec3(1.),${halo ? ".5" : ".94"});
+              ${halo ? "" : "float rim=smoothstep(.70,.91,edge);color=mix(color,mix(vec3(.012,.016,.022),vec3(.75,.81,.93),rim),uInk);"}
               gl_FragColor=vec4(color*(uPower+tip),alpha*reveal*uAlpha);
-            }`, transparent: true, blending: T.AdditiveBlending, side: T.DoubleSide, depthWrite: false
+            }`, transparent: true, blending: halo ? T.AdditiveBlending : T.NormalBlending, side: T.DoubleSide, depthWrite: false
         });
         this.blade.add(new T.Mesh(this.bladeGeometry(halo), mat));
       }
       this.moon = this.blade.clone();
-      this.moonUniforms = { uTime: { value: 0 }, uReveal: { value: 1.02 }, uAlpha: { value: 0 }, uPower: { value: .6 } };
+      this.moonUniforms = { uTime: { value: 0 }, uReveal: { value: 1.02 }, uAlpha: { value: 0 }, uPower: { value: 1 }, uInk: { value: 1 } };
       this.moon.children.forEach((mesh) => {
         mesh.material = this.own(mesh.material.clone());
         mesh.material.uniforms = this.moonUniforms;
       });
-      this.moon.rotation.z = -Math.PI / 2 - .13;
-      this.moon.scale.setScalar(.48);
+      this.moon.rotation.z = -.18;
+      this.moon.scale.setScalar(.37);
       this.scene.add(this.moon);
 
       const random = randomSource(137);
@@ -199,6 +235,42 @@
       this.ash = new T.Points(g, m);
       this.scene.add(this.ash);
     }
+    makeAuraPass() {
+      // A small separable bloom pass follows the actual luminous silhouettes,
+      // including the individual hands. UI and captions never enter this pass.
+      const options = { minFilter: T.LinearFilter, magFilter: T.LinearFilter, depthBuffer: false, stencilBuffer: false };
+      this.sceneTarget = this.own(new T.WebGLRenderTarget(1, 1, options));
+      this.glowA = this.own(new T.WebGLRenderTarget(1, 1, options));
+      this.glowB = this.own(new T.WebGLRenderTarget(1, 1, options));
+      const vertexShader = `varying vec2 vUv;void main(){vUv=uv;gl_Position=vec4(position.xy,0.,1.);}`;
+      this.blur = this.material({
+        uniforms: { uMap: { value: null }, uStep: { value: new T.Vector2() }, uExtract: { value: 1 } },
+        vertexShader,
+        fragmentShader: `varying vec2 vUv;uniform sampler2D uMap;uniform vec2 uStep;uniform float uExtract;
+          vec3 sampleLight(vec2 uv){vec3 c=texture2D(uMap,uv).rgb;float l=max(c.r,max(c.g,c.b));return c*mix(1.,smoothstep(.09,.38,l),uExtract);}
+          void main(){vec3 c=sampleLight(vUv)*.227027;
+            c+=(sampleLight(vUv+uStep*1.384615)+sampleLight(vUv-uStep*1.384615))*.316216;
+            c+=(sampleLight(vUv+uStep*3.230769)+sampleLight(vUv-uStep*3.230769))*.070270;
+            gl_FragColor=vec4(c,1.);}`,
+        depthTest: false, depthWrite: false
+      });
+      this.composite = this.material({
+        uniforms: { uScene: { value: this.sceneTarget.texture }, uGlow: { value: this.glowB.texture }, uTime: { value: 0 }, uAura: { value: 0 } },
+        vertexShader,
+        fragmentShader: `varying vec2 vUv;uniform sampler2D uScene,uGlow;uniform float uTime,uAura;${noiseGLSL}
+          void main(){vec3 base=texture2D(uScene,vUv).rgb;
+            float mist=fbm(vUv*vec2(19.,12.)+vec2(uTime*.025,-uTime*.035));
+            vec2 drift=vec2(mist-.5,noise(vUv*25.+uTime*.02)-.5)*.006;
+            vec3 glow=texture2D(uGlow,vUv+drift).rgb;
+            gl_FragColor=vec4(base+glow*vec3(.84,.9,1.)*uAura*(.75+mist*.55),1.);}`,
+        depthTest: false, depthWrite: false
+      });
+      this.postScene = new T.Scene();
+      this.postCamera = new T.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+      this.postQuad = new T.Mesh(this.own(new T.PlaneGeometry(2, 2)), this.blur);
+      this.postQuad.frustumCulled = false;
+      this.postScene.add(this.postQuad);
+    }
     makeChild(texture) {
       this.childUniforms = { uMap: { value: texture }, uTime: { value: 0 }, uAlpha: { value: 0 }, uLight: { value: 0 } };
       const material = this.material({
@@ -212,7 +284,7 @@
           gl_FragColor=vec4(rgb,c.a*uAlpha); }`,
         transparent: true, depthWrite: false, side: T.DoubleSide
       });
-      this.child = new T.Mesh(this.own(new T.PlaneGeometry(1.8, 2.7, 8, 16)), material);
+      this.child = new T.Mesh(this.own(new T.PlaneGeometry(3.05, 2.033, 12, 8)), material);
       this.child.renderOrder = 3;
       this.scene.add(this.child);
     }
@@ -244,10 +316,10 @@
       const data = [];
       for (let i = 0; i < count; i++) {
         const support = i < 3;
-        const x = support ? [0, -.52, .55][i] : (random() - .5) * 24;
+        const x = support ? [-.53, .12, .68][i] : (random() - .5) * 24;
         const z = support ? [.1, .5, .3][i] : -6 + random() * 9;
         const height = support ? 3.2 : 2.1 + random() * 3.7;
-        data.push({ x, z, height, tip: support ? .67 : -.4 - Math.abs(x) * .23 - random() * 1.8,
+        data.push({ x, z, height, tip: support ? 1.06 : -.4 - Math.abs(x) * .23 - random() * 1.8,
           rotation: support ? [0, -.14, .16][i] : -x * .025 + (random() - .5) * .28,
           variant: support ? [1, 1, 3][i] : Math.floor(random() * 4),
           delay: i === 0 ? .425 : i < 3 ? .478 : i < 10 ? .515 + i * .002 : .54 + Math.pow((i - 10) / (count - 10), .65) * .105,
@@ -297,6 +369,12 @@
       const width = this.canvas.clientWidth || innerWidth;
       const height = this.canvas.clientHeight || innerHeight;
       this.renderer.setSize(width, height, false);
+      this.renderer.getDrawingBufferSize(this.resolution);
+      this.sceneTarget.setSize(this.resolution.x, this.resolution.y);
+      const glowScale = this.quality < 1 ? .25 : .35;
+      this.glowA.setSize(Math.max(1, Math.round(width * glowScale)), Math.max(1, Math.round(height * glowScale)));
+      this.glowB.setSize(this.glowA.width, this.glowA.height);
+      this.mobile = width < 700;
       this.camera.aspect = width / height;
       this.camera.fov = width < 700 ? 49 : 42;
       this.camera.updateProjectionMatrix();
@@ -327,23 +405,23 @@
       this.bladeUniforms.uReveal.value = reveal;
       this.bladeUniforms.uAlpha.value = smooth(.105, .117, p) * (1 - smooth(.278, .298, p));
       this.bladeUniforms.uPower.value = 1 + portal;
-      this.blade.scale.setScalar(1 + portal * 4.5);
+      this.blade.scale.setScalar((this.mobile ? .81 : 1) * (1 + portal * 4.5));
       this.blade.rotation.z = -.19 - portal * .16;
-      this.blade.position.set(portal * 1.5, portal * -.5, portal * 4);
+      this.blade.position.set((this.mobile ? -.05 : -1.8) + portal * 1.5, portal * -.5, portal * 4);
       this.blade.visible = p > .1 && p < .3;
       this.sparkUniforms.uReveal.value = reveal;
       this.sparkUniforms.uAlpha.value = this.bladeUniforms.uAlpha.value;
-      this.moon.position.set(0, 4.8 + rise * .7, -1.8);
+      this.moon.position.set(0, 5.3 + rise * .7, -1.8);
       this.moonUniforms.uTime.value = time;
-      this.moonUniforms.uAlpha.value = emerge * exit * .72;
-      this.moonUniforms.uPower.value = .5 + ascend * 1.7;
+      this.moonUniforms.uAlpha.value = emerge * exit;
+      this.moonUniforms.uPower.value = .85 + ascend * 1.4;
       this.moon.visible = p > .285 && p < .87;
       this.ashUniforms.uTime.value = time;
       this.ashUniforms.uRise.value = ascend;
       this.ashUniforms.uAlpha.value = (.025 + smooth(.08, .15, p) * .2 + ascend * .45) * exit;
       this.ashUniforms.uSplit.value = smooth(.16, .23, p) * (1 - emerge) * .7;
       if (this.ready) {
-        this.child.position.set(0, 1.35 + rise, .65);
+        this.child.position.set(0, 1.05 + rise, .65);
         this.childUniforms.uAlpha.value = emerge * exit;
         this.childUniforms.uTime.value = time;
         this.childUniforms.uLight.value = smooth(.74, .831, p) * .94;
@@ -358,7 +436,24 @@
         this.seaUniforms.uTime.value = time;
         this.sea.visible = p > .54 && p < .87;
       }
+      this.renderer.setRenderTarget(this.sceneTarget);
       this.renderer.render(this.scene, this.camera);
+      this.postQuad.material = this.blur;
+      this.blur.uniforms.uMap.value = this.sceneTarget.texture;
+      this.blur.uniforms.uExtract.value = 1;
+      this.blur.uniforms.uStep.value.set(2.6 / this.glowA.width, 0);
+      this.renderer.setRenderTarget(this.glowA);
+      this.renderer.render(this.postScene, this.postCamera);
+      this.blur.uniforms.uMap.value = this.glowA.texture;
+      this.blur.uniforms.uExtract.value = 0;
+      this.blur.uniforms.uStep.value.set(0, 2.6 / this.glowB.height);
+      this.renderer.setRenderTarget(this.glowB);
+      this.renderer.render(this.postScene, this.postCamera);
+      this.composite.uniforms.uTime.value = time;
+      this.composite.uniforms.uAura.value = smooth(.1, .16, p) * exit * (.7 + ascend * .8);
+      this.postQuad.material = this.composite;
+      this.renderer.setRenderTarget(null);
+      this.renderer.render(this.postScene, this.postCamera);
       // A sustained slow device loses pixels/particles, not narrative information.
       if (delta < .2 && p > .32 && p < .82 && this.frames < 180) {
         this.frames++;
@@ -379,6 +474,7 @@
       this.resources.clear();
       this.textures.clear();
       this.scene.clear();
+      this.postScene.clear();
       this.renderer.dispose();
       const context = this.renderer.getContext();
       if (!context.isContextLost()) context.getExtension("WEBGL_lose_context")?.loseContext();

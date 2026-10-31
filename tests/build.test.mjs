@@ -30,7 +30,7 @@ test("unlicensed recording and QA fixtures never enter the public build", async 
   }
 });
 test("all narrative assets are real files with portable browser URLs", async () => {
-  for (const asset of ["child.png", "hands-atlas.png", "congregation.png"]) {
+  for (const asset of ["newborn.png", "hands-atlas.png", "congregation.png"]) {
     const file = await readFile(join(root, "assets/fate", asset));
     assert.equal(file.subarray(1, 4).toString(), "PNG");
     assert.ok(file.length > 100000);

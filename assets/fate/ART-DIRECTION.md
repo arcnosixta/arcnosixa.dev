@@ -2,7 +2,8 @@
 
 Created for this repository with the built-in Imagegen tool on 2026-10-31. These are original generated visual plates; no anime frames, existing character images or downloaded 3D models are used. Source PNG alpha channels are preserved.
 
-- `child.png` — 1024 × 1536 RGBA; isolated child, 1.65 MB.
+- `newborn.png` — 1536 × 1024 RGBA; sleeping newborn wrapped in ivory linen; current character plate.
+- `child.png` — 1024 × 1536 RGBA; earlier standing-child concept, retained for provenance and no longer used in the page.
 - `hands-atlas.png` — 1254 × 1254 RGBA; four distinct sculptural hand poses in a 2 × 2 atlas, 0.77 MB.
 - `congregation.png` — 1672 × 941 RGB; distant hand congregation, 1.73 MB.
 
@@ -11,6 +12,10 @@ The scene uses image plates in a Three.js perspective camera, 72 or 192 instance
 The musical recording has separate provenance: it was provided locally by the site owner and is excluded from Git and public builds by default. See the project README for the publication opt-in.
 
 ## Exact generation prompts
+
+### Newborn — current character
+
+Use case: stylized-concept. Asset type: original isolated character plate for a monochrome cinematic WebGL artwork, FATE — THE ASCENSION. Subject: a NEWBORN BABY, only a few days old, unmistakably a tiny newborn infant, NOT a toddler, older child, teenager or adult. Sleeping peacefully with closed eyes, a proportionally large rounded newborn head, delicate tiny face, soft rounded cheeks, nearly bald head with only very fine wisps of dark hair. Completely and modestly wrapped from the neck down in a simple loose ivory linen swaddle with exquisitely resolved folds, one tiny hand resting on the swaddle near the chest. Pose: lying on the back in a gently curled cradled pose, viewed in a slightly elevated three-quarter SIDE view. The head is on the LEFT and slightly higher, the wrapped body extends to the RIGHT, long axis only about 15 degrees above horizontal. The entire baby should look like a small delicate bundle that could be supported by two adult palms from beneath. No standing, sitting or walking pose. Original high-end dark fantasy concept art, beautiful fine photorealistic sculptural chiaroscuro in pure black, silver and ivory, not a cartoon or an anime character. Soft cold light from above, subtle luminous silver rim around head and fabric, readable face with delicate natural newborn anatomy. Framing: landscape 3:2 canvas, the whole swaddled baby contained in the center, about 80 percent of width and 60 percent of height, generous transparent margins all around. TRUE TRANSPARENT BACKGROUND and clean alpha. Isolated baby ONLY: no supporting hands in this asset, no floor, bed, pillow, moon, stars, symbols, beams, environment, border, typography or watermark. No injuries, no blood. Tender, vulnerable, peaceful newborn, fully covered in an ivory swaddle. This will be composited hovering just over supporting palms in a vast black void.
 
 ### Child
 
