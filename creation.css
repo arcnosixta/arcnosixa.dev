@@ -42,9 +42,17 @@
 .creation-void:hover { color: #fff; }
 .creation-void svg { filter: drop-shadow(0 0 7px #bdc7dc40); }
 @media (min-width: 1100px) and (min-height: 900px) {
-  .creation-heading { margin-bottom: 48px; }
+  .creation-heading { margin-bottom: 28px; }
   .creation-title { font-size: clamp(74px, 6vw, 100px); }
-  .creation-drawing { height: 23vh; max-height: 260px; }
+  .creation-drawing { height: 21vh; max-height: 240px; }
+}
+@media (min-width: 1000px) and (max-height: 820px) {
+  .creation-stage { padding-top: 22px; padding-bottom: 78px; }
+  .creation-heading { margin-top: 24px; margin-bottom: 18px; }
+  .creation-kicker { margin-bottom: 18px; }
+  .creation-title { font-size: clamp(46px, 4.4vw, 64px); }
+  .creation-drawing { height: 140px; }
+  .creation-footer { padding-top: 20px; }
 }
 @media (max-width: 999px) {
   .creation-note { width: 28%; font-size: 10px; }
