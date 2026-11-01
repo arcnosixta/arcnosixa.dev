@@ -47,10 +47,13 @@
     } else if (!duration) audio.volume = value;
     else {
       const from = audio.volume, start = performance.now();
+      let progress = 0;
       const tick = (now) => {
-        const t = Math.min(1, (now - start) / (duration * 1000));
-        audio.volume = from + (value - from) * t;
-        volumeFrame = t < 1 ? requestAnimationFrame(tick) : 0;
+        // A delayed frame timestamp can predate the fade or regress. Keep the
+        // envelope moving toward its endpoint and media volume inside [0, 1].
+        progress = Math.max(progress, Math.min(1, (now - start) / (duration * 1000)));
+        audio.volume = Math.max(0, Math.min(1, from + (value - from) * progress));
+        volumeFrame = progress < 1 ? requestAnimationFrame(tick) : 0;
       };
       volumeFrame = requestAnimationFrame(tick);
     }

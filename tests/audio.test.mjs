@@ -21,10 +21,15 @@ function harness({ blocked = false, hidden = false, available = true } = {}) {
   Object.assign(document, { hidden, baseURI: "https://example.test/arcnosixa.dev/fate/", querySelector: () => panel, getElementById: id => controls[id] });
   const window = new Element();
   window.FATE_AUDIO = { available, autoplay: true, src: "../assets/audio/fate.mp3" };
-  const audios = [], timers = new Map();
-  let timerId = 0;
+  const audios = [], timers = new Map(), frames = new Map();
+  let timerId = 0, frameId = 0, clock = 1000;
   class FakeAudio extends Element {
     constructor() { super(); this.paused = true; this.volume = 1; this.playCalls = 0; audios.push(this); }
+    get volume() { return this._volume; }
+    set volume(value) {
+      if (!Number.isFinite(value) || value < 0 || value > 1) throw new RangeError(`Media volume ${value} is outside [0, 1]`);
+      this._volume = value;
+    }
     play() {
       this.playCalls++;
       if (blocked && this.playCalls === 1) return Promise.reject(Object.assign(new Error("Autoplay blocked"), { name: "NotAllowedError" }));
@@ -33,12 +38,19 @@ function harness({ blocked = false, hidden = false, available = true } = {}) {
     }
     pause() { this.paused = true; }
   }
-  runInNewContext(code, { window, document, Audio: FakeAudio, URL, performance,
+  runInNewContext(code, { window, document, Audio: FakeAudio, URL, performance: { now: () => clock },
     localStorage: { getItem() { return null; }, setItem() {} },
-    requestAnimationFrame() { return 1; }, cancelAnimationFrame() {},
+    requestAnimationFrame(fn) { frames.set(++frameId, fn); return frameId; }, cancelAnimationFrame(id) { frames.delete(id); },
     setTimeout(fn) { timers.set(++timerId, fn); return timerId; }, clearTimeout(id) { timers.delete(id); }
   });
-  return { document, window, controls, audios, label, finishTimers() { for (const fn of timers.values()) fn(); timers.clear(); } };
+  return { document, window, controls, audios, label,
+    frame(at) {
+      clock = at;
+      const callbacks = [...frames.values()]; frames.clear();
+      callbacks.forEach(fn => fn(at));
+    },
+    finishTimers() { for (const fn of timers.values()) fn(); timers.clear(); }
+  };
 }
 
 test("opening FATE requests the exact local recording without a sound-button click", async () => {
@@ -85,4 +97,33 @@ test("page exit stops playback and disabled audio creates no audio element", asy
   assert.equal(h.audios[0].paused, true);
   const silent = harness({ available: false });
   assert.equal(silent.audios.length, 0);
+});
+
+test("sound fades stay bounded and monotonic when animation timestamps regress", async () => {
+  const h = harness();
+  await flush();
+  const audio = h.audios[0], start = audio.volume;
+  assert.ok(start > 0, "autoplay must still request genuinely audible audio");
+  h.frame(500);
+  assert.equal(audio.volume, start, "a frame predating the fade must not produce negative volume");
+  h.frame(1750);
+  const halfwayUp = audio.volume;
+  assert.ok(halfwayUp > start && halfwayUp < .55);
+  h.frame(1500);
+  assert.equal(audio.volume, halfwayUp, "a regressing frame must not reverse a fade in");
+  h.frame(2500);
+  assert.equal(audio.volume, .55);
+  h.controls["sound-play"].dispatch("click");
+  h.frame(2400);
+  assert.equal(audio.volume, .55, "a frame predating the fade out must not increase volume");
+  h.frame(2725);
+  const halfwayDown = audio.volume;
+  assert.ok(halfwayDown > 0 && halfwayDown < .55);
+  h.frame(2600);
+  assert.equal(audio.volume, halfwayDown, "a regressing frame must not reverse a fade out");
+  h.frame(2950);
+  assert.equal(audio.volume, 0);
+  h.finishTimers();
+  assert.equal(audio.paused, true);
+  assert.equal(audio.playCalls, 1, "fading must preserve playback lifecycle without restarting the recording");
 });
