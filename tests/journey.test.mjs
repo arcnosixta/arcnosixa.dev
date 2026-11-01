@@ -205,19 +205,22 @@ test("the reference katana has a slender blade, open angular guard and physical 
   } finally { journey.dispose(); }
 });
 
-test("organic grove surfaces stay detailed, bounded in draw work and fully disposable", () => {
+test("the treeless meadow has dense real grasses, bounded draw work and complete disposal", () => {
   const journey = new FateJourney(THREE);
   const stats = journey.groveStats;
-  assert.ok(stats.trees > 8 && stats.branches > stats.trees * 3 && stats.leaves > 1000,
-    "trees need open branch networks bearing many individual leaves");
-  assert.ok(stats.tufts > 100 && stats.ferns > 5, "the ground must contain meadow tufts and fern fronds");
-  const leaves = journey.scene.getObjectByName("individual-leaves-and-fern-pinnae");
-  const grasses = journey.scene.getObjectByName("curved-meadow-grasses-and-sedges");
-  assert.ok(leaves?.isMesh && grasses?.isMesh);
-  assert.equal(leaves.material.side, THREE.DoubleSide, "thin leaf planes must render from either camera side");
+  for (const type of ["trees", "branches", "leaves", "ferns"]) assert.equal(stats[type], 0, `${type} must remain absent from the open meadow`);
+  assert.ok(stats.tufts > 1000 && stats.grassBlades > 10000 && stats.seedHeads > 100,
+    "the meadow needs many individually shaped grass blades and bent seed heads");
+  const grasses = journey.scene.getObjectByName("dense-curved-meadow-grasses");
+  const seeds = journey.scene.getObjectByName("bent-grass-seed-heads");
+  assert.ok(grasses?.isMesh && seeds?.isMesh);
   assert.equal(grasses.material.side, THREE.DoubleSide);
-  assert.ok(leaves.geometry.index.count / 3 > stats.leaves * 2, "foliage must use shaped leaf surfaces rather than solid canopy primitives");
-  assert.ok(journey.scene.getObjectByName("organic-trunks-roots-and-branches")?.isMesh);
+  assert.ok(grasses.geometry.index.count / 3 > stats.grassBlades * 2, "the blades need curved surfaces rather than single flat triangles");
+  for (const material of journey.terrainMaterials) {
+    assert.equal(material.opacity, 1);
+    assert.equal(material.transparent, false, "the existing meadow must be solid ink rather than a transparent reveal");
+  }
+  assert.equal(stats.meshes, 3, "the detailed landscape must remain merged into three meshes");
   assert.ok(journey.scene.getObjectByName("organic-black-earth")?.isMesh);
   let meshes = 0, drawCalls = 0;
   journey.scene.traverse(object => {
