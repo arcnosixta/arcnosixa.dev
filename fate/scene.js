@@ -223,10 +223,10 @@
       this.blade.add(new T.Points(g, material));
     }
     makeEye() {
-      this.eyeUniforms = { uTime: { value: 0 }, uAlpha: { value: 0 }, uOpen: { value: 0 } };
+      this.eyeUniforms = { uTime: { value: 0 }, uAlpha: { value: 0 }, uOpen: { value: 0 }, uPaper: { value: 0 } };
       const material = this.material({
         uniforms: this.eyeUniforms, vertexShader: planeVertex,
-        fragmentShader: `varying vec2 vUv;uniform float uTime,uAlpha,uOpen;${noiseGLSL}
+        fragmentShader: `varying vec2 vUv;uniform float uTime,uAlpha,uOpen,uPaper;${noiseGLSL}
           void main(){
             vec2 p=(vUv-.5)*vec2(2.4,1.5);
             float width=max(0.,1.-p.x*p.x);
@@ -242,6 +242,9 @@
             vec3 silver=mix(vec3(.065,.10,.16),vec3(.38,.43,.50),strands);
             vec3 color=ink+iris*(silver*(.35+fibers*.65)+vec3(.045,.075,.12)*strands);
             color*=pupil;
+            // The white world prints black ink. Keep the pupil solid in that
+            // palette instead of turning it into an empty white aperture.
+            color=mix(color,vec3(.98),(1.-smoothstep(.108,.127,radius))*uPaper);
             float ring=exp(-abs(radius-.333)*260.)*.32+exp(-abs(radius-.128)*190.)*.12;
             color+=vec3(.36,.43,.55)*ring*fill;
             float n=fbm(p*vec2(8.,13.)+vec2(uTime*.04,-uTime*.07));
@@ -302,14 +305,32 @@
         depthTest: false, depthWrite: false
       });
       this.composite = this.material({
-        uniforms: { uScene: { value: this.sceneTarget.texture }, uGlow: { value: this.glowB.texture }, uTime: { value: 0 }, uAura: { value: 0 } },
+        uniforms: { uScene: { value: this.sceneTarget.texture }, uGlow: { value: this.glowB.texture }, uTime: { value: 0 }, uAura: { value: 0 },
+          uFlood: { value: 0 }, uAspect: { value: 1 }, uOrigin: { value: new T.Vector2(.5, .5) } },
         vertexShader,
-        fragmentShader: `varying vec2 vUv;uniform sampler2D uScene,uGlow;uniform float uTime,uAura;${noiseGLSL}
+        fragmentShader: `varying vec2 vUv;uniform sampler2D uScene,uGlow;uniform float uTime,uAura,uFlood,uAspect;uniform vec2 uOrigin;${noiseGLSL}
           void main(){vec3 base=texture2D(uScene,vUv).rgb;
             float mist=fbm(vUv*vec2(19.,12.)+vec2(uTime*.025,-uTime*.035));
             vec2 drift=vec2(mist-.5,noise(vUv*25.+uTime*.02)-.5)*.006;
             vec3 glow=texture2D(uGlow,vUv+drift).rgb;
-            gl_FragColor=vec4(base+glow*vec3(.84,.9,1.)*uAura*(.75+mist*.55),1.);}`,
+            vec3 film=base+glow*vec3(.84,.9,1.)*uAura*(.75+mist*.55);
+            if(uFlood<=0.){gl_FragColor=vec4(film,1.);return;}
+            float ink=pow(clamp(dot(film,vec3(.299,.587,.114))*2.,0.,1.),.65);
+            vec3 paper=vec3(1.-ink);
+            if(uFlood>=1.){gl_FragColor=vec4(paper,1.);return;}
+            vec2 p=(vUv-uOrigin)*vec2(uAspect,1.);
+            vec2 curl=vec2(fbm(p*vec2(3.4,6.1)+vec2(4.2,1.7)),fbm(p*vec2(5.7,3.1)+vec2(1.3,8.4)))-.5;
+            vec2 liquid=p+curl*.24;
+            liquid.y*=mix(.72,1.08,smoothstep(-.08,.08,p.y));
+            float angle=atan(liquid.y,liquid.x);
+            float reach=length(vec2(max(uOrigin.x,1.-uOrigin.x)*uAspect,max(uOrigin.y,1.-uOrigin.y)));
+            float arrival=length(liquid)/max(reach,.1)+(fbm(liquid*9.)-.5)*.13
+              +sin(angle*7.+fbm(liquid*4.)*5.)*.055;
+            float front=uFlood*1.5-.15;
+            float wet=(1.-smoothstep(front-.018,front+.018,arrival))*smoothstep(0.,.035,uFlood);
+            wet=mix(wet,1.,smoothstep(.94,1.,uFlood));
+            float shore=exp(-abs(arrival-front)*45.)*smoothstep(0.,.1,uFlood)*(1.-smoothstep(.88,1.,uFlood));
+            gl_FragColor=vec4(mix(film,paper,wet)+vec3(shore*(1.-wet)*.5),1.);}`,
         depthTest: false, depthWrite: false
       });
       this.postScene = new T.Scene();
@@ -317,9 +338,10 @@
       this.postQuad = new T.Mesh(this.own(new T.PlaneGeometry(2, 2)), this.blur);
       this.postQuad.frustumCulled = false;
       this.postScene.add(this.postQuad);
+      this.screenOrigin = new T.Vector3();
     }
     makeChild(texture) {
-      this.childUniforms = { uMap: { value: texture }, uTime: { value: 0 }, uAlpha: { value: 0 }, uLight: { value: 0 }, uPulse: { value: 0 } };
+      this.childUniforms = { uMap: { value: texture }, uTime: { value: 0 }, uAlpha: { value: 0 }, uLight: { value: 0 }, uPulse: { value: 0 }, uIgnition: { value: 0 } };
       const material = this.material({
         uniforms: this.childUniforms,
         vertexShader: infantVertex,
@@ -347,7 +369,7 @@
       });
       const auraMaterial = this.material({
         uniforms: this.childUniforms, vertexShader: infantVertex,
-        fragmentShader: `varying vec2 vUv;uniform sampler2D uMap;uniform float uTime,uAlpha,uLight,uPulse;
+        fragmentShader: `varying vec2 vUv;uniform sampler2D uMap;uniform float uTime,uAlpha,uLight,uPulse,uIgnition;
           ${noiseGLSL} ${infantMaskGLSL}
           void main(){
             vec2 uv=(vUv-.5)*1.8+.5;
@@ -358,14 +380,14 @@
               float angle=float(i)*.52359878;
               vec2 direction=vec2(cos(angle),sin(angle))*vec2(1.,1.5);
               nearGlow+=infantMask(uv+direction*.027+drift*.3);
-              farGlow+=infantMask(uv+direction*(.065+smoke*.055)+drift);
+              farGlow+=infantMask(uv+direction*(.065+smoke*.055+uIgnition*.1)+drift);
             }
             nearGlow/=12.;farGlow/=12.;
             float outside=1.-infantMask(uv);
             float breath=.94+.06*sin(uTime*.9)+uPulse*(.12+.12*sin(uTime*1.8));
             float light=(nearGlow*.85+farGlow*(.32+smoke*.8))*outside*breath;
             vec3 color=mix(vec3(.32,.39,.53),vec3(.86,.93,1.),uLight);
-            gl_FragColor=vec4(color,light*uAlpha*(.8+uLight*1.9));
+            gl_FragColor=vec4(color,light*uAlpha*(.8+uLight*1.9)*(1.+uIgnition*5.));
           }`,
         transparent: true, blending: T.AdditiveBlending, depthWrite: false
       });
