@@ -11,6 +11,8 @@ https://raw.githubusercontent.com/madjin/vrm-samples/master/vroid/beta/Sakurada_
 SHA-256: d8fb05f33e377df028cb6b9d58c441ce68326c41fa23f6c735d40c65ae3dc710
 
 witness.glb preserves the original VRM/GLB bytes and embedded CC0 metadata.
-The application adapts skeletal proportions, pose, grayscale materials and
-placement at runtime to portray the younger FATE witness. This is a derivative
+The application adapts skeletal proportions, pose, skin/eye materials and
+placement, retaining the face, neck and boots for the younger FATE witness.
+New reference-led cloak, robe, lining and hair geometry replaces the old costume.
+The held pose is baked and merged at load time. This is a derivative
 use of an existing CC0 character base, not an exclusive original character model.

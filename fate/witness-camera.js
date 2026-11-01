@@ -19,8 +19,8 @@
   function anchor(journey) {
     const witness = journey.witness || {};
     const root = witness.root || witness;
-    const height = Number.isFinite(witness.height) ? witness.height : 6;
-    const position = root.position ? vector(root.position) : [66, window.FateGrove ? window.FateGrove.groundHeight(66, 4) : 0, 4];
+    const height = Number.isFinite(witness.height) ? witness.height : 148;
+    const position = root.position ? vector(root.position) : [112, window.FateGrove ? window.FateGrove.groundHeight(112, 4) : 0, 4];
     const measuredFace = witness.ready && typeof witness.facePosition === "function" ? vector(witness.facePosition()) : null;
     const faceY = measuredFace ? measuredFace[1] - position[1] : Number.isFinite(witness.faceY) ? witness.faceY : height * 11 / 12;
     const face = measuredFace || [position[0], position[1] + faceY, position[2]];
@@ -45,7 +45,7 @@
     const start = startCamera ? vector(startCamera) : fallback.camera;
     const startFocus = startTarget ? vector(startTarget) : fallback.target;
     const mobile = !!journey.mobile;
-    const footRadius = (mobile ? 3 : 2.5) * unit;
+    const footRadius = (mobile ? 3.6 : 2.9) * unit;
     const footEye = .4 * unit;
     const footAim = (mobile ? .7 : .65) * unit;
     const footCamera = [B[0] + L[0] * footRadius, B[1] + footEye, B[2] + L[2] * footRadius];
@@ -68,9 +68,10 @@
     } else {
       const degrees = ease(250, 330, cue) * 270;
       angle = degrees * Math.PI / 180;
-      radius = track([[0, footRadius], [20, 3 * unit], [45, 4.5 * unit], [82, 8.4 * unit], [100, 8.4 * unit], [180, 6.8 * unit], [240, 4.6 * unit], [270, 3.8 * unit]], degrees);
-      const eye = track([[0, footEye], [20, 1.8 * unit], [45, 3 * unit], [82, base.faceY * .65], [100, base.faceY * .74], [180, base.faceY * .88], [240, base.faceY * .96], [270, base.faceY]], degrees);
-      const aim = track([[0, footAim], [20, 1.4 * unit], [45, 3 * unit], [82, base.faceY * .73], [100, base.faceY * .80], [180, base.faceY * .90], [240, base.faceY * .965], [270, base.faceY]], degrees);
+      const portrait = Math.max(1, .72 / (journey.camera.aspect || 1));
+      radius = track([[0, footRadius], [20, 3.6 * unit], [45, 7.8 * unit * portrait], [82, 10 * unit * portrait], [100, 10 * unit * portrait], [180, 7.2 * unit * portrait], [240, 4.6 * unit], [270, (mobile ? 4.5 : 3.6) * unit]], degrees);
+      const eye = track([[0, footEye], [20, 1.8 * unit], [45, 3 * unit], [82, base.faceY * .60], [100, base.faceY * .72], [180, base.faceY * .88], [240, base.faceY * .96], [270, base.faceY]], degrees);
+      const aim = track([[0, footAim], [20, 1.4 * unit], [45, 2.7 * unit], [82, base.faceY * .58], [100, base.faceY * .62], [180, base.faceY * .90], [240, base.faceY * .965], [270, base.faceY]], degrees);
       const lead = track([[0, 0], [45, 0], [82, 1.1 * unit], [100, 1.1 * unit], [150, 0], [270, 0]], degrees);
       const footFocus = 1 - ease(0, 20, degrees);
       // 0° left, 90° back, 180° right, 270° directly in front.

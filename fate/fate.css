@@ -117,6 +117,8 @@ button:disabled { opacity: .4; cursor: default; }
 .still-witness { padding: 0; }
 .still-witness picture, .still-witness img { position: absolute; inset: 0; display: block; width: 100%; height: 100%; }
 .still-witness img { object-fit: cover; object-position: center; }
+.still-witness-back { background: linear-gradient(#fff 0 58%, #010102 58% 100%); }
+.still-witness-back img { object-fit: contain; }
 .still-ending { align-items: flex-end; justify-content: flex-end; padding: 90px var(--edge); }
 .still-grove-echo { position: absolute; top: 4%; left: 0; width: 100%; height: 60%; }
 .ending-panel { position: relative; z-index: 1; padding: 18px 20px; background: #fffffff2; text-align: right; }

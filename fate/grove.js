@@ -29,7 +29,7 @@
       stats.triangles += buffer.indices.length / 3; stats.meshes++;
       return mesh;
     }
-    const clear = (x, z) => Math.hypot(x + .62, z) < 1.1 || Math.hypot(x - 66, z - 4) < 3.4;
+    const clear = (x, z) => Math.hypot(x + .62, z) < .85;
     // Each blade follows its own curved centreline, lean and twist. Width tapers
     // continuously to a true point instead of ending in straight vertical spikes.
     function ribbon(buffer, x, y, z, angle, height, width, lean, segments, twist) {
@@ -71,8 +71,8 @@
       }
       stats.seedHeads++;
     }
-    const earth = new T.PlaneGeometry(300, 220, compact ? 120 : 192, compact ? 72 : 112);
-    earth.rotateX(-Math.PI / 2); earth.translate(30, 0, -85);
+    const earth = new T.PlaneGeometry(1800, 1800, compact ? 150 : 220, compact ? 150 : 220);
+    earth.rotateX(-Math.PI / 2);
     const points = earth.attributes.position;
     for (let i = 0; i < points.count; i++) {
       const x = points.getX(i), z = points.getZ(i), distance = Math.hypot(x + .62, z);
@@ -82,37 +82,43 @@
     earth.computeBoundingSphere();
     const ground = journey.mesh(earth, material(), journey.terrain); ground.name = "organic-black-earth";
     stats.triangles += earth.index.count / 3; stats.meshes++;
-    // Three planting bands give actual depth and parallax without tall forms.
-    // Jittered tuft centres and unequal blade lengths keep the meadow uncombed.
+    // Jittered, occupied cells form a carpet. Fine blades cover the sword
+    // passage; broader, lower-detail blades continue underneath the full orbit.
+    // Overlapping density bands feather their border so no rectangular planting
+    // patch appears under the boy when the camera rises.
     const bands = [
-      { count: compact ? 1800 : 3600, z0: -7, z1: 14, blades: compact ? 7 : 9, segments: compact ? 3 : 4, size: 1 },
-      { count: compact ? 1300 : 2600, z0: -28, z1: -7, blades: compact ? 5 : 6, segments: 3, size: 1.08 },
-      { count: compact ? 700 : 1400, z0: -62, z1: -28, blades: compact ? 3 : 4, segments: 2, size: .83 },
+      { x0: -28, x1: 178, z0: -38, z1: 82, step: compact ? 1.05 : .78, blades: 3, segments: compact ? 2 : 3, size: 1 },
+      { x0: -260, x1: 510, z0: -350, z1: 350, step: compact ? 5 : 3.6, blades: 2, segments: 2, size: 1.8 },
     ];
+    const nearCoverage = (x, z) => clamp(Math.min(x + 28, 178 - x, z + 38, 82 - z) / 24);
     bands.forEach((band, layer) => {
-      for (let i = 0; i < band.count; i++) {
-        const x = between(-29, 114), z = between(band.z0, band.z1);
+      let i = 0;
+      for (let gx = band.x0; gx < band.x1; gx += band.step) for (let gz = band.z0; gz < band.z1; gz += band.step) {
+        i++;
+        const x = gx + between(.08, .92) * band.step, z = gz + between(.08, .92) * band.step;
+        const coverage = nearCoverage(x, z);
+        if (layer ? random() < coverage : random() > coverage) continue;
         if (clear(x, z)) continue;
-        const patch = Math.sin(x * .24 + z * .17) + .7 * Math.sin(x * .081 - z * .36) + .3 * Math.cos(z * .63);
-        if (patch > 1.52 && random() > .24) continue;
         stats.tufts++;
-        const height = Math.min(1.4, between(.55, 1.3) * band.size * (.85 + .15 * Math.sin(x * .13 + z * .22)));
-        const phase = between(0, Math.PI * 2), spread = between(.07, .22);
+        const height = between(.65, 1.38) * band.size * (.88 + .12 * Math.sin(x * .13 + z * .22));
+        const phase = between(0, Math.PI * 2), spread = band.step * .34;
         for (let blade = 0; blade < band.blades; blade++) {
           const angle = phase + blade * 2.39996 + between(-.55, .55), radius = spread * random();
           const bx = x + Math.cos(angle) * radius, bz = z + Math.sin(angle) * radius;
           if (clear(bx, bz)) continue;
           const by = groundHeight(bx, bz) - .035;
-          const h = Math.min(1.4, height * between(.48, 1.13));
-          const width = between(.009, .026) * (layer === 0 ? 1 : .8);
+          const h = height * between(.68, 1.08);
+          const width = between(.04, .09) * (layer === 0 ? (compact ? 1.3 : 1) : 4.2);
           ribbon(grass, bx, by, bz, angle, h, width, h * between(.16, .58), band.segments, between(-.5, .5));
           stats.grassBlades++;
         }
-        if (i % (layer === 0 ? 11 : 9) === 0) {
+        if (i % (layer === 0 ? 71 : 131) === 0) {
           seedHead(x, groundHeight(x, z) - .025, z, phase, Math.min(1.4, height * between(.95, 1.18)));
         }
       }
     });
+    stats.coverage = "continuous-stratified-carpet";
+    stats.nearSpacing = bands[0].step;
     finish(grass, material(0x131416), "dense-curved-meadow-grasses");
     finish(heads, material(0x090a0c), "bent-grass-seed-heads");
     journey.groveStats = stats;

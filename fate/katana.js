@@ -28,7 +28,7 @@
       this.makeKatana();
       this.makeGrove();
       if (window.FateWitness) this.witness = new window.FateWitness(THREE, {
-        scene: this.scene, quality, x: 66, z: 4, groundY: window.FateGrove.groundHeight(66, 4), height: 6
+        scene: this.scene, quality, x: 112, z: 4, groundY: window.FateGrove.groundHeight(112, 4), height: 148
       });
       this.resize(1440, 900);
       this.update(0, 0);
@@ -233,6 +233,8 @@
     update(score, time = 0) {
       if (this.disposed) return;
       this.score = score;
+      const far = this.witness ? mix(240, 900, smooth(234, 250, score)) : 240;
+      if (this.camera.far !== far) { this.camera.far = far; this.camera.updateProjectionMatrix(); }
       this.witness?.update(score, time);
       this.katana.visible = score > 128;
       const fall = smooth(128, 146, score);

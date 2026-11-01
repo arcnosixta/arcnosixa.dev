@@ -44,7 +44,8 @@
       if (computed.display === "none") return false;
       opacity *= Number(computed.opacity);
     }
-    return opacity > .5 && style.visibility !== "hidden" && box.width > 0 && box.height > 0 && box.bottom > 0 && box.top < w.innerHeight;
+    const overlap = Math.min(box.bottom, w.innerHeight) - Math.max(box.top, 0);
+    return opacity > .5 && style.visibility !== "hidden" && box.width > 0 && box.height > 0 && overlap > 1;
   }
   function luminance(color) {
     const rgb = color.match(/[\d.]+/g)?.slice(0, 3).map(Number) || [];
@@ -256,7 +257,9 @@
           // Audio loading does not affect layout and may outlive the model.
           // The explicit artwork/model signals are the visual readiness gate.
           const hasDocument = Boolean(d.querySelector(".still-ending")) && w.getComputedStyle(d.querySelector(".still-ending")).position === "relative" && Boolean(w.FateScore);
-          const staticReady = mode.value !== "motion" || d.documentElement.classList.contains("is-still");
+          // WebGL failure is asynchronous; wait until the fallback has actually
+          // finished before seeking its static scenes.
+          const staticReady = d.documentElement.classList.contains("is-still");
           const witnessReady = d.querySelector("#stage")?.dataset.witnessReady === "true";
           if (hasDocument && (staticReady || (w.ScrollTrigger?.getById("fate-story") && artwork.length >= 3 && witnessReady))) {
             clearInterval(poll); resolve();

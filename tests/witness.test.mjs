@@ -12,6 +12,65 @@ for (const file of ["grove", "witness-camera"]) {
 }
 const path = scope.window.FateWitnessCamera;
 const plain = value => JSON.parse(JSON.stringify(value));
+
+test("approved cloak is volumetric, uniformly scaled, grounded and efficient", async () => {
+  const actor = await loadActorGeometry(148);
+  try {
+    actor.update(283); actor.root.updateMatrixWorld(true);
+    assert.equal(actor.model.visible, false, "the old shirt, tie and hair are excluded");
+    const parts = [], bounds = new THREE.Box3(), point = new THREE.Vector3();
+    let draws = 0, triangles = 0;
+    actor.root.traverseVisible(object => {
+      if (!object.isMesh) return;
+      draws++; triangles += object.geometry.index.count / 3;
+      parts.push(object.name, ...(object.userData.parts || []));
+      for (let i = 0; i < object.geometry.attributes.position.count; i++) {
+        point.fromBufferAttribute(object.geometry.attributes.position, i).applyMatrix4(object.matrixWorld);
+        assert.ok(point.toArray().every(Number.isFinite));
+        bounds.expandByPoint(point);
+      }
+    });
+    for (const part of ["continuous-folded-cloak-back", "closed-high-undertunic", "high-folded-hood",
+      "broad-wrapped-waist-sash", "wide-pleated-hakama-1", "hanging-wide-sleeve-1", "swept-fringe-2"]) {
+      assert.ok(parts.includes(part), part);
+    }
+    assert.ok(draws <= 22 && triangles < 65000, `${draws} draws, ${triangles} triangles`);
+    assert.ok(Math.abs(bounds.min.y - actor.groundY) < .001, "soles touch the ground");
+    assert.ok(bounds.getSize(new THREE.Vector3()).y >= 147 && bounds.getSize(new THREE.Vector3()).y <= 151);
+    assert.equal(actor.root.scale.x, actor.root.scale.y);
+    assert.equal(actor.root.scale.y, actor.root.scale.z);
+    for (const [width, height] of [[1440, 900], [390, 844]]) {
+      const journey = fixture(width, height); journey.witness = actor; journey.camera.far = 900; journey.camera.updateProjectionMatrix();
+      const B = actor.root.position;
+      for (let cue = 234; cue <= 250; cue += .5) {
+        path.update(journey, cue);
+        assert.equal(inView(actor.facePosition().project(journey.camera)), false, "no early face");
+      }
+      path.update(journey, cueAtAngle(journey, 90));
+      for (const y of [1, 147]) assert.ok(inView(projected(journey, [B.x, B.y + y, B.z])), "full-height back view");
+      path.update(journey, 330);
+      assert.ok(inView(actor.facePosition().project(journey.camera)), "actual eyes framed");
+    }
+    const released = new Set(), resources = [...actor.resources];
+    resources.forEach(r => r.addEventListener?.("dispose", () => released.add(r)));
+    actor.dispose();
+    assert.equal(released.size, resources.filter(r => r.addEventListener).length);
+    assert.equal(actor.resources.size, 0);
+  } finally { actor.dispose(); }
+});
+
+test("the full original katana is shorter than the enlarged witness", async () => {
+  const journeyScope = { window: { FateGrove: scope.window.FateGrove } };
+  runInNewContext(await readFile(new URL("../fate/katana.js", import.meta.url), "utf8"), journeyScope);
+  const journey = new journeyScope.window.FateJourney(THREE, { quality: .6 });
+  try {
+    journey.update(283); journey.katana.updateMatrixWorld(true);
+    const height = new THREE.Box3().setFromObject(journey.katana).getSize(new THREE.Vector3()).y;
+    assert.equal(journey.katana.scale.x, 2, "preserve the sword's established scale");
+    assert.ok(148 / height > 1.3 && 148 / height < 1.5, "human and sword keep natural proportions");
+  } finally { journey.dispose(); }
+});
+
 function fixture(width = 1440, height = 900) {
   const groundY = scope.window.FateGrove.groundHeight(66, 4);
   return { width, height, mobile: width <= 700,
@@ -31,7 +90,7 @@ function cueAtAngle(journey, degrees) {
   }
   return (low + high) / 2;
 }
-async function loadActorGeometry() {
+async function loadActorGeometry(height = 6) {
   const previousLoader = THREE.GLTFLoader;
   const previousTextureLoad = THREE.TextureLoader.prototype.load;
   const geometryScope = { window: {}, THREE, TextDecoder, TextEncoder, ArrayBuffer, URL, Blob,
@@ -47,7 +106,7 @@ async function loadActorGeometry() {
   };
   THREE.GLTFLoader = class extends Loader { loadAsync() { return this.parseAsync(bytes, ""); } };
   const actor = new geometryScope.window.FateWitness(THREE, {
-    scene: new THREE.Scene(), x: 66, z: 4, groundY: scope.window.FateGrove.groundHeight, height: 6,
+    scene: new THREE.Scene(), x: 112, z: 4, groundY: scope.window.FateGrove.groundHeight, height,
   });
   try { await actor.load("node-geometry"); return actor; }
   catch (error) { actor.dispose(); throw error; }
@@ -73,8 +132,8 @@ test("the child is introduced by his foot without an early face or body reveal",
     assert.ok(inView(projected(journey, foot)), `${width}×${height}: the foot must actually be inside the shot`);
     assert.ok(inView(projected(journey, [B.x, B.y + .7, B.z])), "the lower shin must be framed together with the shoe");
     assert.equal(inView(projected(journey, [B.x, B.y + 2.5, B.z])), false, "the first shot must crop the upper legs");
-    assert.ok(Math.hypot(pose.camera[0] - B.x, pose.camera[2] - B.z) < 3.4,
-      "the foot camera must remain inside the meadow's clear patch");
+    assert.ok(Math.hypot(pose.camera[0] - B.x, pose.camera[2] - B.z) < 4,
+      "the foot camera keeps a deliberate close-up distance");
   }
 });
 
@@ -83,8 +142,9 @@ test("the real skinned shoes have complete silhouettes and margin in the lower p
   try {
     const vertices = [], point = new THREE.Vector3();
     actor.root.updateMatrixWorld(true);
-    actor.root.traverse(object => {
-      if (!object.isMesh) return;
+    actor.update(250);
+    actor.root.traverseVisible(object => {
+      if (!object.isMesh || !/Shoes/.test(object.name)) return;
       const positions = object.geometry.attributes.position;
       for (let i = 0; i < positions.count; i++) {
         point.fromBufferAttribute(positions, i);
@@ -93,7 +153,7 @@ test("the real skinned shoes have complete silhouettes and margin in the lower p
         if (point.y <= actor.groundY + .75) vertices.push(point.clone());
       }
     });
-    assert.ok(vertices.length > 1000, "the framing regression must use the loaded, deformed shoe geometry");
+    assert.ok(vertices.length > 100, "the framing regression must use the loaded, fitted shoe geometry");
     for (const [width, height] of [[1440, 900], [390, 844]]) {
       const journey = fixture(width, height); journey.witness = actor;
       path.update(journey, 250);
@@ -105,7 +165,7 @@ test("the real skinned shoes have complete silhouettes and margin in the lower p
       }
       assert.ok(bounds.min.x >= .015 && bounds.max.x <= .985, "shoe toes and heels need horizontal margin");
       assert.ok(bounds.min.y >= .2 && bounds.max.y <= .95, "shoes must have top and bottom margin");
-      assert.ok(bounds.getSize(new THREE.Vector2()).y >= .25, "shoes must read at an intentional close-up size");
+      assert.ok(bounds.getSize(new THREE.Vector2()).y >= .14, "boots occupy at least 14% of frame height with room for the cloak hem");
       const center = bounds.getCenter(new THREE.Vector2());
       assert.ok(center.y >= .5 && center.y <= .8, "the shoe belongs in the lower half, not clipped against the top edge");
       assert.equal(inView(actor.facePosition().project(journey.camera)), false, "the real face must stay outside the first shot");
@@ -143,7 +203,7 @@ test("a real 270 degree orbit rises from the left foot through the back to the f
   }
 });
 
-test("the back shot faces the katana and retains a towering blade above the child", () => {
+test("the back shot faces the katana and frames the child's full height", () => {
   for (const [width, height] of [[1440, 900], [390, 844]]) {
     const journey = fixture(width, height), cue = cueAtAngle(journey, 90);
     const pose = path.update(journey, cue), B = journey.witness.root.position;
@@ -151,16 +211,8 @@ test("the back shot faces the katana and retains a towering blade above the chil
     const katana = new THREE.Vector3(-B.x, 0, -B.z).normalize();
     assert.ok(view.dot(katana) > .99, "the boy's back view must look toward the planted katana");
     const crown = projected(journey, [B.x, B.y + 6, B.z]);
-    // A 99-unit black blade with a real cross-section and the scene's fixed 45° yaw.
-    // Only its upper visible section needs to clear the child's silhouette.
-    const blade = [];
-    for (let y = 5; y <= 99; y += .5) {
-      for (const x of [-1.25, 0, 1.25]) for (const z of [-.18, .18]) blade.push([x, y, z]);
-    }
-    const yaw = new THREE.Matrix4().makeRotationY(Math.PI / 4);
-    const clear = blade.map(point => new THREE.Vector3(...point).applyMatrix4(yaw))
-      .map(point => projected(journey, point.toArray())).filter(point => inView(point) && point.y > crown.y + .02);
-    assert.ok(clear.length >= 30, "a substantial blade section must remain in frame above the boy's head");
+    assert.ok(inView(crown), "the camera pulls back to keep the crown inside the back shot");
+    assert.ok(inView(projected(journey, [B.x, B.y + .05, B.z])), "the grounded feet remain in the back shot");
   }
 });
 
