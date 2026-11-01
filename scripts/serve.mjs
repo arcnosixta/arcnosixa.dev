@@ -4,7 +4,7 @@ import { resolve, sep, extname } from "node:path";
 const root = resolve(process.argv.includes("--source") ? "." : "dist");
 const port = Number(process.env.PORT || 4173);
 const base = process.env.BASE_PATH || "/";
-const types = { ".html": "text/html; charset=utf-8", ".js": "text/javascript; charset=utf-8", ".css": "text/css; charset=utf-8", ".png": "image/png", ".svg": "image/svg+xml", ".mp3": "audio/mpeg", ".xml": "application/xml", ".woff2": "font/woff2" };
+const types = { ".html": "text/html; charset=utf-8", ".js": "text/javascript; charset=utf-8", ".css": "text/css; charset=utf-8", ".png": "image/png", ".svg": "image/svg+xml", ".mp3": "audio/mpeg", ".glb": "model/gltf-binary", ".xml": "application/xml", ".woff2": "font/woff2" };
 createServer(async (req, res) => {
   try {
     const url = new URL(req.url, "http://localhost");

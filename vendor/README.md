@@ -19,3 +19,10 @@
 
 Обновление: положить новую UMD-сборку, проверить `THREE.REVISION` и сцену в
 `scene3d.js`, затем обновить версию в этом файле и в `README.md` репозитория.
+
+## GLTFLoader.js
+
+- Официальный загрузчик glTF из той же версии Three.js r147.
+- Источник: https://raw.githubusercontent.com/mrdoob/three.js/r147/examples/js/loaders/GLTFLoader.js
+- MIT; полный текст лицензии Three.js сохранён в `three-LICENSE.txt`.
+- Используется только в FATE для локальной модели `assets/fate/witness.glb`.

@@ -1,0 +1,16 @@
+Sakurada Fumiriya - CC0 character base
+
+Original author: pixiv Inc. / VRoid Project
+License: Creative Commons CC0 1.0 Universal
+https://creativecommons.org/publicdomain/zero/1.0/
+Official author's license statement:
+https://vroid.pixiv.help/hc/en-us/articles/360014788554-Sakurada-Fumiriya
+
+Distribution source:
+https://raw.githubusercontent.com/madjin/vrm-samples/master/vroid/beta/Sakurada_Fumiriya.vrm
+SHA-256: d8fb05f33e377df028cb6b9d58c441ce68326c41fa23f6c735d40c65ae3dc710
+
+witness.glb preserves the original VRM/GLB bytes and embedded CC0 metadata.
+The application adapts skeletal proportions, pose, grayscale materials and
+placement at runtime to portray the younger FATE witness. This is a derivative
+use of an existing CC0 character base, not an exclusive original character model.

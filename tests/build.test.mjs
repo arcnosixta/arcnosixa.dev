@@ -48,9 +48,26 @@ test("all narrative assets are real files with portable browser URLs", async () 
     assert.equal(file.subarray(1, 4).toString(), "PNG");
     assert.ok(file.length > 100000);
   }
-  for (const name of ["scene.js", "fate.js", "score.js", "katana.js", "grove.js", "audio.js"]) {
+  for (const name of ["scene.js", "fate.js", "score.js", "katana.js", "grove.js", "witness.js", "witness-camera.js", "audio.js"]) {
     assert.doesNotMatch(await readFile(join(root, "fate", name), "utf8"), /[A-Z]:\\|file:\/\//);
   }
+});
+
+test("the witness is a real locally licensed skinned model with a matching loader", async () => {
+  const binary = await readFile(join(root, "assets/fate/witness.glb"));
+  assert.equal(binary.toString("ascii", 0, 4), "glTF");
+  assert.equal(binary.readUInt32LE(4), 2);
+  assert.equal(binary.readUInt32LE(8), binary.length);
+  const model = JSON.parse(binary.toString("utf8", 20, 20 + binary.readUInt32LE(12)));
+  assert.equal(model.extensions.VRM.meta.licenseName, "CC0");
+  const bones = model.extensions.VRM.humanoid.humanBones.map(bone => bone.bone);
+  for (const bone of ["head", "hips", "leftEye", "rightEye", "leftFoot", "rightFoot"]) assert.ok(bones.includes(bone));
+  assert.ok(model.skins.length > 0 && model.meshes.length > 0 && model.images.length > 0);
+  const license = await readFile(join(root, "assets/fate/witness-LICENSE.txt"), "utf8");
+  assert.match(license, /Creative Commons CC0/);
+  assert.ok(license.toLowerCase().includes(createHash("sha256").update(binary).digest("hex")));
+  await stat(join(root, "vendor/GLTFLoader.js"));
+  await stat(join(root, "vendor/three-LICENSE.txt"));
 });
 test("direct route, artwork and soundtrack streaming work under the GitHub Pages base", async () => {
   const server = spawn(process.execPath, ["scripts/serve.mjs"], {

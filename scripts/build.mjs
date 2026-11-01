@@ -13,7 +13,7 @@ catch { throw new Error("Required FATE soundtrack is missing: assets/audio/fate.
 await rm(output, { recursive: true, force: true });
 await mkdir(output, { recursive: true });
 const version = (process.env.GITHUB_SHA || "local").slice(0, 8);
-const extensions = /\.(html|css|js|png|jpg|jpeg|webp|svg|ico|woff2?|mp3|xml|txt)$/i;
+const extensions = /\.(html|css|js|png|jpg|jpeg|webp|svg|ico|woff2?|mp3|glb|xml|txt)$/i;
 let count = 0;
 async function copyDirectory(source, destination) {
   await mkdir(destination, { recursive: true });
