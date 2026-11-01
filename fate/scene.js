@@ -41,7 +41,7 @@
       this.quality = matchMedia("(max-width: 700px)").matches || (navigator.deviceMemory || 8) <= 4 ? .6 : 1;
       this.resources = new Set();
       this.textures = new Set();
-      const options = { alpha: false, antialias: false, powerPreference: "high-performance" };
+      const options = { alpha: false, antialias: true, powerPreference: "high-performance" };
       const context = canvas.getContext("webgl2", options) || canvas.getContext("webgl", options);
       if (!context) throw new Error("WebGL unavailable; use the illustrated story");
       this.renderer = new T.WebGLRenderer({ canvas, context, ...options });
@@ -55,9 +55,9 @@
       this.resolution = new T.Vector2(1, 1);
       this.makeAtmosphere();
       this.makeBlade();
-      this.makeEye();
       this.makeAsh();
       this.makeAuraPass();
+      this.journey = new window.FateJourney(T, { quality: this.quality });
       this.resize();
       this.onContextLost = (event) => { event.preventDefault(); this.onFailure(); };
       canvas.addEventListener("webglcontextlost", this.onContextLost);
@@ -221,44 +221,6 @@
         transparent: true, blending: T.AdditiveBlending, depthWrite: false
       });
       this.blade.add(new T.Points(g, material));
-    }
-    makeEye() {
-      this.eyeUniforms = { uTime: { value: 0 }, uAlpha: { value: 0 }, uOpen: { value: 0 }, uPaper: { value: 0 } };
-      const material = this.material({
-        uniforms: this.eyeUniforms, vertexShader: planeVertex,
-        fragmentShader: `varying vec2 vUv;uniform float uTime,uAlpha,uOpen,uPaper;${noiseGLSL}
-          void main(){
-            vec2 p=(vUv-.5)*vec2(2.4,1.5);
-            float width=max(0.,1.-p.x*p.x);
-            float aperture=.43*pow(width,.68)*uOpen;
-            float lid=abs(p.y)-aperture;
-            float fill=(1.-smoothstep(-.008,.008,lid))*step(abs(p.x),1.);
-            float radius=length(p),angle=atan(p.y,p.x);
-            float strands=fbm(vec2(angle*31.+sin(radius*74.)*.3-uTime*.018,radius*39.));
-            float fibers=pow(.5+.5*sin(angle*119.+strands*9.),3.);
-            float iris=(1.-smoothstep(.325,.342,radius))*smoothstep(.116,.135,radius);
-            float pupil=smoothstep(.108,.125,radius+sin(uTime*1.3)*.003);
-            vec3 ink=vec3(.006,.01,.018);
-            vec3 silver=mix(vec3(.065,.10,.16),vec3(.38,.43,.50),strands);
-            vec3 color=ink+iris*(silver*(.35+fibers*.65)+vec3(.045,.075,.12)*strands);
-            color*=pupil;
-            // The white world prints black ink. Keep the pupil solid in that
-            // palette instead of turning it into an empty white aperture.
-            color=mix(color,vec3(.98),(1.-smoothstep(.108,.127,radius))*uPaper);
-            float ring=exp(-abs(radius-.333)*260.)*.32+exp(-abs(radius-.128)*190.)*.12;
-            color+=vec3(.36,.43,.55)*ring*fill;
-            float n=fbm(p*vec2(8.,13.)+vec2(uTime*.04,-uTime*.07));
-            float rim=exp(-abs(lid)*165.)*(1.-smoothstep(.88,1.04,abs(p.x)));
-            float mist=exp(-abs(lid+(n-.5)*.08)*27.)*(1.-smoothstep(.8,1.12,abs(p.x)))*(.3+n*.5);
-            float closing=smoothstep(0.,.12,uOpen);
-            vec3 light=vec3(.48,.57,.72)*(rim*.65+mist*.24)*closing;
-            gl_FragColor=vec4(color*fill+light,uAlpha*max(fill,(rim+mist)*closing));
-          }`, transparent: true, depthWrite: false, blending: T.NormalBlending
-      });
-      this.eye = new T.Mesh(this.own(new T.PlaneGeometry(19.2, 12)), material);
-      this.eye.renderOrder = 0;
-      this.eye.visible = false;
-      this.scene.add(this.eye);
     }
     makeAsh() {
       const random = randomSource(69), positions = [], seeds = [];
@@ -581,6 +543,7 @@
       const width = this.canvas.clientWidth || innerWidth;
       const height = this.canvas.clientHeight || innerHeight;
       this.renderer.setSize(width, height, false);
+      this.journey.resize(width, height);
       this.renderer.getDrawingBufferSize(this.resolution);
       this.sceneTarget.setSize(this.resolution.x, this.resolution.y);
       const glowScale = this.quality < 1 ? .25 : .35;
@@ -601,13 +564,21 @@
       this.progress = progress;
       this.time += Math.min(.05, delta);
       // Chapter I retains its original score; II continues from its final pose.
-      const score = progress * 160, p = Math.min(score / 100, .835), time = this.time;
+      const score = progress * 240, p = Math.min(score / 100, .835), time = this.time;
+      if (score >= 116) {
+        // Direct rendering keeps black geometry and the etched red patterns
+        // literal. The earlier monochrome inversion must not touch this world.
+        this.journey.update(score, time);
+        this.renderer.setRenderTarget(null);
+        this.renderer.render(this.journey.scene, this.journey.camera);
+        return;
+      }
       const emerge = smooth(.285, .34, p), approach = smooth(.30, .44, p);
       const rise = smooth(.54, .805, p) * 4.2;
       const ascend = smooth(.67, .815, p);
       const awakening = smooth(96, 98, score) * (1 - smooth(147, 152, score));
-      const exit = (1 - smooth(83.6, 87, score)) + awakening;
-      const alone = smooth(98, 120, score), morph = smooth(119, 132, score);
+      const exit = ((1 - smooth(83.6, 87, score)) + awakening) * (1 - smooth(109, 116, score));
+      const alone = smooth(98, 120, score);
       const dissolve = smooth(98, 110, score);
       const flood = smooth(101, 116, score);
       const ignition = smooth(97, 100, score) * (1 - smooth(110, 116, score));
@@ -631,20 +602,13 @@
       this.blade.visible = p > .1 && p < .3;
       this.sparkUniforms.uReveal.value = reveal;
       this.sparkUniforms.uAlpha.value = this.bladeUniforms.uAlpha.value;
-      this.moon.position.set(0, mix(5.3 + rise * .7, 6.8, morph), -1.8);
-      this.moon.scale.set(mix(.37, this.mobile ? .9 : 1.65, morph), mix(.37, this.mobile ? .37 : .68, morph), .37);
-      this.moon.rotation.z = mix(-.18, 0, morph);
+      this.moon.position.set(0, 5.3 + rise * .7, -1.8);
+      this.moon.scale.setScalar(.37);
+      this.moon.rotation.z = -.18;
       this.moonUniforms.uTime.value = time;
       this.moonUniforms.uAlpha.value = emerge * exit * (1 - smooth(122, 132, score));
       this.moonUniforms.uPower.value = mix(.85 + ascend * 1.4, .85, awakening);
-      this.moon.visible = score > 28.5 && score < 132;
-      this.eyeUniforms.uTime.value = time;
-      this.eyeUniforms.uAlpha.value = smooth(121, 131, score) * (1 - smooth(150, 152, score));
-      this.eyeUniforms.uOpen.value = smooth(119, 130, score) * (1 - smooth(145, 151, score));
-      this.eyeUniforms.uPaper.value = flood;
-      this.eye.position.set(0, 6.8, -2);
-      this.eye.scale.setScalar(this.mobile ? .52 : .95);
-      this.eye.visible = score > 119 && score < 152;
+      this.moon.visible = score > 28.5 && score < 116;
       this.ashUniforms.uTime.value = time;
       this.ashUniforms.uRise.value = ascend;
       this.ashUniforms.uAlpha.value = mix(.025 + smooth(.08, .15, p) * .2 + ascend * .45, .025, smooth(96, 110, score)) * exit;
@@ -656,7 +620,7 @@
         this.childUniforms.uLight.value = smooth(.715, .795, p);
         this.childUniforms.uPulse.value = smooth(108, 116, score);
         this.childUniforms.uIgnition.value = ignition;
-        this.child.visible = score > 28.5 && score < 148;
+        this.child.visible = score > 28.5 && score < 116;
         this.handUniforms.uTime.value = time;
         this.handUniforms.uProgress.value = p;
         this.handUniforms.uRise.value = rise;
@@ -713,6 +677,7 @@
       this.textures.clear();
       this.scene.clear();
       this.postScene.clear();
+      this.journey.dispose();
       this.renderer.dispose();
       // The same canvas is reused by Motion version. Disposing owned GPU
       // resources is sufficient; explicitly losing its context prevents restart.

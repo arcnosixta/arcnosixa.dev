@@ -7,14 +7,15 @@
   const story = document.getElementById("written-story");
   const revelation = document.querySelector(".revelation");
   const reduced = matchMedia("(prefers-reduced-motion: reduce)");
-  const scoreLength = 160;
+  const scoreLength = 240;
   const chapters = [
     { at: 0, name: "Silence" }, { at: 10.5, name: "The cut" },
     { at: 30, name: "The child" }, { at: 42.5, name: "The thousand hands" },
     { at: 71.5, name: "Ascension" }, { at: 88, name: "Пробуждение" },
-    { at: 96, name: "Ashes" }, { at: 110, name: "Alone" },
-    { at: 119, name: "The eye" }, { at: 135, name: "Fate" },
-    { at: 145, name: "The closing" }, { at: 153, name: "To be continued" }
+    { at: 96, name: "Ashes" }, { at: 116, name: "" },
+    { at: 128, name: "The descent" }, { at: 146, name: "Along the blade" },
+    { at: 194, name: "The ground" }, { at: 206, name: "The black grove" },
+    { at: 234, name: "The clearing" }
   ];
   let manualStill = false;
   try { manualStill = localStorage.getItem("fate-still") === "1"; } catch { /* optional */ }
@@ -44,8 +45,8 @@
     lastFrame = now;
     try { scene.render(state.progress, delta); }
     catch { fallback(true); return; }
-    // The final white frame is static. Scrubbing backward wakes rendering again.
-    if (state.progress * scoreLength < 152) raf = requestAnimationFrame(frame);
+    // The final grove is static. Scrubbing backward wakes rendering again.
+    if (state.progress * scoreLength < 234) raf = requestAnimationFrame(frame);
   }
   function wake() { if (scene && pageVisible && !raf) raf = requestAnimationFrame(frame); }
   function updateUI() {
@@ -53,6 +54,16 @@
     const white = Math.max(0, Math.min(1, (score - 104) / 12));
     const paper = white * white * (3 - 2 * white);
     root.style.setProperty("--fate-paper", paper.toFixed(4));
+    const blank = score >= 116 && score < 128;
+    if (root.classList.contains("is-void") !== blank) {
+      root.classList.toggle("is-void", blank);
+      document.querySelectorAll(".fate-hud, .sound-control").forEach(control => {
+        control.inert = blank;
+        if (blank) control.setAttribute("aria-hidden", "true"); else control.removeAttribute("aria-hidden");
+      });
+    }
+    root.classList.toggle("is-journey", score >= 128);
+    stage.dataset.journeyPhase = score < 116 ? "awakening" : score < 128 ? "void" : score < 146 ? "fall" : score < 194 ? "blade" : score < 206 ? "ground" : score < 234 ? "grove" : "ending";
     if (root.classList.contains("is-paper") !== (score >= 110)) {
       root.classList.toggle("is-paper", score >= 110);
       document.querySelector('meta[name="theme-color"]').content = score >= 110 ? "#ffffff" : "#000000";
@@ -66,7 +77,7 @@
       document.querySelector(".chapter-name").textContent = chapters[chapter].name;
       stage.dataset.chapter = score >= 88 ? "2" : "1";
     }
-    const revealed = score >= 153;
+    const revealed = score >= 236;
     revelation.inert = !revealed;
     revelation.setAttribute("aria-hidden", String(!revealed));
     wake();
@@ -74,15 +85,16 @@
   function makeTimeline() {
     const gsap = window.gsap;
     gsap.registerPlugin(window.ScrollTrigger);
-    gsap.set(".caption", { autoAlpha: 0, y: 0 });
+    gsap.set(".caption, .blade-note", { autoAlpha: 0, y: 0 });
     gsap.set(".silence", { autoAlpha: .7 });
     gsap.set(".revelation, .scroll-invitation, .chapter-marker", { autoAlpha: 0 });
+    gsap.set(".journey-notes", { autoAlpha: 0 });
     gsap.set(".whiteout", { opacity: 0 });
     timeline = gsap.timeline({
       defaults: { ease: "none" }, onUpdate: updateUI,
       scrollTrigger: {
         id: "fate-story", trigger: "#experience", pin: stage,
-        start: "top top", end: () => `+=${Math.round(stage.clientHeight * 15.2)}`,
+        start: "top top", end: () => `+=${Math.round(stage.clientHeight * 22.8)}`,
         scrub: .85, anticipatePin: 1, invalidateOnRefresh: true,
         onRefresh(self) {
           if (resizeProgress === null) return;
@@ -115,11 +127,12 @@
     timeline.to(".whiteout", { opacity: 1, duration: 1 }, 82.9);
     timeline.to(".whiteout", { opacity: 0, duration: 2.3 }, 84.1);
     line(".awakening-title", 88, 94.5, 2.5);
-    line(".awakening-alone", 110, 118, 2);
-    line(".awakening-claim", 135, 143.5, 2.5);
-    timeline.fromTo(".awakening-taken", { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 2, immediateRender: false }, 137);
-    timeline.to(".revelation", { autoAlpha: 1, duration: 3 }, 153);
-    timeline.fromTo(".revelation .reveal-name, .revelation .reveal-will", { y: 12 }, { y: 0, duration: 3, immediateRender: false }, 153);
+    timeline.set(".journey-notes", { autoAlpha: 1 }, 154);
+    line(".note-architecture", 156, 166, 2);
+    line(".note-services", 169, 179, 2);
+    line(".note-craft", 182, 192, 2);
+    timeline.set(".journey-notes", { autoAlpha: 0 }, 194);
+    timeline.to(".revelation", { autoAlpha: 1, duration: 2 }, 236);
     intro = gsap.timeline();
     intro.fromTo(".captions", { opacity: 0 }, { opacity: 1, duration: 2.8 }, .4);
     // Only the invitation's entrance uses clock time. The story never autoplays.
@@ -138,7 +151,12 @@
     scene?.dispose(); scene = null;
     root.classList.remove("enhanced");
     root.classList.remove("is-paper");
+    root.classList.remove("is-void", "is-journey");
     root.style.removeProperty("--fate-paper");
+    document.querySelectorAll(".fate-hud, .sound-control").forEach(control => {
+      control.inert = false;
+      control.removeAttribute("aria-hidden");
+    });
     story.querySelectorAll("a").forEach((link) => link.removeAttribute("tabindex"));
     revelation.inert = true;
     revelation.setAttribute("aria-hidden", "true");
@@ -160,7 +178,7 @@
     syncToggle();
     if (wasEnhanced) {
       const scenes = [...story.querySelectorAll("[data-story-at]")];
-      const current = scenes.filter(el => Number(el.dataset.storyAt) <= score).at(-1) || scenes[0];
+      const current = scenes.filter(el => Number(el.dataset.storyStart || el.dataset.storyAt) <= score).at(-1) || scenes[0];
       current?.scrollIntoView({ behavior: "instant" });
     }
   }
@@ -172,6 +190,7 @@
     const request = ++version;
     try {
       await script("../vendor/three.min.js");
+      await script(`katana.js${assetVersion}`);
       await script(`scene.js${assetVersion}`);
       if (request !== version || reduced.matches || manualStill) return;
       root.classList.add("enhanced");
@@ -195,15 +214,16 @@
       if (request === version) fallback(true);
     } finally { if (request === version) starting = false; }
   }
+  function visibleStoryProgress() {
+    const current = [...story.querySelectorAll("[data-story-at]")].find(el => el.getBoundingClientRect().bottom > innerHeight * .5);
+    return Number(current?.dataset.storyAt || 0) / scoreLength;
+  }
   stillToggle.addEventListener("click", () => {
     if (reduced.matches || unavailable) return;
     manualStill = !manualStill;
     try { localStorage.setItem("fate-still", manualStill ? "1" : "0"); } catch { /* optional */ }
     if (manualStill) fallback();
-    else {
-      const current = [...story.querySelectorAll("[data-story-at]")].find(el => el.getBoundingClientRect().bottom > innerHeight * .5);
-      void start(Number(current?.dataset.storyAt || 0) / scoreLength);
-    }
+    else void start(visibleStoryProgress());
   });
   document.querySelector(".skip-story").addEventListener("click", (event) => {
     event.preventDefault();
@@ -214,7 +234,7 @@
   });
   reduced.addEventListener("change", () => {
     if (reduced.matches) fallback();
-    else void start();
+    else void start(visibleStoryProgress());
   });
   window.addEventListener("resize", () => {
     if (scene && timeline) resizeProgress ??= state.progress;
