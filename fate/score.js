@@ -2,7 +2,7 @@
 (() => {
   "use strict";
   window.FateScore = Object.freeze({
-    length: 277,
+    length: 377,
     at(cue) {
       if (cue <= 85) return cue;
       if (cue < 96) return 85;

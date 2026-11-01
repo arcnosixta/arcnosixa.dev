@@ -14,7 +14,9 @@
     { at: 71.5, name: "Ascension" }, { at: 96, name: "Ashes" },
     { at: 116, name: "" }, { at: 128, name: "The descent" },
     { at: 146, name: "Along the blade" }, { at: 194, name: "The ground" },
-    { at: 206, name: "The black grove" }, { at: 234, name: "The clearing" }
+    { at: 206, name: "The black meadow" }, { at: 234, name: "The witness" },
+    { at: 250, name: "The first step" }, { at: 280, name: "Before the blade" },
+    { at: 310, name: "The turn" }, { at: 330, name: "Face to face" }
   ];
   let manualStill = false;
   try { manualStill = localStorage.getItem("fate-still") === "1"; } catch { /* optional */ }
@@ -45,11 +47,11 @@
     try { scene.render(state.progress, delta); }
     catch { fallback(true); return; }
     // The final grove is static. Scrubbing backward wakes rendering again.
-    if (state.progress * scoreLength < at(234)) raf = requestAnimationFrame(frame);
+    if (state.progress * scoreLength < at(330)) raf = requestAnimationFrame(frame);
   }
   function wake() { if (scene && pageVisible && !raf) raf = requestAnimationFrame(frame); }
   function updateUI() {
-    const p = state.progress, score = window.FateScore.cue(p * scoreLength);
+    const p = state.progress, score = Math.round(window.FateScore.cue(p * scoreLength) * 1000) / 1000;
     const white = Math.max(0, Math.min(1, (score - 104) / 12));
     const paper = white * white * (3 - 2 * white);
     root.style.setProperty("--fate-paper", paper.toFixed(4));
@@ -62,7 +64,7 @@
       });
     }
     root.classList.toggle("is-journey", score >= 128);
-    stage.dataset.journeyPhase = score < 116 ? "ascension" : score < 128 ? "void" : score < 146 ? "fall" : score < 194 ? "blade" : score < 206 ? "ground" : score < 234 ? "grove" : "ending";
+    stage.dataset.journeyPhase = score < 116 ? "ascension" : score < 128 ? "void" : score < 146 ? "fall" : score < 194 ? "blade" : score < 206 ? "ground" : score < 234 ? "meadow" : score < 250 ? "witness-approach" : score < 275 ? "witness-rise" : score < 295 ? "witness-back" : score < 330 ? "witness-orbit" : "witness-face";
     if (root.classList.contains("is-paper") !== (score >= 110)) {
       root.classList.toggle("is-paper", score >= 110);
       document.querySelector('meta[name="theme-color"]').content = score >= 110 ? "#ffffff" : "#000000";
@@ -74,7 +76,7 @@
       activeChapter = chapter;
       document.querySelector(".chapter-name").textContent = chapters[chapter].name;
     }
-    const revealed = score >= 236;
+    const revealed = score >= 336;
     revelation.inert = !revealed;
     revelation.setAttribute("aria-hidden", String(!revealed));
     wake();
@@ -82,6 +84,9 @@
   function makeTimeline() {
     const gsap = window.gsap;
     gsap.registerPlugin(window.ScrollTrigger);
+    // Model/texture loading never changes this pinned viewport's dimensions.
+    // Explicit refresh and resize handling preserve the current scroll position.
+    window.ScrollTrigger.config({ autoRefreshEvents: "visibilitychange,DOMContentLoaded,resize" });
     gsap.set(".caption, .blade-note", { autoAlpha: 0, y: 0 });
     gsap.set(".silence", { autoAlpha: .7 });
     gsap.set(".revelation, .scroll-invitation, .chapter-marker", { autoAlpha: 0 });
@@ -128,7 +133,7 @@
     line(".note-services", 169, 179, 2);
     line(".note-craft", 182, 192, 2);
     timeline.set(".journey-notes", { autoAlpha: 0 }, at(194));
-    timeline.to(".revelation", { autoAlpha: 1, duration: 2 }, at(236));
+    timeline.to(".revelation", { autoAlpha: 1, duration: 2 }, at(336));
     intro = gsap.timeline();
     intro.fromTo(".captions", { opacity: 0 }, { opacity: 1, duration: 2.8 }, .4);
     // Only the invitation's entrance uses clock time. The story never autoplays.
@@ -140,6 +145,7 @@
     version++;
     starting = false;
     resizeProgress = null;
+    stage.dataset.witnessReady = "false";
     stopFrames();
     intro?.kill(); intro = null;
     timeline?.scrollTrigger?.kill();
@@ -186,7 +192,10 @@
     const request = ++version;
     try {
       await script("../vendor/three.min.js");
+      await script("../vendor/GLTFLoader.js");
       await script(`grove.js${assetVersion}`);
+      await script(`witness.js${assetVersion}`);
+      await script(`witness-camera.js${assetVersion}`);
       await script(`katana.js${assetVersion}`);
       await script(`scene.js${assetVersion}`);
       if (request !== version || reduced.matches || manualStill) return;

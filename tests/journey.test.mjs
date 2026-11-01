@@ -31,14 +31,15 @@ function terrainVerticesInView(journey) {
 
 test("the scroll score roundtrips scene cues while extending blade and ground passages", () => {
   const score = scope.window.FateScore;
-  assert.equal(score.length, 277);
+  assert.equal(score.length, 377);
   assert.equal(score.at(194) - score.at(146), 84, "the long blade passage must retain its full reading interval");
   assert.equal(score.at(206) - score.at(194), 24, "the ground reveal must remain separate from the horizontal grove");
-  assert.equal(score.at(240), score.length);
-  for (const cue of [0, 42.5, 83.5, 84.999, 96, 116, 128, 146, 160, 173, 194, 200, 206, 230, 240]) {
+  assert.equal(score.at(340), score.length);
+  assert.equal(score.at(330) - score.at(250), 80, "the full foot-to-face orbit must retain its reading interval");
+  for (const cue of [0, 42.5, 83.5, 84.999, 96, 116, 128, 146, 160, 173, 194, 200, 206, 230, 234, 250, 283, 310, 330, 340]) {
     assert.ok(Math.abs(score.cue(score.at(cue)) - cue) < 1e-9, `scene cue ${cue} must roundtrip, including retime boundaries`);
   }
-  for (const position of [0, 84.999, 85, 100, 135, 182.25, 219, 231, 243, 277]) {
+  for (const position of [0, 84.999, 85, 100, 135, 182.25, 219, 231, 243, 277, 287, 320, 347, 367, 377]) {
     assert.ok(Math.abs(score.at(score.cue(position)) - position) < 1e-9, `scroll position ${position} must preserve its scene time`);
   }
 });
@@ -98,18 +99,18 @@ test("the information passage frames only the giant blade, with all terrain belo
   }
 });
 
-test("the grove traversal is strictly horizontal even when clock time changes", () => {
+test("the meadow traversal is strictly horizontal before the child approach", () => {
   for (const [width, height] of [[1440, 900], [390, 844]]) {
     const journey = new FateJourney(THREE);
     try {
       journey.resize(width, height);
-      const start = sample(journey, 206), states = [215, 230, 240].map(score => sample(journey, score, 100));
+      const start = sample(journey, 206), states = [215, 230, 233.99].map(score => sample(journey, score, 100));
       let previousX = start.camera[0];
       for (const state of states) {
-        assert.equal(state.camera[1], start.camera[1], "camera Y must never bob during the grove");
-        assert.equal(state.target[1], start.target[1], "target Y must remain fixed during the grove");
+        assert.equal(state.camera[1], start.camera[1], "camera Y must never bob during the meadow");
+        assert.equal(state.target[1], start.target[1], "target Y must remain fixed during the meadow");
         assert.equal(state.camera[2], start.camera[2]);
-        assert.ok(state.camera[0] > previousX, "the camera must translate sideways through the grove");
+        assert.ok(state.camera[0] > previousX, "the camera must translate sideways through the meadow");
         previousX = state.camera[0];
       }
       assert.deepEqual(sample(journey, 230, 0), sample(journey, 230, 10000), "wall-clock time must not add vertical movement");
@@ -189,7 +190,9 @@ test("the reference katana has a slender blade, open angular guard and physical 
     const center = guard.getWorldPosition(new THREE.Vector3());
     const throughCenter = new THREE.Raycaster(center.clone().add(new THREE.Vector3(0, 5, 0)), new THREE.Vector3(0, -1, 0));
     assert.equal(throughCenter.intersectObject(guard, false).length, 0, "the guard must have a real central aperture");
-    const throughRim = new THREE.Raycaster(center.clone().add(new THREE.Vector3(.93 * journey.katana.scale.x, 5, 0)), new THREE.Vector3(0, -1, 0));
+    const rimOrigin = guard.localToWorld(new THREE.Vector3(.93, 5, 0));
+    const rimDirection = new THREE.Vector3(0, -1, 0).transformDirection(guard.matrixWorld);
+    const throughRim = new THREE.Raycaster(rimOrigin, rimDirection);
     assert.ok(throughRim.intersectObject(guard, false).length > 0, "shaped metal must surround the guard aperture");
     const grip = journey.scene.getObjectByName("katana-grip");
     const gripSize = new THREE.Box3().setFromObject(grip).getSize(new THREE.Vector3());

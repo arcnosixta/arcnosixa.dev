@@ -78,12 +78,17 @@
           resolve(texture);
         }, undefined, reject);
       });
-      const [child, hands, sea] = await Promise.all([load("newborn"), load("hands-atlas"), load("congregation")]);
-      if (this.disposed) return;
-      this.makeChild(child);
-      this.makeHands(hands);
-      this.makeCongregation(sea);
-      this.ready = true;
+      const plates = Promise.all([load("newborn"), load("hands-atlas"), load("congregation")]).then(([child, hands, sea]) => {
+        if (this.disposed) return;
+        this.makeChild(child);
+        this.makeHands(hands);
+        this.makeCongregation(sea);
+        this.ready = true;
+      });
+      const witness = this.journey.witness.load(new URL("../assets/fate/witness.glb", document.baseURI).href).then(() => {
+        if (!this.disposed) document.getElementById("stage").dataset.witnessReady = "true";
+      });
+      await Promise.all([plates, witness]);
     }
     makeAtmosphere() {
       this.fog = this.material({

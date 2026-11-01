@@ -6,7 +6,7 @@
   const metrics = document.getElementById("metrics");
   const report = document.getElementById("report");
   const checks = document.getElementById("checks");
-  const scoreLength = () => frame.contentWindow.FateScore?.length || 277;
+  const scoreLength = () => frame.contentWindow.FateScore?.length || 377;
   const scoreForCue = cue => frame.contentWindow.FateScore.at(cue);
   const query = new URLSearchParams(location.search);
   if ([...mode.options].some(option => option.value === query.get("mode"))) mode.value = query.get("mode");
@@ -68,10 +68,15 @@
     const settle = () => new Promise((resolve, reject) => {
       if (query.has("run")) {
         setTimeout(() => {
-          w.ScrollTrigger?.update();
-          w.ScrollTrigger?.getById("fate-story")?.getTween()?.progress(1);
-          w.gsap?.getTweensOf(".captions").forEach(tween => tween.totalProgress(1));
-          resolve();
+          try {
+            if (revision !== run) throw new Error("Case changed during the checks");
+            w.ScrollTrigger?.update();
+            // A trigger with scrubDuration(0) may return false rather than a
+            // tween. A missing tween is already settled, not an error.
+            w.ScrollTrigger?.getById("fate-story")?.getTween()?.progress?.(1);
+            w.gsap?.getTweensOf(".captions").forEach(tween => tween.totalProgress(1));
+            resolve();
+          } catch (error) { reject(error); }
         }, 1300);
         return;
       }
@@ -124,15 +129,20 @@
           check(`${name} note stays inside the viewport and appears alone`, Boolean(box) && box.left >= 0 && box.right <= w.innerWidth + 1 && box.top >= 0 && box.bottom <= w.innerHeight + 1 && notes.filter(visible).length === 1);
         }
         await atCue(200);
-        check("the katana reaches the ground before the grove", stage.dataset.journeyPhase === "ground" && Math.abs(renderedScore() - scoreForCue(200)) < 1 && !notes.some(visible));
+        check("the katana reaches the ground before the meadow", stage.dataset.journeyPhase === "ground" && Math.abs(renderedScore() - scoreForCue(200)) < 1 && !notes.some(visible));
         await atCue(215);
         const grovePhase = stage.dataset.journeyPhase;
-        check("the grove begins with a clear white field", grovePhase === "grove" && paper() === 1 && !notes.some(visible));
+        check("the meadow begins with a clear white field", grovePhase === "meadow" && paper() === 1 && !notes.some(visible));
         await atCue(230);
-        check("the horizontal grove continues without early return", stage.dataset.journeyPhase === grovePhase && d.querySelector(".revelation").inert && !visible(d.querySelector(".revelation")));
-        await atCue(238);
+        check("the horizontal meadow continues without early return", stage.dataset.journeyPhase === grovePhase && d.querySelector(".revelation").inert && !visible(d.querySelector(".revelation")));
         const finale = d.querySelector(".revelation");
-        check("the ending appears after the grove", stage.dataset.journeyPhase === "ending" && visible(finale) && finale.querySelector(".reveal-name").textContent.trim().length > 0);
+        check("the real child model finishes loading before the camera visits him", stage.dataset.witnessReady === "true");
+        for (const [cue, phase, shot] of [[238, "witness-approach", "meadow approach"], [250, "witness-rise", "first foot"], [283, "witness-back", "back and katana"], [310, "witness-orbit", "rising orbit"], [330, "witness-face", "frontal face"]]) {
+          await atCue(cue);
+          check(`${shot} has no early captions, notes or return`, stage.dataset.journeyPhase === phase && stage.dataset.witnessReady === "true" && paper() === 1 && ![...d.querySelectorAll(".caption, .journey-notes")].some(visible) && !notes.some(visible) && finale.inert && !visible(finale));
+        }
+        await atCue(338);
+        check("the ending appears after the final face shot", stage.dataset.journeyPhase === "witness-face" && visible(finale) && finale.querySelector(".reveal-name").textContent.trim().length > 0);
         check("final return becomes interactive", !finale.inert && visible(finale.querySelector(".return-link")));
         check("the ending keeps the white world", Math.abs(paper() - 1) < .001 && d.documentElement.classList.contains("is-paper"));
         await at(85.8);
@@ -147,15 +157,20 @@
         check("still to motion restores the grove score", d.documentElement.classList.contains("enhanced") && Math.abs(renderedScore() - scoreForCue(218)) < 1);
         check("view switches preserve the soundtrack without restarting", w.qaAudio === audio && w.qaAudioPlays === oldPlays && (audio?.currentTime || 0) >= oldTime - .1 && (!wasPlaying || audio.paused === false));
       } else {
-        const cues = [99, 116, 134, 158, 172, 186, 199, 218, 236];
-        check("every katana and grove scene exists in document flow", cues.every(cue => d.querySelector(`[data-story-at="${scoreForCue(cue)}"]`)?.getBoundingClientRect().height > 0));
+        const cues = [99, 116, 134, 158, 172, 186, 199, 218, 250, 281, 330, 336];
+        check("every katana, meadow and child scene exists in document flow", cues.every(cue => d.querySelector(`[data-story-at="${scoreForCue(cue)}"]`)?.getBoundingClientRect().height > 0));
         await atCue(120);
         check("static score selection reaches the white void", visible(d.querySelector(".still-void")));
         await atCue(230);
-        check("static score selection reaches the grove", visible(d.querySelector(".still-grove")));
+        check("static score selection reaches the meadow", visible(d.querySelector(".still-grove")));
         const grove = d.querySelector(".still-grove");
-        check("the static grove uses dark readable ink on white", paperContrast(grove, grove.querySelector("figcaption")));
-        await atCue(238);
+        check("the static meadow uses dark readable ink on white", paperContrast(grove, grove.querySelector("figcaption")));
+        for (const [cue, shot] of [[250, "foot"], [281, "back"], [330, "face"]]) {
+          await atCue(cue);
+          const scene = d.querySelector(`[data-story-at="${scoreForCue(cue)}"]`);
+          check(`the static child ${shot} shot exists before the ending`, visible(scene) && Boolean(scene.querySelector("svg, img")) && !visible(d.querySelector(".still-ending")));
+        }
+        await atCue(338);
         check("the static ending has a usable return", visible(d.querySelector(".still-ending .return-link")) && !d.querySelector(".still-ending").inert);
         const ending = d.querySelector(".still-ending");
         check("the static final return has readable contrast", paperContrast(ending, ending.querySelector(".return-link")));
@@ -174,7 +189,7 @@
     const response = await fetch("../fate/");
     let html = await response.text();
     const setup = `<base href="${new URL("../fate/", location.href).href}"><script>
-      try{localStorage.removeItem('fate-still')}catch{}
+      try{localStorage.removeItem('fate-still');history.scrollRestoration='manual'}catch{}
       window.addEventListener('error',e=>parent.qaError(e.message));
       window.addEventListener('unhandledrejection',e=>parent.qaError(String(e.reason)));
       const err=console.error;console.error=(...args)=>{parent.qaError(args.join(' '));err(...args)};
@@ -193,7 +208,7 @@
         const marker = d.querySelector(".chapter-name")?.textContent || "static";
         const caption = [...d.querySelectorAll(".caption, .journey-notes > *")].filter(visible).map(e => e.textContent.trim().replace(/\s+/g, " ")).join(" / ");
         const paper = Number.parseFloat(w.getComputedStyle(d.documentElement).getPropertyValue("--fate-paper"));
-        metrics.textContent = `${d.documentElement.className || 'static'} | ${w.innerWidth}×${w.innerHeight} | q${renderedScore().toFixed(1)}/${scoreLength()} cue${w.FateScore?.cue(renderedScore()).toFixed(1) || "…"} ${marker} ${d.querySelector("#stage")?.dataset.journeyPhase || ""} | paper ${Number.isFinite(paper) ? paper.toFixed(3) : "static"} | ${caption || "no caption"} | y${Math.round(w.scrollY)} | ${w.qaFPS || '…'}fps | ${audio?.paused === false ? 'playing' : 'silent'} ${(audio?.currentTime || 0).toFixed(1)}s`;
+        metrics.textContent = `${d.documentElement.className || 'static'} | ${w.innerWidth}×${w.innerHeight} | q${renderedScore().toFixed(1)}/${scoreLength()} cue${w.FateScore?.cue(renderedScore()).toFixed(1) || "…"} ${marker} ${d.querySelector("#stage")?.dataset.journeyPhase || ""} | child ${d.querySelector("#stage")?.dataset.witnessReady || "pending"} | paper ${Number.isFinite(paper) ? paper.toFixed(3) : "static"} | ${caption || "no caption"} | y${Math.round(w.scrollY)} | ${w.qaFPS || '…'}fps | ${audio?.paused === false ? 'playing' : 'silent'} ${(audio?.currentTime || 0).toFixed(1)}s`;
       }, 300);
     };
     frame.srcdoc = html;
@@ -203,6 +218,8 @@
   }
   async function cli(run) {
     let finished = false;
+    const started = performance.now();
+    let readyAt = null, watchdog;
     const phase = value => {
       document.body.dataset.qaPhase = value;
       console.log(`FATE_QA_STAGE ${value}`);
@@ -213,34 +230,48 @@
       const w = frame.contentWindow, d = frame.contentDocument;
       document.body.dataset.qaReady = "true";
       console.log("FATE_QA_RESULT " + JSON.stringify({ checks: checks.textContent, errors: report.textContent,
-        score: renderedScore(), scoreLength: scoreLength(), cue: w.FateScore?.cue(renderedScore()), phase: d.querySelector("#stage")?.dataset.journeyPhase || "",
+        score: renderedScore(), scoreLength: scoreLength(), cue: w.FateScore?.cue(renderedScore()), phase: d.querySelector("#stage")?.dataset.journeyPhase || "", witnessReady: d.querySelector("#stage")?.dataset.witnessReady === "true",
         paper: w.getComputedStyle(d.documentElement).getPropertyValue("--fate-paper"),
-        enhanced: d.documentElement.classList.contains("enhanced"), viewport: [w.innerWidth, w.innerHeight] }));
+        enhanced: d.documentElement.classList.contains("enhanced"), viewport: [w.innerWidth, w.innerHeight],
+        startupMs: readyAt === null ? null : Math.round(readyAt - started), durationMs: Math.round(performance.now() - started) }));
     };
-    const watchdog = setTimeout(() => {
-      report.textContent += `CLI regression timed out in ${document.body.dataset.qaPhase}.\n`;
-      finish();
-    }, 90000);
+    const armWatchdog = (milliseconds, budget) => {
+      clearTimeout(watchdog);
+      watchdog = setTimeout(() => {
+        report.textContent += `CLI ${budget} timed out in ${document.body.dataset.qaPhase}.\n`;
+        finish();
+      }, milliseconds);
+    };
+    // Resource decoding and the regression have separate budgets. A slow model
+    // must not consume the time reserved for visiting every story cue.
+    armWatchdog(120000, "startup");
     try {
       phase("waiting-for-story");
       await new Promise((resolve, reject) => {
-        const deadline = performance.now() + 45000;
+        const deadline = performance.now() + 120000;
         const poll = setInterval(() => {
           if (run !== revision) { clearInterval(poll); reject(new Error("Case changed during startup")); return; }
           const w = frame.contentWindow, d = frame.contentDocument;
           const artwork = w.performance.getEntriesByType("resource").filter(entry => /assets\/fate\/(newborn|hands-atlas|congregation)\.png/.test(entry.name));
+          // Audio loading does not affect layout and may outlive the model.
+          // The explicit artwork/model signals are the visual readiness gate.
           const hasDocument = Boolean(d.querySelector(".still-ending")) && w.getComputedStyle(d.querySelector(".still-ending")).position === "relative" && Boolean(w.FateScore);
           const staticReady = mode.value !== "motion" || d.documentElement.classList.contains("is-still");
-          if (hasDocument && (staticReady || (w.ScrollTrigger?.getById("fate-story") && artwork.length >= 3))) {
+          const witnessReady = d.querySelector("#stage")?.dataset.witnessReady === "true";
+          if (hasDocument && (staticReady || (w.ScrollTrigger?.getById("fate-story") && artwork.length >= 3 && witnessReady))) {
             clearInterval(poll); resolve();
           } else if (performance.now() > deadline) {
             clearInterval(poll);
-            reject(new Error(`Story readiness timed out: document=${hasDocument}, images=${artwork.length}, mode=${mode.value}`));
+            reject(new Error(`Story readiness timed out: document=${hasDocument}, images=${artwork.length}, child=${witnessReady}, mode=${mode.value}`));
           }
         }, 50);
       });
+      readyAt = performance.now();
+      armWatchdog(180000, "regression");
       phase("ready");
       const w = frame.contentWindow, d = frame.contentDocument;
+      w.ScrollTrigger?.getById("fate-story")?.scrubDuration(0);
+      w.ScrollTrigger?.config({ autoRefreshEvents: "visibilitychange,DOMContentLoaded,resize" });
       // A late global load refresh can restore the iframe's original scroll.
       // Static captures have no triggers and keep their explicit test position.
       if (!d.documentElement.classList.contains("enhanced")) {

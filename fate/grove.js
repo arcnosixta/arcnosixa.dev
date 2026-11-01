@@ -85,9 +85,9 @@
     // Three planting bands give actual depth and parallax without tall forms.
     // Jittered tuft centres and unequal blade lengths keep the meadow uncombed.
     const bands = [
-      { count: compact ? 900 : 1800, z0: -7, z1: 14, blades: compact ? 7 : 9, segments: compact ? 3 : 4, size: 1 },
-      { count: compact ? 650 : 1300, z0: -28, z1: -7, blades: compact ? 5 : 6, segments: 3, size: 1.08 },
-      { count: compact ? 350 : 700, z0: -62, z1: -28, blades: compact ? 3 : 4, segments: 2, size: .83 },
+      { count: compact ? 1800 : 3600, z0: -7, z1: 14, blades: compact ? 7 : 9, segments: compact ? 3 : 4, size: 1 },
+      { count: compact ? 1300 : 2600, z0: -28, z1: -7, blades: compact ? 5 : 6, segments: 3, size: 1.08 },
+      { count: compact ? 700 : 1400, z0: -62, z1: -28, blades: compact ? 3 : 4, segments: 2, size: .83 },
     ];
     bands.forEach((band, layer) => {
       for (let i = 0; i < band.count; i++) {
@@ -97,7 +97,7 @@
         if (patch > 1.52 && random() > .24) continue;
         stats.tufts++;
         const height = Math.min(1.4, between(.55, 1.3) * band.size * (.85 + .15 * Math.sin(x * .13 + z * .22)));
-        const phase = between(0, Math.PI * 2), spread = between(.045, .16);
+        const phase = between(0, Math.PI * 2), spread = between(.07, .22);
         for (let blade = 0; blade < band.blades; blade++) {
           const angle = phase + blade * 2.39996 + between(-.55, .55), radius = spread * random();
           const bx = x + Math.cos(angle) * radius, bz = z + Math.sin(angle) * radius;

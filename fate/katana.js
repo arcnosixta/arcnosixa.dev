@@ -20,12 +20,16 @@
       this.katana = new THREE.Group();
       this.katana.name = "black-katana";
       this.katana.scale.setScalar(2);
+      this.katana.rotation.y = Math.PI / 4;
       this.terrain = new THREE.Group();
       this.terrain.name = "black-grove";
       this.scene.add(this.katana, this.terrain);
       this.terrainMaterials = [];
       this.makeKatana();
       this.makeGrove();
+      if (window.FateWitness) this.witness = new window.FateWitness(THREE, {
+        scene: this.scene, quality, x: 66, z: 4, groundY: window.FateGrove.groundHeight(66, 4), height: 6
+      });
       this.resize(1440, 900);
       this.update(0, 0);
     }
@@ -229,6 +233,7 @@
     update(score, time = 0) {
       if (this.disposed) return;
       this.score = score;
+      this.witness?.update(score, time);
       this.katana.visible = score > 128;
       const fall = smooth(128, 146, score);
       this.katana.position.y = mix(330, -8, fall);
@@ -260,14 +265,19 @@
       if (this.mobile) this.target.y += 40 * smooth(134, 146, score) * (1 - smooth(146, 154, score));
       this.camera.lookAt(this.target);
       this.camera.updateMatrixWorld();
+      if (score >= 234 && this.witness && window.FateWitnessCamera) {
+        this.witnessPose = window.FateWitnessCamera.update(this, score, this.camera.position.toArray(), this.target.toArray());
+      }
       this.terrain.visible = true;
       this.terrainMaterials.forEach(material => { material.opacity = 1; });
       this.phase = score <= 128 ? "white" : score < 146 ? "fall" : score < 194 ? "blade" : score < 206 ? "ground" : score < 236 ? "grove" : "ending";
     }
     snapshot() {
-      const angle = this.katana.rotation.z, scale = this.katana.scale.x;
+      const scale = this.katana.scale.x;
+      this.katana.updateMatrixWorld(true);
+      const tip = this.katana.localToWorld(new this.T.Vector3(bladeCenter(0), 0, 0));
       return { score: this.score, phase: this.phase, camera: this.camera.position.toArray(), target: this.target.toArray(),
-        katanaY: this.katana.position.y, tip: [scale * bladeCenter(0) * Math.cos(angle), this.katana.position.y + scale * bladeCenter(0) * Math.sin(angle), 0],
+        katanaY: this.katana.position.y, tip: tip.toArray(),
         scale, embedDepth: 8,
         swordVisible: this.katana.visible, groundVisible: this.terrain.visible, terrain: this.terrain.visible,
         terrainOpacity: this.terrainMaterials[0].opacity, mobile: this.mobile };
@@ -275,6 +285,7 @@
     dispose() {
       if (this.disposed) return;
       this.disposed = true;
+      this.witness?.dispose();
       this.resources.forEach(resource => resource.dispose());
       this.resources.clear(); this.scene.clear();
     }
