@@ -19,6 +19,7 @@
       this.target = new THREE.Vector3();
       this.katana = new THREE.Group();
       this.katana.name = "black-katana";
+      this.katana.scale.setScalar(2);
       this.terrain = new THREE.Group();
       this.terrain.name = "black-grove";
       this.scene.add(this.katana, this.terrain);
@@ -219,7 +220,7 @@
       window.FateGrove.build(this);
     }
     resize(width, height) {
-      this.mobile = width < 700;
+      this.mobile = width <= 700;
       this.width = Math.max(1, width); this.height = Math.max(1, height);
       this.camera.aspect = this.width / this.height;
       this.camera.fov = this.mobile ? 49 : 42;
@@ -229,31 +230,45 @@
       if (this.disposed) return;
       this.score = score;
       this.katana.visible = score > 128;
-      this.katana.position.y = mix(96, 0, smooth(128, 146, score));
+      const fall = smooth(128, 146, score);
+      this.katana.position.y = mix(330, -8, fall);
       this.katana.rotation.z = mix(-.035, 0, smooth(132, 146, score));
       const descent = smooth(146, 194, score);
-      const height = mix(44, 3, descent);
-      const distance = mix(124, 18, smooth(146, 154, score));
+      let targetHeight = score < 146 ? mix(230, 88, fall) : mix(88, 32, descent);
+      let eyeHeight = targetHeight - 10;
+      const distance = score < 146 ? mix(18, 124, fall) : mix(124, 18, smooth(146, 154, score));
+      if (score >= 194) {
+        const groundArrival = smooth(194, 206, score);
+        eyeHeight = mix(22, 3, groundArrival);
+        targetHeight = mix(32, 3, groundArrival);
+      }
       const halfWidth = Math.tan(this.camera.fov * Math.PI / 360) * distance * this.camera.aspect;
-      const offset = halfWidth * (this.mobile ? .53 : .37);
-      const bladeX = bladeCenter(Math.min(44, height));
-      const baseX = bladeCenter(3) + Math.tan(this.camera.fov * Math.PI / 360) * 18 * this.camera.aspect * (this.mobile ? .53 : .37);
+      // The narrow portrait frame deliberately crops the blade's far left edge
+      // so the enormous guard and hanging chain also clear the text column.
+      const framing = this.mobile ? Math.max(.7, .06 + .41 / this.camera.aspect) : Math.max(.37, .7 - this.camera.aspect * .3);
+      const offset = halfWidth * framing;
+      const bladeX = 2 * bladeCenter(clamp((targetHeight + 8) / 88) * 44);
+      const baseX = 2 * bladeCenter(5.5) + Math.tan(this.camera.fov * Math.PI / 360) * 18 * this.camera.aspect * framing;
       const travel = smooth(206, 234, score) * 44;
       const x = score >= 206 ? baseX + travel : bladeX + offset;
-      // At q194 the tip has been reached; from q206 both Y values are constant.
-      this.camera.position.set(x + .7, height, distance);
-      this.target.set(x, height, 0);
+      // During the information passage we look upward, with the pre-existing
+      // landscape below the frustum. Its reveal is a separate downward move.
+      this.camera.position.set(x + .7, eyeHeight, distance);
+      this.target.set(x, targetHeight, 0);
+      // At the mobile wide establishing distance, aim higher until the zoom
+      // closes in; otherwise the wider vertical FOV catches the distant grove.
+      if (this.mobile) this.target.y += 40 * smooth(134, 146, score) * (1 - smooth(146, 154, score));
       this.camera.lookAt(this.target);
       this.camera.updateMatrixWorld();
-      const terrainAlpha = smooth(186, 198, score);
-      this.terrain.visible = terrainAlpha > 0;
-      this.terrainMaterials.forEach(material => { material.opacity = terrainAlpha; });
+      this.terrain.visible = true;
+      this.terrainMaterials.forEach(material => { material.opacity = 1; });
       this.phase = score <= 128 ? "white" : score < 146 ? "fall" : score < 194 ? "blade" : score < 206 ? "ground" : score < 236 ? "grove" : "ending";
     }
     snapshot() {
-      const angle = this.katana.rotation.z;
+      const angle = this.katana.rotation.z, scale = this.katana.scale.x;
       return { score: this.score, phase: this.phase, camera: this.camera.position.toArray(), target: this.target.toArray(),
-        katanaY: this.katana.position.y, tip: [bladeCenter(0) * Math.cos(angle), this.katana.position.y + bladeCenter(0) * Math.sin(angle), 0],
+        katanaY: this.katana.position.y, tip: [scale * bladeCenter(0) * Math.cos(angle), this.katana.position.y + scale * bladeCenter(0) * Math.sin(angle), 0],
+        scale, embedDepth: 8,
         swordVisible: this.katana.visible, groundVisible: this.terrain.visible, terrain: this.terrain.visible,
         terrainOpacity: this.terrainMaterials[0].opacity, mobile: this.mobile };
     }
