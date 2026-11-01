@@ -14,9 +14,9 @@
     { at: 71.5, name: "Ascension" }, { at: 96, name: "Ashes" },
     { at: 116, name: "" }, { at: 128, name: "The descent" },
     { at: 146, name: "Along the blade" }, { at: 194, name: "The ground" },
-    { at: 206, name: "The black meadow" }, { at: 234, name: "The witness" },
-    { at: 250, name: "The first step" }, { at: 280, name: "Before the blade" },
-    { at: 310, name: "The turn" }, { at: 330, name: "Face to face" }
+    { at: 218, name: "The black meadow" }, { at: 256.08, name: "Brave" },
+    { at: 279.6, name: "The witness" }, { at: 289.68, name: "" },
+    { at: 312.08, name: "" }, { at: 330, name: "Face to face" }
   ];
   let manualStill = false;
   try { manualStill = localStorage.getItem("fate-still") === "1"; } catch { /* optional */ }
@@ -46,8 +46,9 @@
     lastFrame = now;
     try { scene.render(state.progress, delta); }
     catch { fallback(true); return; }
-    // The final grove is static. Scrubbing backward wakes rendering again.
-    if (state.progress * scoreLength < at(330)) raf = requestAnimationFrame(frame);
+    // The perspective journey is entirely scroll driven. Scrubbing wakes it;
+    // only the earlier aura and hands need continuous clock-time rendering.
+    if (state.progress * scoreLength < at(116)) raf = requestAnimationFrame(frame);
   }
   function wake() { if (scene && pageVisible && !raf) raf = requestAnimationFrame(frame); }
   function updateUI() {
@@ -64,7 +65,10 @@
       });
     }
     root.classList.toggle("is-journey", score >= 128);
-    stage.dataset.journeyPhase = score < 116 ? "ascension" : score < 128 ? "void" : score < 146 ? "fall" : score < 194 ? "blade" : score < 206 ? "ground" : score < 234 ? "meadow" : score < 250 ? "witness-approach" : score < 275 ? "witness-rise" : score < 295 ? "witness-back" : score < 330 ? "witness-orbit" : "witness-face";
+    root.classList.toggle("is-brave", score >= 194);
+    const arrival = Math.max(0, Math.min(1, (score-194)/24));
+    root.style.setProperty("--brave-arrival", (arrival*arrival*(3-2*arrival)).toFixed(4));
+    stage.dataset.journeyPhase = score < 116 ? "ascension" : score < 128 ? "void" : score < 146 ? "fall" : score < 194 ? "blade" : score < 218 ? "clearing-arrival" : window.braveCameraPose((score-218)/112, stage.clientWidth/stage.clientHeight).phase;
     if (root.classList.contains("is-paper") !== (score >= 110)) {
       root.classList.toggle("is-paper", score >= 110);
       document.querySelector('meta[name="theme-color"]').content = score >= 110 ? "#ffffff" : "#000000";
@@ -153,7 +157,8 @@
     scene?.dispose(); scene = null;
     root.classList.remove("enhanced");
     root.classList.remove("is-paper");
-    root.classList.remove("is-void", "is-journey");
+    root.classList.remove("is-void", "is-journey", "is-brave");
+    root.style.removeProperty("--brave-arrival");
     root.style.removeProperty("--fate-paper");
     document.querySelectorAll(".fate-hud, .sound-control").forEach(control => {
       control.inert = false;
@@ -192,10 +197,10 @@
     const request = ++version;
     try {
       await script("../vendor/three.min.js");
-      await script("../vendor/GLTFLoader.js");
-      await script(`grove.js${assetVersion}`);
-      await script(`witness.js${assetVersion}`);
-      await script(`witness-camera.js${assetVersion}`);
+      await script(`brave-world.js${assetVersion}`);
+      await script(`brave-camera.js${assetVersion}`);
+      await script(`brave-ground.js${assetVersion}`);
+      await script(`brave.js${assetVersion}`);
       await script(`katana.js${assetVersion}`);
       await script(`scene.js${assetVersion}`);
       if (request !== version || reduced.matches || manualStill) return;

@@ -27,8 +27,8 @@
       this.terrainMaterials = [];
       this.makeKatana();
       this.makeGrove();
-      if (window.FateWitness) this.witness = new window.FateWitness(THREE, {
-        scene: this.scene, quality, x: 112, z: 4, groundY: window.FateGrove.groundHeight(112, 4), height: 148
+      if (!this.brave && window.FateWitness) this.witness = new window.FateWitness(THREE, {
+        scene: this.scene, quality, x: 112, z: 4, groundY: this.groundHeight(112, 4), height: 148
       });
       this.resize(1440, 900);
       this.update(0, 0);
@@ -221,7 +221,8 @@
       this.mesh(chainGeometry, metal).name = "katana-chain";
     }
     makeGrove() {
-      window.FateGrove.build(this);
+      if (window.FateBrave) this.brave = new window.FateBrave(this);
+      else window.FateGrove.build(this);
     }
     resize(width, height) {
       this.mobile = width <= 700;
@@ -233,7 +234,7 @@
     update(score, time = 0) {
       if (this.disposed) return;
       this.score = score;
-      const far = this.witness ? mix(240, 900, smooth(234, 250, score)) : 240;
+      const far = this.brave ? 1200 : this.witness ? mix(240, 900, smooth(234, 250, score)) : 240;
       if (this.camera.far !== far) { this.camera.far = far; this.camera.updateProjectionMatrix(); }
       this.witness?.update(score, time);
       this.katana.visible = score > 128;
@@ -273,6 +274,7 @@
       this.terrain.visible = true;
       this.terrainMaterials.forEach(material => { material.opacity = 1; });
       this.phase = score <= 128 ? "white" : score < 146 ? "fall" : score < 194 ? "blade" : score < 206 ? "ground" : score < 236 ? "grove" : "ending";
+      this.brave?.update(score);
     }
     snapshot() {
       const scale = this.katana.scale.x;
@@ -288,6 +290,7 @@
       if (this.disposed) return;
       this.disposed = true;
       this.witness?.dispose();
+      this.brave?.dispose();
       this.resources.forEach(resource => resource.dispose());
       this.resources.clear(); this.scene.clear();
     }

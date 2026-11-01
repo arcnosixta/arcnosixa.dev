@@ -44,7 +44,10 @@
         const turn = angle + Math.PI / 2 + twist * t;
         const radius = width * Math.pow(Math.max(0, 1 - t), .82) * (.72 + .28 * Math.sin(t * Math.PI));
         const sx = Math.cos(turn) * radius, sz = Math.sin(turn) * radius;
-        buffer.positions.push(cx - sx, cy, cz - sz, cx + sx, cy, cz + sz);
+        // Both edges of a wide blade meet the rendered slope, not just its centre.
+        const leftY = i === 0 ? surfaceHeight(cx - sx, cz - sz) - .035 : cy;
+        const rightY = i === 0 ? surfaceHeight(cx + sx, cz + sz) - .035 : cy;
+        buffer.positions.push(cx - sx, leftY, cz - sz, cx + sx, rightY, cz + sz);
         if (i < segments) {
           const a = first + i * 2;
           buffer.indices.push(a, a + 1, a + 2, a + 1, a + 3, a + 2);
@@ -71,7 +74,8 @@
       }
       stats.seedHeads++;
     }
-    const earth = new T.PlaneGeometry(1800, 1800, compact ? 150 : 220, compact ? 150 : 220);
+    const divisions = compact ? 150 : 220;
+    const earth = new T.PlaneGeometry(1800, 1800, divisions, divisions);
     earth.rotateX(-Math.PI / 2);
     const points = earth.attributes.position;
     for (let i = 0; i < points.count; i++) {
@@ -79,6 +83,20 @@
       const texture = (Math.sin(x * .49 + z * .31) + Math.sin(z * .63 - x * .17)) * .018 * clamp(distance / 5);
       points.setY(i, groundHeight(x, z) + texture);
     }
+    // Sample the same two triangles that PlaneGeometry renders in each cell.
+    // The analytic hills can sit above a coarse triangle, especially on mobile;
+    // using that formula for plants used to leave whole patches floating.
+    const surfaceHeight = (x, z) => {
+      const column = Math.min(divisions - 1, Math.floor(clamp((x + 900) / 1800) * divisions));
+      const row = Math.min(divisions - 1, Math.floor(clamp((z + 900) / 1800) * divisions));
+      const a = row * (divisions + 1) + column, b = a + divisions + 1, d = a + 1, c = b + 1;
+      const u = clamp((x - points.getX(a)) / (points.getX(d) - points.getX(a)));
+      const v = clamp((z - points.getZ(a)) / (points.getZ(b) - points.getZ(a)));
+      return u + v <= 1
+        ? points.getY(a) + (points.getY(d) - points.getY(a)) * u + (points.getY(b) - points.getY(a)) * v
+        : points.getY(c) + (points.getY(b) - points.getY(c)) * (1 - u) + (points.getY(d) - points.getY(c)) * (1 - v);
+    };
+    journey.groundHeight = surfaceHeight;
     earth.computeBoundingSphere();
     const ground = journey.mesh(earth, material(), journey.terrain); ground.name = "organic-black-earth";
     stats.triangles += earth.index.count / 3; stats.meshes++;
@@ -106,14 +124,14 @@
           const angle = phase + blade * 2.39996 + between(-.55, .55), radius = spread * random();
           const bx = x + Math.cos(angle) * radius, bz = z + Math.sin(angle) * radius;
           if (clear(bx, bz)) continue;
-          const by = groundHeight(bx, bz) - .035;
+          const by = surfaceHeight(bx, bz) - .035;
           const h = height * between(.68, 1.08);
           const width = between(.04, .09) * (layer === 0 ? (compact ? 1.3 : 1) : 4.2);
           ribbon(grass, bx, by, bz, angle, h, width, h * between(.16, .58), band.segments, between(-.5, .5));
           stats.grassBlades++;
         }
         if (i % (layer === 0 ? 71 : 131) === 0) {
-          seedHead(x, groundHeight(x, z) - .025, z, phase, Math.min(1.4, height * between(.95, 1.18)));
+          seedHead(x, surfaceHeight(x, z) - .035, z, phase, Math.min(1.4, height * between(.95, 1.18)));
         }
       }
     });

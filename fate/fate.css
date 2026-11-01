@@ -125,6 +125,12 @@ button:disabled { opacity: .4; cursor: default; }
 .is-void :is(.fate-hud, .sound-control, .sound-status, .chapter-marker, .story-progress, .grain, .film-edge, .vignette) { visibility: hidden !important; }
 html.is-void { scrollbar-color: #fff #fff; }
 .is-journey :is(.vignette, .film-edge) { visibility: hidden; }
+.is-brave .vignette { visibility: visible; opacity: var(--brave-arrival, 0); background: radial-gradient(ellipse at 50% 43%, transparent 34%, #14203718 73%, #03050bc2 100%); }
+.is-brave .film-edge { visibility: visible; height: 3svh; background: #050609; opacity: var(--brave-arrival, 0); }
+.brave-text-space { position: absolute; z-index: 7; pointer-events: none; visibility: hidden; }
+.still-brave { padding: 0; background: #050609; }
+.still-brave picture { width: 100%; height: 100svh; display: block; }
+.still-brave img { display: block; width: 100%; height: 100%; object-fit: contain; }
 .is-still .still-toggle { color: #eee; }
 @keyframes appear { to { opacity: 1; } }
 @media (max-width: 700px) {

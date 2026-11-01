@@ -48,6 +48,8 @@
       this.renderer.setClearColor(0x000000, 1);
       this.renderer.setPixelRatio(Math.min(devicePixelRatio || 1, this.quality < 1 ? 1.25 : 1.65));
       this.renderer.outputEncoding = T.sRGBEncoding;
+      this.renderer.shadowMap.enabled = true;
+      this.renderer.shadowMap.type = T.PCFSoftShadowMap;
       this.scene = new T.Scene();
       this.camera = new T.PerspectiveCamera(42, 1, .1, 100);
       this.target = new T.Vector3(0, 0, 0);
@@ -85,7 +87,7 @@
         this.makeCongregation(sea);
         this.ready = true;
       });
-      const witness = this.journey.witness.load(new URL("../assets/fate/witness.glb", document.baseURI).href).then(() => {
+      const witness = this.journey.brave.load(new URL("../assets/fate/brave-boy-approved.png", document.baseURI).href).then(() => {
         if (!this.disposed) document.getElementById("stage").dataset.witnessReady = "true";
       });
       await Promise.all([plates, witness]);

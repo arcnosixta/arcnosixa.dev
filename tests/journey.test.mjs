@@ -208,6 +208,41 @@ test("the reference katana has a slender blade, open angular guard and physical 
   } finally { journey.dispose(); }
 });
 
+test("grass roots follow rendered terrain triangles at both quality levels", () => {
+  for (const quality of [1, .6]) {
+    const journey = new FateJourney(THREE, { quality });
+    try {
+      const ground = journey.scene.getObjectByName("organic-black-earth");
+      const grass = journey.scene.getObjectByName("dense-curved-meadow-grasses").geometry;
+      const positions = grass.attributes.position, index = grass.index;
+      const ray = new THREE.Raycaster(new THREE.Vector3(), new THREE.Vector3(0, -1, 0));
+      let previous = -4, roots = 0, hits = 0;
+      for (let i = 0; i < index.count; i += 6) {
+        const first = index.getX(i);
+        if (first !== previous + 2) {
+          roots++;
+          for (const vertex of [first, first + 1]) {
+            const x = positions.getX(vertex), z = positions.getZ(vertex), y = positions.getY(vertex);
+            assert.ok(Math.abs(journey.groundHeight(x, z) - y - .035) < .0001,
+              `both blade edges must be embedded in the surface at ${x}, ${z}`);
+          }
+          if (roots % 2401 === 0) {
+            ray.ray.origin.set(positions.getX(first), 20, positions.getZ(first));
+            const hit = ray.intersectObject(ground, false)[0];
+            assert.ok(hit, "sampled root has rendered earth beneath it");
+            assert.ok(Math.abs(hit.point.y - positions.getY(first) - .035) < .0001,
+              "grass must meet actual triangles, including their diagonal and displacement");
+            hits++;
+          }
+        }
+        previous = first;
+      }
+      assert.equal(roots, journey.groveStats.grassBlades);
+      assert.ok(hits >= 30, "check roots across near and far planting bands");
+    } finally { journey.dispose(); }
+  }
+});
+
 test("the treeless meadow has dense real grasses, bounded draw work and complete disposal", () => {
   const journey = new FateJourney(THREE);
   const stats = journey.groveStats;
