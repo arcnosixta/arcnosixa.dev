@@ -5,13 +5,8 @@
   const clamp = value => Math.max(0, Math.min(1, value));
   const smooth = (a, b, value) => { const t = clamp((value - a) / (b - a)); return t * t * (3 - 2 * t); };
   const mix = (a, b, t) => a + (b - a) * t;
-  const randomSource = initial => {
-    let seed = initial;
-    return () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; };
-  };
   const bladeCenter = y => 1.25 * Math.pow(clamp(y / 44), 1.8) - .62 * (1 - clamp(y / 4.2));
   const bladeWidth = y => y < 4.2 ? 1.12 * clamp(y / 4.2) : mix(1.12, 1.5, clamp((y - 4.2) / 39.8));
-  const groundHeight = (x, z) => Math.sin((x + .62) * .08) * .13 + Math.sin(z * .12) * .085;
 
   class FateJourney {
     constructor(THREE, { quality = 1 } = {}) {
@@ -221,116 +216,7 @@
       this.mesh(chainGeometry, metal).name = "katana-chain";
     }
     makeGrove() {
-      const T = this.T, random = randomSource(87291);
-      const earth = this.material(0x030303, { transparent: true, opacity: 0, side: T.DoubleSide });
-      const treeInk = this.material(0x030303, { transparent: true, opacity: 0 });
-      const grassInk = this.material(0x030303, { transparent: true, opacity: 0, side: T.DoubleSide });
-      this.terrainMaterials.push(earth, treeInk, grassInk);
-      const ground = new T.PlaneGeometry(300, 220, 80, 44);
-      ground.rotateX(-Math.PI / 2); ground.translate(30, -.055, -85);
-      const groundPositions = ground.attributes.position;
-      for (let i = 0; i < groundPositions.count; i++) groundPositions.setY(i, groundHeight(groundPositions.getX(i), groundPositions.getZ(i)) + .015);
-      ground.computeVertexNormals();
-      this.mesh(ground, earth, this.terrain);
-
-      const vertices = [], triangles = [];
-      const segment = (a, b, r1, r2, sides = 6) => {
-        const axis = new T.Vector3().subVectors(b, a).normalize();
-        const normal = new T.Vector3(Math.abs(axis.y) < .94 ? 0 : 1, Math.abs(axis.y) < .94 ? 1 : 0, 0).cross(axis).normalize();
-        const across = new T.Vector3().crossVectors(axis, normal);
-        const first = vertices.length / 3;
-        for (const [center, radius] of [[a, r1], [b, r2]]) {
-          for (let j = 0; j < sides; j++) {
-            const angle = j / sides * Math.PI * 2;
-            const p = center.clone().addScaledVector(normal, Math.cos(angle) * radius).addScaledVector(across, Math.sin(angle) * radius);
-            vertices.push(p.x, p.y, p.z);
-          }
-        }
-        for (let j = 0; j < sides; j++) {
-          const k = (j + 1) % sides;
-          triangles.push(first + j, first + k, first + sides + j, first + k, first + sides + k, first + sides + j);
-        }
-      };
-      const ellipsoid = (center, radii, rings = 7, sides = 14) => {
-        const first = vertices.length / 3;
-        for (let ring = 0; ring <= rings; ring++) {
-          const phi = ring / rings * Math.PI;
-          for (let side = 0; side <= sides; side++) {
-            const theta = side / sides * Math.PI * 2;
-            vertices.push(center.x + Math.sin(phi) * Math.cos(theta) * radii.x,
-              center.y + Math.cos(phi) * radii.y, center.z + Math.sin(phi) * Math.sin(theta) * radii.z);
-          }
-        }
-        for (let ring = 0; ring < rings; ring++) for (let side = 0; side < sides; side++) {
-          const a = first + ring * (sides + 1) + side, b = a + sides + 1;
-          triangles.push(a, a + 1, b, a + 1, b + 1, b);
-        }
-      };
-      const tree = (x, z, height, kind) => {
-        const base = new T.Vector3(x, groundHeight(x, z), z);
-        const lean = (random() - .5) * height * .11;
-        const crown = base.clone().add(new T.Vector3(lean, height, 0));
-        const radius = height * (.019 + random() * .009);
-        segment(base, crown, radius, .025);
-        if (kind === "pine") {
-          for (let tier = 0; tier < 7; tier++) {
-            const y = height * (.25 + tier * .095), spread = height * (.22 - tier * .025);
-            const b = base.clone().add(new T.Vector3(lean * y / height, y, 0));
-            segment(b, b.clone().add(new T.Vector3(0, height * .28, 0)), spread, .01, 7);
-          }
-          return;
-        }
-        const count = kind === "bare" ? 8 : 6;
-        for (let branch = 0; branch < count; branch++) {
-          const fraction = .36 + branch / count * .55;
-          const start = base.clone().lerp(crown, fraction);
-          const side = branch % 2 ? 1 : -1;
-          const end = start.clone().add(new T.Vector3(side * height * (.15 + random() * .12), height * (.12 + random() * .15), (random() - .5) * height * .2));
-          segment(start, end, radius * .57, .02);
-          for (let twig = 0; twig < 3; twig++) {
-            const fork = start.clone().lerp(end, .4 + twig * .22);
-            const tip = fork.clone().add(new T.Vector3(side * height * (.065 + random() * .05), height * (.1 + random() * .1), (random() - .5) * height * .13));
-            segment(fork, tip, radius * .24, .006, 5);
-          }
-          if (kind === "crown") ellipsoid(end, new T.Vector3(height * (.13 + random() * .08), height * (.09 + random() * .06), height * .12));
-        }
-      };
-      // Three depth layers yield real parallax as the camera translates sideways.
-      const foreground = [[10, 7, 15, "bare"], [26, 5, 17, "crown"], [43, 8, 16, "bare"], [61, 6, 18, "pine"], [80, 7, 17, "crown"]];
-      foreground.forEach(data => tree(...data));
-      for (let i = 0; i < 12; i++) tree(-22 + i * 10 + random() * 3, -10 - random() * 12,
-        9 + random() * 8, i % 3 === 0 ? "bare" : i % 3 === 1 ? "crown" : "pine");
-      const distantCount = this.quality < 1 ? 28 : 52;
-      for (let i = 0; i < distantCount; i++) tree(-45 + i / distantCount * 190, -34 - random() * 26,
-        8 + random() * 10, i % 4 === 0 ? "bare" : i % 3 === 0 ? "crown" : "pine");
-      const treeGeometry = new T.BufferGeometry();
-      treeGeometry.setAttribute("position", new T.Float32BufferAttribute(vertices, 3));
-      treeGeometry.setIndex(triangles); treeGeometry.computeVertexNormals();
-      this.mesh(treeGeometry, treeInk, this.terrain);
-
-      const grass = [], grassCount = this.quality < 1 ? 1050 : 2400;
-      for (let i = 0; i < grassCount; i++) {
-        const x = -35 + random() * 150, z = -21 + random() * 33, y = groundHeight(x, z);
-        const height = .16 + Math.pow(random(), 2) * .75, width = .025 + random() * .06;
-        grass.push(x - width, y, z, x + width, y, z, x + (random() - .5) * .33, y + height, z + (random() - .5) * .1);
-      }
-      const grassGeometry = new T.BufferGeometry();
-      grassGeometry.setAttribute("position", new T.Float32BufferAttribute(grass, 3));
-      grassGeometry.computeVertexNormals();
-      this.mesh(grassGeometry, grassInk, this.terrain);
-      const stones = [], stoneIndices = [];
-      // Low angular stones make the ground plane legible without introducing color.
-      for (let i = 0; i < 80; i++) {
-        const x = -25 + random() * 130, z = -19 + random() * 29, y = groundHeight(x, z);
-        const radius = .1 + random() * .55, first = stones.length / 3;
-        stones.push(x - radius, y, z, x, y + radius * .55, z - radius * .2, x + radius, y, z,
-          x, y + radius * .2, z + radius * .8);
-        stoneIndices.push(first, first + 1, first + 2, first, first + 3, first + 1, first + 1, first + 3, first + 2);
-      }
-      const stoneGeometry = new T.BufferGeometry();
-      stoneGeometry.setAttribute("position", new T.Float32BufferAttribute(stones, 3));
-      stoneGeometry.setIndex(stoneIndices); stoneGeometry.computeVertexNormals();
-      this.mesh(stoneGeometry, treeInk, this.terrain);
+      window.FateGrove.build(this);
     }
     resize(width, height) {
       this.mobile = width < 700;

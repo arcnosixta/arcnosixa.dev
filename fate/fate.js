@@ -190,6 +190,7 @@
     const request = ++version;
     try {
       await script("../vendor/three.min.js");
+      await script(`grove.js${assetVersion}`);
       await script(`katana.js${assetVersion}`);
       await script(`scene.js${assetVersion}`);
       if (request !== version || reduced.matches || manualStill) return;
