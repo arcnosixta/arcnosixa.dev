@@ -9,8 +9,8 @@
     let seed = initial;
     return () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; };
   };
-  const bladeCenter = y => 1.55 * Math.pow(clamp(y / 44), 1.65) - .62 * (1 - smooth(0, 3.2, y));
-  const bladeWidth = y => 2.15 * smooth(0, 2.6, y) * (1 - .12 * clamp(y / 44));
+  const bladeCenter = y => 1.25 * Math.pow(clamp(y / 44), 1.8) - .62 * (1 - clamp(y / 4.2));
+  const bladeWidth = y => y < 4.2 ? 1.12 * clamp(y / 4.2) : mix(1.12, 1.5, clamp((y - 4.2) / 39.8));
   const groundHeight = (x, z) => Math.sin((x + .62) * .08) * .13 + Math.sin(z * .12) * .085;
 
   class FateJourney {
@@ -49,95 +49,176 @@
     makeKatana() {
       const T = this.T;
       const black = this.material(0x030304);
-      const face = this.material(0x0b0b0e);
-      const bevel = this.material(0x2a2b2f);
-      const crimson = this.material(0xb10925);
-      const darkCrimson = this.material(0x720b1c);
-      const positions = [], indices = [];
-      const steps = 176;
-      // An actual eight-sided cross-section: a broad dark face and narrow bevels.
-      for (let i = 0; i <= steps; i++) {
-        const y = i / steps * 44, x = bladeCenter(y), w = Math.max(.002, bladeWidth(y));
-        const inset = Math.min(.11, w * .22);
-        const section = [[-w / 2, 0], [-w / 2 + inset, .12], [w / 2 - inset, .12], [w / 2, .035],
-          [w / 2, -.035], [w / 2 - inset, -.12], [-w / 2 + inset, -.12], [-w / 2, -.015]];
-        section.forEach(([dx, z]) => positions.push(x + dx, y, z));
+      const steel = this.material(0x0c0e11);
+      const edgeSteel = this.material(0x30343a);
+      const bevel = this.material(0x202329);
+      const tipSteel = this.material(0x1a1d22);
+      const crimson = this.material(0x961025);
+      const darkCrimson = this.material(0x5e0a18);
+      const metal = this.material(0x171a1e);
+      const shoulder = bladeCenter(44);
+      const stations = [0, 4.2];
+      for (let y = 4.45; y < 44; y += .22) stations.push(y);
+      stations.push(44);
+      const positions = [], buckets = [[], [], [], [], []];
+      const section = [[-.5, 0], [-.4, .055], [-.08, .15], [.46, .085], [.5, .045], [.5, -.045], [-.08, -.15], [-.4, -.055]];
+      stations.forEach(y => {
+        const w = Math.max(.001, bladeWidth(y)), depth = Math.min(1, y / 4.2), x = bladeCenter(y);
+        section.forEach(([fraction, z]) => positions.push(x + fraction * w, y, z * depth));
+      });
+      for (let i = 0; i < stations.length - 1; i++) for (let side = 0; side < 8; side++) {
+        const a = i * 8 + side, b = i * 8 + (side + 1) % 8, c = a + 8, d = b + 8;
+        let surface = side === 0 || side === 7 ? 2 : side === 1 || side === 6 ? 3 : side === 4 ? 0 : 1;
+        if (i === 0 && side >= 1 && side <= 3) surface = 4;
+        buckets[surface].push(a, b, c, b, d, c);
       }
-      const geometry = this.own(new T.BufferGeometry());
+      const geometry = this.own(new T.BufferGeometry()), indices = [];
       geometry.setAttribute("position", new T.Float32BufferAttribute(positions, 3));
-      for (let side = 0; side < 8; side++) {
-        const first = indices.length;
-        for (let i = 0; i < steps; i++) {
-          const a = i * 8 + side, b = i * 8 + (side + 1) % 8;
-          const c = a + 8, d = b + 8;
-          indices.push(a, b, c, b, d, c);
-        }
-        geometry.addGroup(first, indices.length - first, side === 0 || side === 6 ? 2 : side === 1 || side === 5 ? 1 : 0);
-      }
-      geometry.setIndex(indices);
-      geometry.computeVertexNormals();
-      const blade = new T.Mesh(geometry, [black, face, bevel]);
-      blade.name = "curved-black-blade";
-      this.katana.add(blade);
+      buckets.forEach((triangles, material) => { geometry.addGroup(indices.length, triangles.length, material); indices.push(...triangles); });
+      geometry.setIndex(indices); geometry.computeVertexNormals();
+      const blade = new T.Mesh(geometry, [black, steel, edgeSteel, bevel, tipSteel]);
+      blade.name = "curved-black-blade"; this.katana.add(blade);
 
-      const ribbon = (path, width, material, z = .125) => {
-        const vertices = [], triangles = [];
-        for (let i = 0; i < path.length; i++) {
+      const frontSurface = (x, y) => {
+        const fraction = (x - bladeCenter(y)) / Math.max(.001, bladeWidth(y));
+        const profile = section.slice(0, 5);
+        for (let i = 1; i < profile.length; i++) if (fraction <= profile[i][0]) {
+          return mix(profile[i - 1][1], profile[i][1], clamp((fraction - profile[i - 1][0]) / (profile[i][0] - profile[i - 1][0]))) * Math.min(1, y / 4.2);
+        }
+        return .045;
+      };
+      const inkPositions = [], inkIndices = [];
+      const ribbon = (path, width) => {
+        const first = inkPositions.length / 3;
+        path.forEach(([x, y], i) => {
           const previous = path[Math.max(0, i - 1)], next = path[Math.min(path.length - 1, i + 1)];
           const dx = next[0] - previous[0], dy = next[1] - previous[1], length = Math.hypot(dx, dy) || 1;
-          const nx = -dy / length * width / 2, ny = dx / length * width / 2;
-          vertices.push(path[i][0] + nx, path[i][1] + ny, z, path[i][0] - nx, path[i][1] - ny, z);
-          if (i < path.length - 1) { const a = i * 2; triangles.push(a, a + 1, a + 2, a + 1, a + 3, a + 2); }
-        }
-        const g = new T.BufferGeometry();
-        g.setAttribute("position", new T.Float32BufferAttribute(vertices, 3)); g.setIndex(triangles); g.computeVertexNormals();
-        return this.mesh(g, material);
+          for (const side of [-1, 1]) {
+            const px = x + side * dy / length * width / 2, py = y - side * dx / length * width / 2;
+            inkPositions.push(px, py, frontSurface(px, py) + .004);
+          }
+          if (i < path.length - 1) { const a = first + i * 2; inkIndices.push(a, a + 1, a + 2, a + 1, a + 3, a + 2); }
+        });
       };
-      // Etching follows the curvature instead of floating beside the steel.
-      const river = [], edge = [];
-      for (let i = 0; i <= 220; i++) {
-        const y = 2.1 + i / 220 * 40.7;
-        river.push([bladeCenter(y) + Math.sin(y * .67) * .245 + Math.sin(y * 1.71) * .035, y]);
-        edge.push([bladeCenter(y) - bladeWidth(y) * .34 + Math.sin(y * 1.25) * .045, y]);
+      const spineTrace = [], hairline = [];
+      for (let i = 0; i <= 230; i++) {
+        const y = 4.8 + i / 230 * 38.1, w = bladeWidth(y);
+        spineTrace.push([bladeCenter(y) + w * (.22 + Math.sin(y * .58) * .035), y]);
+        hairline.push([bladeCenter(y) + w * (.31 + Math.sin(y * .58 + .3) * .02), y]);
       }
-      ribbon(river, .065, crimson);
-      ribbon(edge, .025, darkCrimson);
-      for (let mark = 0; mark < 7; mark++) {
-        const y = 5.2 + mark * 5.45, x = bladeCenter(y);
-        const knot = [[x, y - 1.1], [x - .48, y - .34], [x + .36, y + .2], [x, y + 1.05],
-          [x - .29, y + .22], [x + .48, y - .34], [x, y - 1.1]];
-        ribbon(knot, .045, crimson, .132);
-        ribbon([[x - .58, y + .55], [x - .19, y + .28], [x + .09, y + .5]], .025, darkCrimson, .134);
+      ribbon(spineTrace, .025); ribbon(hairline, .009);
+      for (let mark = 0; mark < 6; mark++) {
+        const y = 7.2 + mark * 6.2, x = bladeCenter(y) + bladeWidth(y) * .22;
+        ribbon([[x, y - .62], [x - .12, y - .18], [x + .11, y + .12], [x + .02, y + .65]], .017);
+        ribbon([[x - .11, y - .19], [x - .21, y - .06], [x - .17, y + .22]], .011);
       }
+      const engraving = new T.BufferGeometry();
+      engraving.setAttribute("position", new T.Float32BufferAttribute(inkPositions, 3)); engraving.setIndex(inkIndices); engraving.computeVertexNormals();
+      this.mesh(engraving, crimson).name = "crimson-steel-inlay";
+      const yokotePoints = [new T.Vector3(bladeCenter(4.2) - bladeWidth(4.2) * .49, 4.2, .006),
+        new T.Vector3(bladeCenter(4.2) - bladeWidth(4.2) * .08, 4.2, .154),
+        new T.Vector3(bladeCenter(4.2) + bladeWidth(4.2) * .46, 4.2, .09)];
+      const yokote = this.mesh(new T.TubeGeometry(new T.CatmullRomCurve3(yokotePoints), 12, .012, 4, false), edgeSteel);
+      yokote.name = "kissaki-yokote";
 
-      const shoulder = bladeCenter(44);
-      const collar = this.mesh(new T.BoxGeometry(2.02, .42, .4), black);
-      collar.position.set(shoulder, 44.13, 0);
-      const collarLine = this.mesh(new T.BoxGeometry(1.98, .045, .415), crimson);
-      collarLine.position.set(shoulder, 44.22, 0);
-      const guard = this.mesh(new T.CylinderGeometry(1.96, 1.96, .28, 32), black);
-      guard.scale.z = .54; guard.position.set(shoulder, 44.58, 0);
-      const guardRim = this.mesh(new T.CylinderGeometry(1.82, 1.82, .035, 32), bevel);
-      guardRim.scale.z = .54; guardRim.position.set(shoulder, 44.73, 0);
-      const grip = this.mesh(new T.CylinderGeometry(.48, .52, 8.45, 12), black);
-      grip.scale.z = .69; grip.position.set(shoulder, 49.02, 0);
-      // Red underwrap diamonds are inset into a black tsuka, not a red handle.
-      const diamondVertices = [], diamondIndices = [];
-      for (let i = 0; i < 11; i++) {
-        const y = 45.2 + i * .72, halfWidth = .28, halfHeight = .29;
-        const base = diamondVertices.length / 3;
-        diamondVertices.push(shoulder, y - halfHeight, .365, shoulder + halfWidth, y, .365,
-          shoulder, y + halfHeight, .365, shoulder - halfWidth, y, .365);
-        diamondIndices.push(base, base + 1, base + 2, base, base + 2, base + 3);
+      const merge = parts => {
+        const vertices = [], normals = [];
+        parts.forEach(part => {
+          const expanded = part.index ? part.toNonIndexed() : part;
+          vertices.push(...expanded.attributes.position.array);
+          if (!expanded.attributes.normal) expanded.computeVertexNormals();
+          normals.push(...expanded.attributes.normal.array);
+          if (expanded !== part) expanded.dispose(); part.dispose();
+        });
+        const g = new T.BufferGeometry();
+        g.setAttribute("position", new T.Float32BufferAttribute(vertices, 3));
+        g.setAttribute("normal", new T.Float32BufferAttribute(normals, 3));
+        return g;
+      };
+      const extrude = (points, depth, holes = []) => {
+        const shape = new T.Shape(points.map(([x, y]) => new T.Vector2(x, y)));
+        holes.forEach(points => shape.holes.push(new T.Path(points.map(([x, y]) => new T.Vector2(x, y)))));
+        return new T.ExtrudeGeometry(shape, { depth, bevelEnabled: true, bevelThickness: .023, bevelSize: .023, bevelSegments: 1, steps: 1 });
+      };
+      const habakiGeometry = extrude([[-.88, 0], [-.77, -.59], [.75, -.59], [.86, 0]], .39);
+      habakiGeometry.translate(shoulder, 44.5, -.195);
+      this.mesh(habakiGeometry, metal).name = "katana-habaki";
+      const habakiLip = this.mesh(new T.BoxGeometry(1.68, .035, .41), edgeSteel); habakiLip.position.set(shoulder, 44.47, 0);
+
+      // Open four-hook guard: shaped metal around a real aperture, not a disk.
+      const guardParts = [];
+      const hub = extrude([[-.98, -.58], [.98, -.58], [.98, .58], [-.98, .58]], .21,
+        [[[-.83, -.22], [-.83, .22], [.83, .22], [.83, -.22]]]);
+      hub.rotateX(-Math.PI / 2); guardParts.push(hub);
+      for (let arm = 0; arm < 4; arm++) {
+        const hook = extrude([[.71, -.19], [1.53, -.19], [1.53, .82], [1.27, .82], [1.27, .09], [.71, .09]], .21);
+        hook.rotateX(-Math.PI / 2); hook.rotateY(arm * Math.PI / 2); guardParts.push(hook);
       }
-      const wrapGeometry = new T.BufferGeometry();
-      wrapGeometry.setAttribute("position", new T.Float32BufferAttribute(diamondVertices, 3));
-      wrapGeometry.setIndex(diamondIndices); wrapGeometry.computeVertexNormals();
-      this.mesh(wrapGeometry, darkCrimson);
-      const pommel = this.mesh(new T.CylinderGeometry(.51, .49, .36, 12), black);
-      pommel.scale.z = .72; pommel.position.set(shoulder, 53.42, 0);
-      const pommelScar = this.mesh(new T.BoxGeometry(.13, .26, .025), crimson);
-      pommelScar.position.set(shoulder, 53.42, .379);
+      const guardGeometry = merge(guardParts), colors = [];
+      for (let i = 0; i < guardGeometry.attributes.normal.count; i++) {
+        const normal = new T.Vector3().fromBufferAttribute(guardGeometry.attributes.normal, i);
+        const shade = .034 + Math.abs(normal.z) * .055 + Math.abs(normal.x) * .012;
+        const color = new T.Color(shade, shade, shade).convertSRGBToLinear(); colors.push(color.r, color.g, color.b);
+      }
+      guardGeometry.setAttribute("color", new T.Float32BufferAttribute(colors, 3));
+      const guard = this.mesh(guardGeometry, this.material(0xffffff, { vertexColors: true }));
+      guard.name = "katana-angular-guard"; guard.position.set(shoulder, 44.64, 0);
+
+      const grip = new T.Group(); grip.name = "katana-grip"; grip.position.set(shoulder, 45, 0); grip.rotation.z = -Math.atan(.035); this.katana.add(grip);
+      const underwrap = this.mesh(new T.CylinderGeometry(.39, .43, 8.25, 28), darkCrimson, grip);
+      underwrap.scale.z = .68; underwrap.position.y = 4.25; underwrap.name = "tsuka-red-underwrap";
+      const wrapParts = [], bandWidth = .15;
+      for (let row = 0; row < 14; row++) for (const direction of [-1, 1]) for (const face of [-1, 1]) {
+        const vertices = [], triangles = [];
+        const center = .3 + row * .6;
+        for (let i = 0; i <= 28; i++) {
+          const angle = -Math.PI / 2 + i / 28 * Math.PI;
+          const x = Math.sin(angle) * .447, z = Math.cos(angle) * .306 * face;
+          const y = center + direction * Math.sin(angle) * .315;
+          for (const side of [-1, 1]) vertices.push(x, Math.max(.12, Math.min(8.35, y + side * bandWidth / 2)), z);
+          if (i < 28) { const a = i * 2; triangles.push(a, a + 1, a + 2, a + 1, a + 3, a + 2); }
+        }
+        const band = new T.BufferGeometry(); band.setAttribute("position", new T.Float32BufferAttribute(vertices, 3));
+        band.setIndex(triangles); band.computeVertexNormals(); wrapParts.push(band);
+      }
+      // Double-sided only for the thin wrap bands that bend around the oval core.
+      const wrap = this.mesh(merge(wrapParts), this.material(0x030304, { side: T.DoubleSide }), grip); wrap.name = "katana-wrap";
+      const fuchi = this.mesh(new T.CylinderGeometry(.455, .47, .39, 28), black, grip); fuchi.scale.z = .7; fuchi.position.y = .05; fuchi.name = "katana-fuchi";
+      const fuchiLip = this.mesh(new T.CylinderGeometry(.462, .462, .035, 28), metal, grip); fuchiLip.scale.z = .7; fuchiLip.position.y = .245;
+      const cap = this.mesh(new T.CylinderGeometry(.43, .415, .34, 28), black, grip); cap.scale.z = .72; cap.position.y = 8.52; cap.name = "katana-kashira";
+      const capLip = this.mesh(new T.CylinderGeometry(.437, .437, .034, 28), metal, grip); capLip.scale.z = .72; capLip.position.y = 8.36;
+      const menuki = this.mesh(new T.SphereGeometry(.095, 10, 6), metal, grip); menuki.scale.set(1, .5, .3); menuki.position.set(.1, 2.4, .304);
+
+      // One merged mesh of individually modelled, alternating interlocking links.
+      const chainCurve = new T.CatmullRomCurve3([new T.Vector3(shoulder + .60, 53.7, .03),
+        new T.Vector3(shoulder + 1.05, 52.5, .12), new T.Vector3(shoulder + 1.28, 47.5, .27),
+        new T.Vector3(shoulder + 1.05, 41.9, .42), new T.Vector3(shoulder + .36, 36.3, .45), new T.Vector3(shoulder - .95, 34.1, .20)]);
+      const chainPositions = [], chainTriangles = [], linkCount = Math.ceil(chainCurve.getLength() / .29), sides = 6, segments = 16;
+      const chainPoints = chainCurve.getSpacedPoints(linkCount - 1);
+      chainPoints.forEach((center, link) => {
+        const tangent = chainCurve.getTangentAt(link / (linkCount - 1)).normalize();
+        const side = new T.Vector3(tangent.y, -tangent.x, 0).normalize();
+        const normal = new T.Vector3().crossVectors(side, tangent).normalize();
+        if (link % 2) { const previous = side.clone(); side.copy(normal); normal.copy(previous).negate(); }
+        const first = chainPositions.length / 3;
+        for (let ring = 0; ring <= segments; ring++) {
+          const theta = ring / segments * Math.PI * 2, rx = .112, ry = .19;
+          const c = center.clone().addScaledVector(side, Math.cos(theta) * rx).addScaledVector(tangent, Math.sin(theta) * ry);
+          const outward = side.clone().multiplyScalar(Math.cos(theta) * ry).addScaledVector(tangent, Math.sin(theta) * rx).normalize();
+          for (let face = 0; face <= sides; face++) {
+            const phi = face / sides * Math.PI * 2;
+            const point = c.clone().addScaledVector(outward, Math.cos(phi) * .027).addScaledVector(normal, Math.sin(phi) * .027);
+            chainPositions.push(point.x, point.y, point.z);
+          }
+        }
+        for (let ring = 0; ring < segments; ring++) for (let face = 0; face < sides; face++) {
+          const a = first + ring * (sides + 1) + face, b = a + sides + 1;
+          chainTriangles.push(a, b, a + 1, a + 1, b, b + 1);
+        }
+      });
+      const chainGeometry = new T.BufferGeometry(); chainGeometry.setAttribute("position", new T.Float32BufferAttribute(chainPositions, 3));
+      chainGeometry.setIndex(chainTriangles); chainGeometry.computeVertexNormals();
+      this.mesh(chainGeometry, metal).name = "katana-chain";
     }
     makeGrove() {
       const T = this.T, random = randomSource(87291);
@@ -262,11 +343,11 @@
       if (this.disposed) return;
       this.score = score;
       this.katana.visible = score > 128;
-      this.katana.position.y = mix(80, 0, smooth(128, 146, score));
+      this.katana.position.y = mix(96, 0, smooth(128, 146, score));
       this.katana.rotation.z = mix(-.035, 0, smooth(132, 146, score));
       const descent = smooth(146, 194, score);
       const height = mix(44, 3, descent);
-      const distance = mix(48, 18, smooth(146, 154, score));
+      const distance = mix(124, 18, smooth(146, 154, score));
       const halfWidth = Math.tan(this.camera.fov * Math.PI / 360) * distance * this.camera.aspect;
       const offset = halfWidth * (this.mobile ? .53 : .37);
       const bladeX = bladeCenter(Math.min(44, height));
