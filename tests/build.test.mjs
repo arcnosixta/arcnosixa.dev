@@ -48,7 +48,7 @@ test("all narrative assets are real files with portable browser URLs", async () 
     assert.equal(file.subarray(1, 4).toString(), "PNG");
     assert.ok(file.length > 100000);
   }
-  for (const name of ["scene.js", "fate.js", "audio.js"]) {
+  for (const name of ["scene.js", "fate.js", "katana.js", "grove.js", "audio.js"]) {
     assert.doesNotMatch(await readFile(join(root, "fate", name), "utf8"), /[A-Z]:\\|file:\/\//);
   }
 });
@@ -67,7 +67,7 @@ test("direct route, artwork and soundtrack streaming work under the GitHub Pages
     const direct = await fetch(`${base}fate?test=1`, { redirect: "manual" });
     assert.equal(direct.status, 301);
     assert.equal(direct.headers.get("location"), "/arcnosixa.dev/fate/?test=1");
-    for (const path of ["", "fate/", "fate/fate.css", "fate/scene.js?v=local", "vendor/three.min.js", "assets/fate/hands-atlas.png"]) {
+    for (const path of ["", "fate/", "fate/fate.css", "fate/scene.js?v=local", "fate/grove.js?v=local", "fate/katana.js?v=local", "vendor/three.min.js", "assets/fate/hands-atlas.png", "assets/fate/reference-katana.svg", "assets/fate/organic-grove.svg"]) {
       const response = await fetch(base + path);
       assert.equal(response.status, 200, path);
       await response.arrayBuffer();

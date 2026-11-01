@@ -6,7 +6,7 @@
   const metrics = document.getElementById("metrics");
   const report = document.getElementById("report");
   const checks = document.getElementById("checks");
-  const scoreLength = 240;
+  const scoreLength = 229;
   const query = new URLSearchParams(location.search);
   if ([...mode.options].some(option => option.value === query.get("mode"))) mode.value = query.get("mode");
   if (query.has("preview")) {
@@ -89,28 +89,31 @@
     };
     try {
       const motion = d.documentElement.classList.contains("enhanced");
+      check("the removed chapter title is absent from every story mode", !d.querySelector(".awakening-title, .still-awakening-title") && !d.body.textContent.toUpperCase().includes("ПРОБУЖДЕНИЕ"));
       if (mode.value === "motion") check("requested motion renderer starts", motion);
       if (motion) {
-        await at(92);
-        check("Chapter II title is visible", visible(d.querySelector(".awakening-title")) && d.querySelector(".awakening-title").textContent.includes("ПРОБУЖДЕНИЕ"));
+        await at(84.9); const beforeBridge = Number(w.getComputedStyle(d.querySelector(".whiteout")).opacity);
+        await at(85.8); const duringBridge = Number(w.getComputedStyle(d.querySelector(".whiteout")).opacity);
+        await at(87); const afterBridge = Number(w.getComputedStyle(d.querySelector(".whiteout")).opacity);
+        check("the flash fades continuously into ash without an intermission", beforeBridge > duringBridge && duringBridge > afterBridge && afterBridge === 0 && !d.documentElement.classList.contains("is-void") && ![...d.querySelectorAll(".caption")].some(visible));
         check("the world remains dark before ignition", paper() === 0 && !d.documentElement.classList.contains("is-paper"));
-        await at(102);
-        check("hands dissolve in the Ashes scene", d.querySelector(".chapter-name").textContent === "Ashes" && !visible(d.querySelector(".awakening-title")));
-        await at(106); const flood = paper();
-        await at(112); const engulf = paper();
+        await at(94);
+        check("hands dissolve in the Ashes scene", d.querySelector(".chapter-name").textContent === "Ashes");
+        await at(95); const flood = paper();
+        await at(101); const engulf = paper();
         check("the white front advances continuously", flood > 0 && flood < 1 && engulf > flood && engulf <= 1);
-        await at(118);
+        await at(107);
         check("the white world is complete after engulfment", Math.abs(paper() - 1) < .001 && d.documentElement.classList.contains("is-paper"));
-        await at(120);
+        await at(109);
         const stage = d.querySelector("#stage");
         const notes = [...d.querySelectorAll(".journey-notes > *")];
         check("the white void has no captions or journey notes", Math.abs(paper() - 1) < .001 && stage.dataset.journeyPhase === "void" && d.documentElement.classList.contains("is-void") && ![...d.querySelectorAll(".caption, .journey-notes")].some(visible) && !notes.some(visible));
-        await at(138);
-        check("the katana leaves the blank void without early notes", stage.dataset.journeyPhase === "fall" && !d.documentElement.classList.contains("is-void") && Math.abs(renderedScore() - 138) < 1 && !notes.some(visible));
+        await at(127);
+        check("the katana leaves the blank void without early notes", stage.dataset.journeyPhase === "fall" && !d.documentElement.classList.contains("is-void") && Math.abs(renderedScore() - 127) < 1 && !notes.some(visible));
         for (const [score, selector, name, facts] of [
-          [160, ".note-architecture", "architecture", ["границы модулей, API и движение данных", "систему с понятной логикой"]],
-          [173, ".note-services", "services", ["серверной логикой, локальными сервисами", "интеграциями ИИ-агентов"]],
-          [186, ".note-craft", "craft", ["устройстве Linux", "объяснить, проверить и развивать"]],
+          [149, ".note-architecture", "architecture", ["границы модулей, API и движение данных", "систему с понятной логикой"]],
+          [162, ".note-services", "services", ["серверной логикой, локальными сервисами", "интеграциями ИИ-агентов"]],
+          [175, ".note-craft", "craft", ["устройстве Linux", "объяснить, проверить и развивать"]],
         ]) {
           await at(score);
           const note = d.querySelector(selector), text = note?.innerText.replace(/\s+/g, " ").trim() || "";
@@ -118,39 +121,39 @@
           check(`${name} note has readable factual copy`, stage.dataset.journeyPhase === "blade" && visible(note) && facts.every(fact => text.includes(fact)));
           check(`${name} note stays inside the viewport and appears alone`, Boolean(box) && box.left >= 0 && box.right <= w.innerWidth + 1 && box.top >= 0 && box.bottom <= w.innerHeight + 1 && notes.filter(visible).length === 1);
         }
-        await at(200);
-        check("the katana reaches the ground before the grove", stage.dataset.journeyPhase === "ground" && Math.abs(renderedScore() - 200) < 1 && !notes.some(visible));
-        await at(215);
+        await at(189);
+        check("the katana reaches the ground before the grove", stage.dataset.journeyPhase === "ground" && Math.abs(renderedScore() - 189) < 1 && !notes.some(visible));
+        await at(204);
         const grovePhase = stage.dataset.journeyPhase;
         check("the grove begins with a clear white field", grovePhase === "grove" && paper() === 1 && !notes.some(visible));
-        await at(230);
+        await at(219);
         check("the horizontal grove continues without early return", stage.dataset.journeyPhase === grovePhase && d.querySelector(".revelation").inert && !visible(d.querySelector(".revelation")));
-        await at(238);
+        await at(227);
         const finale = d.querySelector(".revelation");
         check("the ending appears after the grove", stage.dataset.journeyPhase === "ending" && visible(finale) && finale.querySelector(".reveal-name").textContent.trim().length > 0);
         check("final return becomes interactive", !finale.inert && visible(finale.querySelector(".return-link")));
         check("the ending keeps the white world", Math.abs(paper() - 1) < .001 && d.documentElement.classList.contains("is-paper"));
-        await at(92);
-        check("reverse scroll restores the chapter title and gates the return", visible(d.querySelector(".awakening-title")) && finale.inert);
+        await at(85.8);
+        check("reverse scroll restores the flash bridge and gates the return", Number(w.getComputedStyle(d.querySelector(".whiteout")).opacity) > 0 && finale.inert && !d.querySelector(".awakening-title"));
         check("reverse scroll restores the dark world", paper() === 0 && !d.documentElement.classList.contains("is-paper"));
-        await at(215);
+        await at(204);
         const oldTime = audio?.currentTime || 0, oldPlays = w.qaAudioPlays, wasPlaying = audio?.paused === false;
         d.querySelector(".still-toggle").click(); await settle();
-        const grove = d.querySelector('.still-grove[data-story-at="218"]');
+        const grove = d.querySelector('.still-grove[data-story-at="207"]');
         check("motion to still preserves the grove scene", d.documentElement.classList.contains("is-still") && visible(grove) && Math.abs(grove.getBoundingClientRect().top) < 4);
         d.querySelector(".still-toggle").click(); await settle();
-        check("still to motion restores the grove score", d.documentElement.classList.contains("enhanced") && Math.abs(renderedScore() - 218) < 1);
+        check("still to motion restores the grove score", d.documentElement.classList.contains("enhanced") && Math.abs(renderedScore() - 207) < 1);
         check("view switches preserve the soundtrack without restarting", w.qaAudio === audio && w.qaAudioPlays === oldPlays && (audio?.currentTime || 0) >= oldTime - .1 && (!wasPlaying || audio.paused === false));
       } else {
-        const scores = [88, 99, 116, 134, 158, 172, 186, 199, 218, 236];
+        const scores = [88, 105, 123, 147, 161, 175, 188, 207, 225];
         check("every katana and grove scene exists in document flow", scores.every(score => d.querySelector(`[data-story-at="${score}"]`)?.getBoundingClientRect().height > 0));
-        await at(120);
-        check("static score selection reaches the white void", visible(d.querySelector('[data-story-at="116"]')));
-        await at(230);
+        await at(109);
+        check("static score selection reaches the white void", visible(d.querySelector('[data-story-at="105"]')));
+        await at(219);
         check("static score selection reaches the grove", visible(d.querySelector(".still-grove")));
         const grove = d.querySelector(".still-grove");
         check("the static grove uses dark readable ink on white", paperContrast(grove, grove.querySelector("figcaption")));
-        await at(238);
+        await at(227);
         check("the static ending has a usable return", visible(d.querySelector(".still-ending .return-link")) && !d.querySelector(".still-ending").inert);
         const ending = d.querySelector(".still-ending");
         check("the static final return has readable contrast", paperContrast(ending, ending.querySelector(".return-link")));

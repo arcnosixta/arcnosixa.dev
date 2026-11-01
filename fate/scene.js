@@ -563,8 +563,10 @@
       if (this.disposed) return;
       this.progress = progress;
       this.time += Math.min(.05, delta);
-      // Chapter I retains its original score; II continues from its final pose.
-      const score = progress * 240, p = Math.min(score / 100, .835), time = this.time;
+      // Remove the old title-card hold while preserving the existing scene cues.
+      const scrollScore = progress * 229;
+      const score = scrollScore < 85 ? scrollScore : scrollScore + 11;
+      const p = Math.min(score / 100, .835), time = this.time;
       if (score >= 116) {
         // Direct rendering keeps black geometry and the etched red patterns
         // literal. The earlier monochrome inversion must not touch this world.
@@ -577,7 +579,7 @@
       const rise = smooth(.54, .805, p) * 4.2;
       const ascend = smooth(.67, .815, p);
       const awakening = smooth(96, 98, score) * (1 - smooth(147, 152, score));
-      const exit = ((1 - smooth(83.6, 87, score)) + awakening) * (1 - smooth(109, 116, score));
+      const exit = 1 - smooth(109, 116, score);
       const alone = smooth(98, 120, score);
       const dissolve = smooth(98, 110, score);
       const flood = smooth(101, 116, score);
