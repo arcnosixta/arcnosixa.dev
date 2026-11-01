@@ -21,13 +21,18 @@
   let manualStill = false;
   try { manualStill = localStorage.getItem("fate-still") === "1"; } catch { /* optional */ }
   let scene, timeline, intro, raf = 0, lastFrame = 0, version = 0, unavailable = false;
-  let activeChapter = -1, pageVisible = !document.hidden, starting = false;
+  let activeChapter = -1, pageVisible = !document.hidden, stageVisible = true, starting = false;
   let state = { progress: 0 };
   let resizeProgress = null;
   const scripts = new Map();
   const assetVersion = new URL(document.currentScript.src).search;
   const sizeObserver = new ResizeObserver(() => scene?.resize());
   sizeObserver.observe(stage);
+  const visibilityObserver = new IntersectionObserver(([entry]) => {
+    stageVisible = entry.isIntersecting;
+    if (stageVisible) wake(); else stopFrames();
+  });
+  visibilityObserver.observe(stage);
   function script(src) {
     if (!scripts.has(src)) scripts.set(src, new Promise((resolve, reject) => {
       const node = document.createElement("script");
@@ -41,16 +46,16 @@
   function stopFrames() { cancelAnimationFrame(raf); raf = 0; lastFrame = 0; }
   function frame(now) {
     raf = 0;
-    if (!pageVisible || !scene) return;
+    if (!pageVisible || !stageVisible || !scene) return;
     const delta = lastFrame ? (now - lastFrame) / 1000 : 1 / 60;
     lastFrame = now;
     try { scene.render(state.progress, delta); }
     catch { fallback(true); return; }
-    // The perspective journey is entirely scroll driven. Scrubbing wakes it;
-    // only the earlier aura and hands need continuous clock-time rendering.
-    if (state.progress * scoreLength < at(116)) raf = requestAnimationFrame(frame);
+    // Camera motion remains scroll driven; only the visible ink material and
+    // the earlier hands animate in clock time. Hidden pages stop all frames.
+    if (state.progress * scoreLength < at(116) || scene.journey?.brave?.needsAnimation) raf = requestAnimationFrame(frame);
   }
-  function wake() { if (scene && pageVisible && !raf) raf = requestAnimationFrame(frame); }
+  function wake() { if (scene && pageVisible && stageVisible && !raf) raf = requestAnimationFrame(frame); }
   function updateUI() {
     const p = state.progress, score = Math.round(window.FateScore.cue(p * scoreLength) * 1000) / 1000;
     const white = Math.max(0, Math.min(1, (score - 104) / 12));
@@ -200,6 +205,7 @@
       await script(`brave-world.js${assetVersion}`);
       await script(`brave-camera.js${assetVersion}`);
       await script(`brave-ground.js${assetVersion}`);
+      await script(`brave-ink.js${assetVersion}`);
       await script(`brave.js${assetVersion}`);
       await script(`katana.js${assetVersion}`);
       await script(`scene.js${assetVersion}`);
@@ -257,7 +263,7 @@
   });
   window.addEventListener("pagehide", (event) => {
     pageVisible = false;
-    if (event.persisted) stopFrames(); else { teardown(); sizeObserver.disconnect(); }
+    if (event.persisted) stopFrames(); else { teardown(); sizeObserver.disconnect(); visibilityObserver.disconnect(); }
   });
   window.addEventListener("pageshow", (event) => {
     if (!event.persisted) return;

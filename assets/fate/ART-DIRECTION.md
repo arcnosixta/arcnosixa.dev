@@ -35,7 +35,15 @@ At the dissolution, the newborn's silhouette aura expands and brightens. A domai
 
 `reference-katana.svg` and `organic-grove.svg` are native vector projections of the procedural sword and meadow for static/reduced-motion mode. The katana has a fixed 45-degree yaw so its black/red face reads both during the earlier descent and from behind the boy.
 
-### The young witness (CC0 skinned 3D base, 2026-11-01)
+### Current witness: black ink silhouette (2026-11-01)
+
+The active route uses the approved `brave-boy-approved.png` on a fixed perspective plane, with the camera in `brave-camera.js` and geography in `brave-world.js`. Its path visits the planted katana, the carved footprint, the right sleeve, the left shoulder and the eyes. The earlier 3D orbit implementation described below is retained as history and is not loaded by this route.
+
+`fate/brave-ink.js` derives a contour and the two blue iris masks from the unchanged 1024 by 1536 reference. A border-connected flood fill retains open background gaps and fills the light face and cloak lining. Signed distances drive a pure black body, animated black aura and flowing blue eye glow. The noise basis and slow advection match the spectral hands; a faint neutral reflection outside the body keeps the black contour legible. Original skin, clothing and background RGB never enter the rendered material. The padded plane has zero alpha at its borders and does not write depth through empty areas. No opaque replacement backdrop is used.
+
+The actual clearing becomes darker during the return from the footprint; the former light ground patch used to disguise the RGB background has been removed. Character scale, position, camera path, katana and footprint geography remain fixed. Only the visible material animates in clock time. Rendering stops when the scene leaves the viewport or the page is hidden. Still mode, reduced motion and unavailable WebGL use updated direct scene renders in the seven `brave-*` frame pairs. The illustration remains flat, so it is intended for the existing restrained camera approach rather than an orbit or rear view.
+
+### Earlier young witness (CC0 skinned 3D base, 2026-11-01)
 
 `witness.glb` preserves the original CC0 Sakurada Fumiriya VRM/GLB bytes. The official author is pixiv Inc. / VRoid Project; [the author's CC0 statement](https://vroid.pixiv.help/hc/en-us/articles/360014788554-Sakurada-Fumiriya) and the distribution URL/checksum are retained in `witness-LICENSE.txt`. This is a derivative of an existing character base, not an exclusive original model and not the exact character in the user's reference.
 

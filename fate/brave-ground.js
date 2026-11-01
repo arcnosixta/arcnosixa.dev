@@ -45,12 +45,6 @@ float coarse = earthNoise(earthWorld.xz * .25);
 float fine = earthNoise(earthWorld.xz * 5.);
 float grit = earthNoise(earthWorld.xz * 17.);
 diffuseColor.rgb *= .81 + coarse*.27 + (fine-.5)*.16 + (grit-.5)*.08;`);
-      // Match the light clearing beneath the original opaque artwork. This
-      // changes the environment only; no character pixels or contours are keyed.
-      shader.fragmentShader=shader.fragmentShader.replace('#include <output_fragment>',`float clearingDistance=length(vec2(earthWorld.x/110.,(earthWorld.z+90.)/65.));
-float clearingLight=1.-smoothstep(.12,1.,clearingDistance);
-outgoingLight=mix(outgoingLight,vec3(.6383,.6445,.6584),clearingLight);
-#include <output_fragment>`);
     };}
     earth(mat);earth(groundMat);
     function ground(x,z,w,d){const mesh=new T.Mesh(own(new T.PlaneGeometry(w,d)),groundMat);mesh.rotation.x=-Math.PI/2;mesh.position.set(x,0,z);mesh.receiveShadow=true;group.add(mesh);}

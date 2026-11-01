@@ -274,7 +274,7 @@
       this.terrain.visible = true;
       this.terrainMaterials.forEach(material => { material.opacity = 1; });
       this.phase = score <= 128 ? "white" : score < 146 ? "fall" : score < 194 ? "blade" : score < 206 ? "ground" : score < 236 ? "grove" : "ending";
-      this.brave?.update(score);
+      this.brave?.update(score, time);
     }
     snapshot() {
       const scale = this.katana.scale.x;

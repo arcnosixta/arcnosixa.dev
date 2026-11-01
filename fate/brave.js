@@ -28,25 +28,13 @@
       this.fog = new T.Fog(0xd9dee7, 180, 520);
       this.white = new T.Color(0xffffff);
       this.cold = new T.Color(0xd9dee7);
+      this.night = new T.Color(0x171b24);
       this.position = new T.Vector3();
       this.rotation = new T.Quaternion();
       this.euler = new T.Euler(0, 0, 0, 'YXZ');
       this.direction = new T.Vector3();
-      // Feather empty outer margins only. Original pixels and character edges
-      // remain untouched; this RGB source is not falsely described as a cutout.
-      const alpha = document.createElement('canvas');
-      alpha.width = alpha.height = 256;
-      const context = alpha.getContext('2d'), pixels = context.createImageData(256, 256);
-      for (let y=0; y<256; y++) for (let x=0; x<256; x++) {
-        const edge = clamp(Math.min(x/255/.12, (1-x/255)/.08, y/255/.015, (1-y/255)/.034));
-        const i = (y*256+x)*4;
-        pixels.data[i] = pixels.data[i+1] = pixels.data[i+2] = Math.round(edge*edge*(3-2*edge)*255);
-        pixels.data[i+3] = 255;
-      }
-      context.putImageData(pixels, 0, 0);
-      const height = 148/(1440/1536), width = height*1024/1536, bottom = -(1536-1470)/1536*height;
-      this.material = own(new T.MeshBasicMaterial({alphaMap:own(new T.CanvasTexture(alpha)), transparent:true, depthWrite:true, side:T.FrontSide, toneMapped:false, fog:false}));
-      this.boy = new T.Mesh(own(new T.PlaneGeometry(width, height)), this.material);
+      const height = 148/(1440/1536), bottom = -(1536-1470)/1536*height;
+      this.boy = new T.Mesh(own(new T.BufferGeometry()), own(new T.MeshBasicMaterial()));
       this.boy.name = 'approved-static-boy';
       this.boy.position.set(0, bottom+height/2, window.BRAVE_WORLD.boy[2]);
       this.boy.visible = false;
@@ -63,24 +51,30 @@
     async load(url) {
       const texture = await new this.T.TextureLoader().loadAsync(url);
       if (this.disposed) { texture.dispose(); return; }
-      texture.encoding = this.T.sRGBEncoding;
-      texture.anisotropy = 4;
-      this.resources.push(texture);
-      this.material.map = texture;
-      this.material.needsUpdate = true;
+      try {
+        this.ink = window.FateBraveInk.create(this.T, texture.image, resource => (this.resources.push(resource), resource));
+        this.material = this.boy.material = this.ink.material;
+        this.boy.geometry = this.ink.geometry;
+      } finally { texture.dispose(); }
       this.ready = true;
     }
-    update(score) {
+    update(score, time = 0) {
       const j = this.journey, T = this.T;
       const arrival = ease((score-194)/24), progress = clamp((score-218)/112);
       const pose = window.braveCameraPose(progress, j.camera.aspect, j.camera.fov);
       j.scene.background.copy(this.white).lerp(this.cold, arrival);
+      const dusk = ease((progress-.44)/.11);
+      j.scene.background.lerp(this.night, dusk);
+      this.lights[0].intensity = .70-.42*dusk;
+      this.lights[1].intensity = 1.25-.60*dusk;
       this.fog.color.copy(j.scene.background);
       j.scene.fog = this.fog;
       // Keep the distant illustration out of the blade's reading passage.
       // It enters the render set at an offscreen point, before the footprint;
       // its world position, scale and opacity never change during the journey.
       this.boy.visible = this.ready && score >= 218;
+      this.needsAnimation = this.ready && progress >= .44;
+      if (this.ink) this.ink.uniforms.uTime.value = time;
       this.shadow.visible = score >= 218;
       if (score >= 194) {
         this.position.fromArray(pose.camera);
@@ -97,7 +91,9 @@
       j.phase = this.phase;
       // Reserve actual empty composition space; no story copy or controls.
       const slot = document.getElementById('brave-text-space');
-      if (slot) {
+      const slotKey = this.slot ? this.slot.side+this.slot.rect.join(',') : '';
+      if (slot && this.slotKey !== slotKey) {
+        this.slotKey = slotKey;
         slot.hidden = !this.slot;
         if (this.slot) {
           const [x,y,w,h] = this.slot.rect;
