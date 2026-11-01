@@ -44,12 +44,19 @@
     lastFrame = now;
     try { scene.render(state.progress, delta); }
     catch { fallback(true); return; }
-    // The final black frame is static. Scrubbing backward wakes rendering again.
+    // The final white frame is static. Scrubbing backward wakes rendering again.
     if (state.progress * scoreLength < 152) raf = requestAnimationFrame(frame);
   }
   function wake() { if (scene && pageVisible && !raf) raf = requestAnimationFrame(frame); }
   function updateUI() {
     const p = state.progress, score = p * scoreLength;
+    const white = Math.max(0, Math.min(1, (score - 104) / 12));
+    const paper = white * white * (3 - 2 * white);
+    root.style.setProperty("--fate-paper", paper.toFixed(4));
+    if (root.classList.contains("is-paper") !== (score >= 110)) {
+      root.classList.toggle("is-paper", score >= 110);
+      document.querySelector('meta[name="theme-color"]').content = score >= 110 ? "#ffffff" : "#000000";
+    }
     document.querySelector(".story-progress span").style.transform = `scaleX(${p})`;
     let chapter = 0;
     chapters.forEach((item, i) => { if (score >= item.at) chapter = i; });
@@ -130,6 +137,8 @@
     timeline?.kill(); timeline = null;
     scene?.dispose(); scene = null;
     root.classList.remove("enhanced");
+    root.classList.remove("is-paper");
+    root.style.removeProperty("--fate-paper");
     story.querySelectorAll("a").forEach((link) => link.removeAttribute("tabindex"));
     revelation.inert = true;
     revelation.setAttribute("aria-hidden", "true");

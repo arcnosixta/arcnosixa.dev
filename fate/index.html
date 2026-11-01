@@ -58,25 +58,30 @@
         <stop offset=".66" stop-color="#273e60" /><stop offset=".83" stop-color="#8d9dbb" />
         <stop offset=".96" stop-color="#29344b" /><stop offset="1" stop-color="#06080e" />
       </radialGradient>
+      <radialGradient id="awakening-ink-iris">
+        <stop offset="0" stop-color="#fff" /><stop offset=".35" stop-color="#eceef1" />
+        <stop offset=".66" stop-color="#858c98" /><stop offset=".83" stop-color="#20242c" />
+        <stop offset=".96" stop-color="#767d88" /><stop offset="1" stop-color="#f4f4f5" />
+      </radialGradient>
       <filter id="awakening-glow" x="-30%" y="-60%" width="160%" height="220%">
         <feGaussianBlur stdDeviation="5" /><feMerge><feMergeNode /><feMergeNode in="SourceGraphic" /></feMerge>
       </filter>
       <clipPath id="awakening-aperture"><path d="M30 150Q300-105 570 150Q300 405 30 150Z" /></clipPath>
       <symbol id="awakened-eye" viewBox="0 0 600 300">
-        <path d="M30 150Q300-105 570 150Q300 405 30 150Z" fill="#070a12" stroke="#7889a6" stroke-width="1.8" filter="url(#awakening-glow)" />
+        <path d="M30 150Q300-105 570 150Q300 405 30 150Z" fill="var(--eye-field, #070a12)" stroke="var(--eye-outline, #7889a6)" stroke-width="1.8" filter="url(#awakening-glow)" />
         <g clip-path="url(#awakening-aperture)">
-          <circle cx="300" cy="150" r="126" fill="url(#awakening-iris)" />
-          <g fill="none" stroke="#9baecb" stroke-width="1" opacity=".55">
+          <circle cx="300" cy="150" r="126" fill="var(--eye-iris, url(#awakening-iris))" />
+          <g fill="none" stroke="var(--eye-rays, #9baecb)" stroke-width="1" opacity=".55">
             <circle cx="300" cy="150" r="119" /><circle cx="300" cy="150" r="103" stroke-dasharray="1 5" />
             <circle cx="300" cy="150" r="79" stroke-dasharray="1 3" />
             <path d="M300 27V99M300 201V273M177 150H249M351 150H423M213 63L264 114M336 186L387 237M213 237L264 186M336 114L387 63" />
             <path d="M253 37L280 102M320 198L347 263M187 103L252 130M348 170L413 197M187 197L252 170M348 130L413 103M253 263L280 198M320 102L347 37" />
             <path d="M276 31L289 95M311 205L324 269M181 126L245 139M355 161L419 174M181 174L245 161M355 139L419 126M276 269L289 205M311 95L324 31" opacity=".5" />
           </g>
-          <circle cx="300" cy="150" r="52" fill="#000" stroke="#b0bed7" stroke-width="1.4" />
-          <circle cx="300" cy="150" r="58" fill="none" stroke="#476284" stroke-width="2" opacity=".65" />
+          <circle cx="300" cy="150" r="52" fill="#000" stroke="var(--eye-pupil-rim, #b0bed7)" stroke-width="1.4" />
+          <circle cx="300" cy="150" r="58" fill="none" stroke="var(--eye-inner, #476284)" stroke-width="2" opacity=".65" />
         </g>
-        <path d="M30 150Q300-105 570 150" fill="none" stroke="#bdc7dc" stroke-width="2.2" filter="url(#awakening-glow)" />
+        <path d="M30 150Q300-105 570 150" fill="none" stroke="var(--eye-outline, #bdc7dc)" stroke-width="2.2" filter="url(#awakening-glow)" />
       </symbol>
       <symbol id="closed-eye" viewBox="0 0 600 110">
         <path d="M30 35Q300 130 570 35" fill="none" stroke="#8594af" stroke-width="1.6" filter="url(#awakening-glow)" />
@@ -163,21 +168,21 @@
         <svg class="still-infant radiant-infant" viewBox="0 0 1536 1024" role="img" aria-label="A featureless white newborn remains suspended above the dissolving hands."><use href="#radiant-newborn" /></svg>
         <figcaption>The hands became ash.</figcaption>
       </figure>
-      <figure class="still-scene still-alone" data-story-at="110">
+      <figure class="still-scene still-alone still-paper" data-story-at="110">
         <div class="still-pulse" aria-hidden="true"></div>
-        <svg class="still-infant radiant-infant" viewBox="0 0 1536 1024" role="img" aria-label="The newborn floats alone in blackness, its featureless white silhouette enclosed by cold concentric aura rings."><use href="#radiant-newborn" /></svg>
+        <svg class="still-infant radiant-infant" viewBox="0 0 1536 1024" role="img" aria-label="The newborn floats alone as a featureless black silhouette in an immense white void, enclosed by faint dark aura rings."><use href="#radiant-newborn" /></svg>
         <figcaption>Only one remained.</figcaption>
       </figure>
-      <figure class="still-scene still-eye" data-story-at="126">
-        <svg class="awakened-eye" viewBox="0 0 600 300" role="img" aria-label="The crescent has become an immense cold silver eye with a dark blue radial iris and a bottomless black pupil."><use href="#awakened-eye" /></svg>
+      <figure class="still-scene still-eye still-paper" data-story-at="126">
+        <svg class="awakened-eye" viewBox="0 0 600 300" role="img" aria-label="The crescent has become an immense black eye with a radial ink iris and a bottomless black pupil on a white field."><use href="#awakened-eye" /></svg>
         <figcaption>The void opened its eye.</figcaption>
       </figure>
-      <figure class="still-scene still-claim" data-story-at="138" lang="ru">
-        <svg class="awakened-eye" viewBox="0 0 600 300" role="img" aria-label="Огромный глаз судьбы смотрит из тёмной ауры."><use href="#awakened-eye" /></svg>
+      <figure class="still-scene still-claim still-paper" data-story-at="138" lang="ru">
+        <svg class="awakened-eye" viewBox="0 0 600 300" role="img" aria-label="Огромный чёрный глаз судьбы смотрит из белой пустоты."><use href="#awakened-eye" /></svg>
         <figcaption>Судьбу не получают.<br /><em>Её забирают.</em></figcaption>
       </figure>
-      <div class="still-scene still-ending" data-story-at="151">
-        <svg class="final-eye" viewBox="0 0 600 110" role="img" aria-label="The eye has closed, leaving only a thin silver seam."><use href="#closed-eye" /></svg>
+      <div class="still-scene still-ending still-paper" data-story-at="151">
+        <svg class="final-eye" viewBox="0 0 600 110" role="img" aria-label="The eye has closed, leaving only a thin black seam in the white void."><use href="#closed-eye" /></svg>
         <p class="reveal-name">TO BE CONTINUED</p><p class="reveal-will">ARCNOSIXTA / FATE</p>
         <p class="reveal-end">The eye remembers.</p>
         <a class="return-link" data-void-return href="../">Return to reality <span aria-hidden="true">↗</span></a>

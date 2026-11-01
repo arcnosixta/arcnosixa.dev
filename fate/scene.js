@@ -591,6 +591,7 @@
       this.camera.fov = width < 700 ? 49 : 42;
       this.camera.updateProjectionMatrix();
       this.fog.uniforms.uAspect.value = Math.min(2, width / height);
+      this.composite.uniforms.uAspect.value = width / height;
       this.ashUniforms.uPixel.value = this.renderer.getPixelRatio();
       this.sparkUniforms.uPixel.value = this.renderer.getPixelRatio();
       if (this.handAshUniforms) this.handAshUniforms.uPixel.value = this.renderer.getPixelRatio();
@@ -608,6 +609,8 @@
       const exit = (1 - smooth(83.6, 87, score)) + awakening;
       const alone = smooth(98, 120, score), morph = smooth(119, 132, score);
       const dissolve = smooth(98, 110, score);
+      const flood = smooth(101, 116, score);
+      const ignition = smooth(97, 100, score) * (1 - smooth(110, 116, score));
       let z = mix(23, 31, smooth(.265, .3, p));
       z = mix(z, 17.8, approach);
       z = mix(z, 25.8, ascend);
@@ -615,7 +618,7 @@
       this.target.set(0, mix(mix(0, 1.2, emerge) + rise * .8, 5.1, alone), 0);
       this.camera.lookAt(this.target);
       this.fog.uniforms.uTime.value = time;
-      this.fog.uniforms.uLight.value = mix(emerge * .07 + ascend * .5, .012, smooth(96, 108, score)) * exit;
+      this.fog.uniforms.uLight.value = mix(emerge * .07 + ascend * .5, .012, smooth(96, 108, score)) * exit * (1 - flood);
       this.bladeUniforms.uTime.value = time;
       const reveal = smooth(.105, .215, p) * 1.02;
       const portal = smooth(.24, .293, p);
@@ -638,6 +641,7 @@
       this.eyeUniforms.uTime.value = time;
       this.eyeUniforms.uAlpha.value = smooth(121, 131, score) * (1 - smooth(150, 152, score));
       this.eyeUniforms.uOpen.value = smooth(119, 130, score) * (1 - smooth(145, 151, score));
+      this.eyeUniforms.uPaper.value = flood;
       this.eye.position.set(0, 6.8, -2);
       this.eye.scale.setScalar(this.mobile ? .52 : .95);
       this.eye.visible = score > 119 && score < 152;
@@ -651,6 +655,7 @@
         this.childUniforms.uTime.value = time;
         this.childUniforms.uLight.value = smooth(.715, .795, p);
         this.childUniforms.uPulse.value = smooth(108, 116, score);
+        this.childUniforms.uIgnition.value = ignition;
         this.child.visible = score > 28.5 && score < 148;
         this.handUniforms.uTime.value = time;
         this.handUniforms.uProgress.value = p;
@@ -666,6 +671,10 @@
       }
       this.renderer.setRenderTarget(this.sceneTarget);
       this.renderer.render(this.scene, this.camera);
+      if (this.ready) {
+        this.screenOrigin.copy(this.child.position).project(this.camera);
+        this.composite.uniforms.uOrigin.value.set(this.screenOrigin.x * .5 + .5, this.screenOrigin.y * .5 + .5);
+      }
       this.postQuad.material = this.blur;
       this.blur.uniforms.uMap.value = this.sceneTarget.texture;
       this.blur.uniforms.uExtract.value = 1;
@@ -679,6 +688,7 @@
       this.renderer.render(this.postScene, this.postCamera);
       this.composite.uniforms.uTime.value = time;
       this.composite.uniforms.uAura.value = smooth(.1, .16, p) * exit * mix(.7 + ascend * .8, 1.05, awakening);
+      this.composite.uniforms.uFlood.value = flood;
       this.postQuad.material = this.composite;
       this.renderer.setRenderTarget(null);
       this.renderer.render(this.postScene, this.postCamera);
