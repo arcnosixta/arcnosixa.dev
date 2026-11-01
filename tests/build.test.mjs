@@ -48,7 +48,7 @@ test("all narrative assets are real files with portable browser URLs", async () 
     assert.equal(file.subarray(1, 4).toString(), "PNG");
     assert.ok(file.length > 100000);
   }
-  for (const name of ["scene.js", "fate.js", "katana.js", "grove.js", "audio.js"]) {
+  for (const name of ["scene.js", "fate.js", "score.js", "katana.js", "grove.js", "audio.js"]) {
     assert.doesNotMatch(await readFile(join(root, "fate", name), "utf8"), /[A-Z]:\\|file:\/\//);
   }
 });

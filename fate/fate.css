@@ -111,7 +111,7 @@ button:disabled { opacity: .4; cursor: default; }
 .still-katana { display: block; width: min(25vw, 230px); height: 78svh; }
 .still-blade-segment { position: absolute; top: 12%; left: 35%; width: min(33vw, 310px); height: 76%; transform: translateX(-50%); overflow: hidden; }
 .still-scene .still-note-copy { position: absolute; top: 42%; left: 61%; width: 33%; max-width: 360px; text-align: left; line-height: normal; }
-.still-katana-tip { position: absolute; left: 50%; bottom: 22%; width: min(40vw, 300px); height: 64%; transform: translateX(-50%); }
+.still-katana-tip { position: absolute; left: 50%; bottom: 17%; width: min(40vw, 300px); height: 64%; transform: translateX(-50%); }
 .still-ground-plane { position: absolute; bottom: 0; left: 0; right: 0; height: 22%; background: #050507; }
 .grove-panorama { flex: 0 0 auto; display: block; width: max(100%, 1100px); height: min(68svh, 600px); }
 .still-ending { align-items: flex-end; justify-content: flex-end; padding: 90px var(--edge); }

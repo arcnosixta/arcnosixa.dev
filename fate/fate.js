@@ -7,14 +7,14 @@
   const story = document.getElementById("written-story");
   const revelation = document.querySelector(".revelation");
   const reduced = matchMedia("(prefers-reduced-motion: reduce)");
-  const scoreLength = 229;
+  const scoreLength = window.FateScore.length, at = window.FateScore.at;
   const chapters = [
     { at: 0, name: "Silence" }, { at: 10.5, name: "The cut" },
     { at: 30, name: "The child" }, { at: 42.5, name: "The thousand hands" },
-    { at: 71.5, name: "Ascension" }, { at: 85, name: "Ashes" },
-    { at: 105, name: "" }, { at: 117, name: "The descent" },
-    { at: 135, name: "Along the blade" }, { at: 183, name: "The ground" },
-    { at: 195, name: "The black grove" }, { at: 223, name: "The clearing" }
+    { at: 71.5, name: "Ascension" }, { at: 96, name: "Ashes" },
+    { at: 116, name: "" }, { at: 128, name: "The descent" },
+    { at: 146, name: "Along the blade" }, { at: 194, name: "The ground" },
+    { at: 206, name: "The black grove" }, { at: 234, name: "The clearing" }
   ];
   let manualStill = false;
   try { manualStill = localStorage.getItem("fate-still") === "1"; } catch { /* optional */ }
@@ -45,15 +45,15 @@
     try { scene.render(state.progress, delta); }
     catch { fallback(true); return; }
     // The final grove is static. Scrubbing backward wakes rendering again.
-    if (state.progress * scoreLength < 223) raf = requestAnimationFrame(frame);
+    if (state.progress * scoreLength < at(234)) raf = requestAnimationFrame(frame);
   }
   function wake() { if (scene && pageVisible && !raf) raf = requestAnimationFrame(frame); }
   function updateUI() {
-    const p = state.progress, score = p * scoreLength;
-    const white = Math.max(0, Math.min(1, (score - 93) / 12));
+    const p = state.progress, score = window.FateScore.cue(p * scoreLength);
+    const white = Math.max(0, Math.min(1, (score - 104) / 12));
     const paper = white * white * (3 - 2 * white);
     root.style.setProperty("--fate-paper", paper.toFixed(4));
-    const blank = score >= 105 && score < 117;
+    const blank = score >= 116 && score < 128;
     if (root.classList.contains("is-void") !== blank) {
       root.classList.toggle("is-void", blank);
       document.querySelectorAll(".fate-hud, .sound-control").forEach(control => {
@@ -61,11 +61,11 @@
         if (blank) control.setAttribute("aria-hidden", "true"); else control.removeAttribute("aria-hidden");
       });
     }
-    root.classList.toggle("is-journey", score >= 117);
-    stage.dataset.journeyPhase = score < 105 ? "ascension" : score < 117 ? "void" : score < 135 ? "fall" : score < 183 ? "blade" : score < 195 ? "ground" : score < 223 ? "grove" : "ending";
-    if (root.classList.contains("is-paper") !== (score >= 99)) {
-      root.classList.toggle("is-paper", score >= 99);
-      document.querySelector('meta[name="theme-color"]').content = score >= 99 ? "#ffffff" : "#000000";
+    root.classList.toggle("is-journey", score >= 128);
+    stage.dataset.journeyPhase = score < 116 ? "ascension" : score < 128 ? "void" : score < 146 ? "fall" : score < 194 ? "blade" : score < 206 ? "ground" : score < 234 ? "grove" : "ending";
+    if (root.classList.contains("is-paper") !== (score >= 110)) {
+      root.classList.toggle("is-paper", score >= 110);
+      document.querySelector('meta[name="theme-color"]').content = score >= 110 ? "#ffffff" : "#000000";
     }
     document.querySelector(".story-progress span").style.transform = `scaleX(${p})`;
     let chapter = 0;
@@ -74,7 +74,7 @@
       activeChapter = chapter;
       document.querySelector(".chapter-name").textContent = chapters[chapter].name;
     }
-    const revealed = score >= 225;
+    const revealed = score >= 236;
     revelation.inert = !revealed;
     revelation.setAttribute("aria-hidden", String(!revealed));
     wake();
@@ -91,7 +91,7 @@
       defaults: { ease: "none" }, onUpdate: updateUI,
       scrollTrigger: {
         id: "fate-story", trigger: "#experience", pin: stage,
-        start: "top top", end: () => `+=${Math.round(stage.clientHeight * 21.755)}`,
+        start: "top top", end: () => `+=${Math.round(stage.clientHeight * scoreLength * .095)}`,
         scrub: .85, anticipatePin: 1, invalidateOnRefresh: true,
         onRefresh(self) {
           if (resizeProgress === null) return;
@@ -102,14 +102,14 @@
         }
       }
     });
-    chapters.forEach((c) => timeline.addLabel(c.name, c.at));
+    chapters.forEach((c) => timeline.addLabel(c.name, at(c.at)));
     timeline.to(state, { progress: 1, duration: scoreLength }, 0);
     timeline.to(".silence", { autoAlpha: 0, duration: 3.5 }, 6);
     timeline.to(".scroll-invitation", { autoAlpha: 0, duration: 3 }, 3.5);
     timeline.to(".chapter-marker", { autoAlpha: 1, duration: 4 }, 7);
     function line(selector, enter, leave, duration = 2.3) {
-      timeline.fromTo(selector, { autoAlpha: 0, y: 14 }, { autoAlpha: 1, y: 0, duration, immediateRender: false }, enter);
-      timeline.to(selector, { autoAlpha: 0, y: -10, duration: 1.8 }, leave);
+      timeline.fromTo(selector, { autoAlpha: 0, y: 14 }, { autoAlpha: 1, y: 0, duration: at(enter + duration) - at(enter), immediateRender: false }, at(enter));
+      timeline.to(selector, { autoAlpha: 0, y: -10, duration: at(leave + 1.8) - at(leave) }, at(leave));
     }
     line(".cut", 21.2, 24.2);
     line(".depths", 31.7, 35.3);
@@ -123,12 +123,12 @@
     timeline.to(".whiteout", { opacity: 0, duration: 1.4 }, 28.7);
     timeline.to(".whiteout", { opacity: 1, duration: 1 }, 82.9);
     timeline.to(".whiteout", { opacity: 0, duration: 2.3 }, 84.1);
-    timeline.set(".journey-notes", { autoAlpha: 1 }, 143);
-    line(".note-architecture", 145, 155, 2);
-    line(".note-services", 158, 168, 2);
-    line(".note-craft", 171, 181, 2);
-    timeline.set(".journey-notes", { autoAlpha: 0 }, 183);
-    timeline.to(".revelation", { autoAlpha: 1, duration: 2 }, 225);
+    timeline.set(".journey-notes", { autoAlpha: 1 }, at(154));
+    line(".note-architecture", 156, 166, 2);
+    line(".note-services", 169, 179, 2);
+    line(".note-craft", 182, 192, 2);
+    timeline.set(".journey-notes", { autoAlpha: 0 }, at(194));
+    timeline.to(".revelation", { autoAlpha: 1, duration: 2 }, at(236));
     intro = gsap.timeline();
     intro.fromTo(".captions", { opacity: 0 }, { opacity: 1, duration: 2.8 }, .4);
     // Only the invitation's entrance uses clock time. The story never autoplays.

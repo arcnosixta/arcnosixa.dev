@@ -564,8 +564,8 @@
       this.progress = progress;
       this.time += Math.min(.05, delta);
       // Remove the old title-card hold while preserving the existing scene cues.
-      const scrollScore = progress * 229;
-      const score = scrollScore < 85 ? scrollScore : scrollScore + 11;
+      const scrollScore = progress * window.FateScore.length;
+      const score = window.FateScore.cue(scrollScore);
       const p = Math.min(score / 100, .835), time = this.time;
       if (score >= 116) {
         // Direct rendering keeps black geometry and the etched red patterns
