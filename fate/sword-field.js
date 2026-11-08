@@ -157,6 +157,8 @@
           this.triangleBudget += 4 * chipCount;
         }
       }
+      this.distantCount = 999 - this.entries.length;
+      this.buildDistantLayer(groundHeight);
       journey.scene.add(this.group);
       this.update(start - 1);
     }
@@ -178,13 +180,49 @@
       return mesh;
     }
 
+    buildDistantLayer(groundHeight) {
+      const T = this.journey.T;
+      // One narrow blade, guard and grip outline with real depth. At this
+      // distance 32 triangles preserve the silhouette without copying fittings.
+      const outline = [[0, 0], [.055, .2], [.062, .74], [.116, .74], [.063, .79],
+        [.057, 1], [.026, 1], [.02, .78], [-.022, .73]];
+      const shape = new T.Shape(outline.map(([x, y]) => new T.Vector2(x, y)));
+      const geometry = this.track(new T.ExtrudeGeometry(shape, { depth: .009, steps: 1, bevelEnabled: false }));
+      geometry.translate(0, 0, -.0045);
+      const material = this.track(this.journey.material(0x000000));
+      const mesh = this.makeInstances(geometry, material, this.distantCount, "distant-planted-katana");
+      mesh.instanceMatrix.setUsage(T.StaticDrawUsage);
+      const columns = 60, rows = Math.ceil(this.distantCount / columns);
+      // Separate seed keeps every featured sword and all rain cues identical.
+      let seed = 91821713;
+      const random = () => {
+        seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0;
+        return seed / 4294967296;
+      };
+      const pose = this.transform;
+      for (let i = 0; i < this.distantCount; i++) {
+        const column = i * 37 % columns, row = Math.floor(i / columns);
+        const x = mix(-780, 780, (column + mix(.07, .93, random())) / columns);
+        const z = mix(-540, -850, (row + mix(.12, .88, random())) / rows);
+        const height = mix(1.8, 4, Math.pow(random(), 1.65));
+        pose.position.set(x, groundHeight(x, z) - height * .12, z);
+        pose.rotation.set(mix(-.13, .13, random()), mix(-.8, .8, random()), mix(-.17, .17, random()), "YXZ");
+        pose.scale.set(height * .76, height, height);
+        pose.updateMatrix();
+        mesh.setMatrixAt(i, pose.matrix);
+      }
+      mesh.count = this.distantCount;
+      mesh.instanceMatrix.needsUpdate = true;
+      this.triangleBudget += geometry.attributes.position.count / 3 * mesh.count;
+    }
+
     update(cue) {
       if (this.disposed) return;
       this.cue = cue;
       const score = Math.max(this.start - 1, Math.min(this.settle + 3, cue));
       if (score === this.poseCue) return;
       this.poseCue = score;
-      this.group.visible = score >= this.start && this.entries.length > 0;
+      this.group.visible = score >= this.start;
       this.counts = { waiting: 0, falling: 0, embedding: 0, planted: 0 };
       const pose = this.transform;
       for (const { mesh, entries } of this.batches) {
@@ -238,7 +276,7 @@
     }
 
     snapshot({ details = true } = {}) {
-      const state = { cue: this.cue, start: this.start, settle: this.settle, count: this.entries.length,
+      const state = { cue: this.cue, start: this.start, settle: this.settle, count: this.entries.length, distantCount: this.distantCount,
         visible: this.group.visible, ...this.counts, profiles: this.batches.map(batch => batch.id),
         meshCount: this.group.children.length, triangleBudget: this.triangleBudget, particleCount: this.chips?.count || 0 };
       if (details) state.swords = this.entries.map(entry => ({ id: entry.id, profile: entry.profile.id, phase: entry.phase,

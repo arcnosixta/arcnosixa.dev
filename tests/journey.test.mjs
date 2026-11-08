@@ -112,7 +112,7 @@ test("the camera retreats smoothly during the rain and aligns the hero with the 
       const falling = sample(journey, 226), settled = sample(journey, 238), flatten = sample(journey, 244), flat = sample(journey, 252);
       assert.ok(start.camera[2] < falling.camera[2] && falling.camera[2] < settled.camera[2] && settled.camera[2] < flatten.camera[2]);
       assert.ok(start.silhouette === 0 && falling.silhouette > 0 && falling.silhouette < 1 && flatten.silhouette === 1);
-      assert.deepEqual(flat.camera, flatten.camera, "the camera holds while the SVG covers the field");
+      assert.deepEqual(flat.camera, flatten.camera, "the camera holds through the frozen-frame handoff");
       assert.deepEqual(flat.target, flatten.target);
       const [x, , z] = flat.tip;
       const contact = new THREE.Vector3(x, journey.groundHeight(x, z), z).project(journey.camera);
@@ -149,7 +149,9 @@ test("swords descend in staggered groups and remain embedded in the rendered ter
         assert.equal(z, sword.anchor[2]);
         assert.ok(sword.embedDepth > 0 && Math.abs(y - (journey.groundHeight(x, z) - sword.embedDepth)) < 1e-7);
       }
-      assert.deepEqual(sample(journey, 252).swordField.swords, settled.swords, "the planted swords hold through the reveal");
+      const finalField = sample(journey, 252).swordField;
+      assert.deepEqual(finalField.swords, settled.swords, "the planted swords hold through the reveal");
+      assert.equal(finalField.count + finalField.distantCount + 1, 1000, "near, distant and hero blades make the same thousand-sword scene");
     } finally { journey.dispose(); }
   }
 });

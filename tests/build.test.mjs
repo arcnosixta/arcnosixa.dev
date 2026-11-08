@@ -63,16 +63,15 @@ test("the public build drops the retired character models, art and scripts", asy
   await stat(join(root, "vendor/three-LICENSE.txt"));
 });
 
-test("the flat horizon contains 1,000 distinct SVG swords planted on the 35% seam", async () => {
-  const svg = await readFile(join(root, "assets/fate/sword-horizon.svg"), "utf8");
-  assert.match(svg, /<svg\b(?=[^>]*\bviewBox="0 0 1800 1000")(?=[^>]*\bpreserveAspectRatio="none")/);
-  assert.match(svg, /<rect\b(?=[^>]*\bdata-horizon="black")(?=[^>]*\by="350")(?=[^>]*\bheight="650")(?=[^>]*\bfill="#000")/);
-  const swords = [...svg.matchAll(/<use\b[^>]*\bdata-sword="([^"]+)"[^>]*>/g)];
-  assert.equal(swords.length, 1000);
-  assert.equal(new Set(swords.map(([, id]) => id)).size, 1000);
-  assert.ok(swords.every(([element]) => /\btransform="translate\(\s*[\d.]+[ ,]+350\s*\)/.test(element)), "every sword tip must share the black and white seam");
-  const hero = swords.find(([element]) => /\bdata-role="hero"/.test(element));
-  assert.match(hero?.[0] || "", /translate\(900[ ,]+350\)/);
+test("the still story packages desktop and portrait PNGs of the final render", async () => {
+  for (const [name, width, height] of [["sword-horizon.png", 1869, 935], ["sword-horizon-mobile.png", 390, 844]]) {
+    const image = await readFile(join(root, "assets/fate", name));
+    assert.equal(image.subarray(0, 8).toString("hex"), "89504e470d0a1a0a", `${name} must be PNG`);
+    assert.equal(image.subarray(12, 16).toString(), "IHDR");
+    assert.deepEqual([image.readUInt32BE(16), image.readUInt32BE(20)], [width, height]);
+    assert.ok(image.length > 4096 && image.includes("IDAT"), `${name} must contain a full captured frame`);
+  }
+  await assert.rejects(stat(join(root, "assets/fate/sword-horizon.svg")), { code: "ENOENT" });
 });
 test("direct route, artwork and soundtrack streaming work under the GitHub Pages base", async () => {
   const server = spawn(process.execPath, ["scripts/serve.mjs"], {
@@ -89,7 +88,7 @@ test("direct route, artwork and soundtrack streaming work under the GitHub Pages
     const direct = await fetch(`${base}fate?test=1`, { redirect: "manual" });
     assert.equal(direct.status, 301);
     assert.equal(direct.headers.get("location"), "/arcnosixa.dev/fate/?test=1");
-    for (const path of ["", "fate/", "fate/fate.css", "fate/scene.js?v=local", "fate/grove.js?v=local", "fate/katana.js?v=local", "fate/sword-field.js?v=local", "vendor/three.min.js", "assets/fate/hands-atlas.png", "assets/fate/reference-katana.svg", "assets/fate/sword-horizon.svg"]) {
+    for (const path of ["", "fate/", "fate/fate.css", "fate/scene.js?v=local", "fate/grove.js?v=local", "fate/katana.js?v=local", "fate/sword-field.js?v=local", "vendor/three.min.js", "assets/fate/hands-atlas.png", "assets/fate/reference-katana.svg", "assets/fate/sword-horizon.png", "assets/fate/sword-horizon-mobile.png"]) {
       const response = await fetch(base + path);
       assert.equal(response.status, 200, path);
       await response.arrayBuffer();

@@ -3,8 +3,10 @@
   const root = document.documentElement;
   const stage = document.getElementById("stage");
   const canvas = document.getElementById("fate-canvas");
+  const horizon = document.getElementById("sword-horizon");
   const stillToggle = document.querySelector(".still-toggle");
   const story = document.getElementById("written-story");
+  const stillHorizon = story.querySelector(".still-sword-horizon");
   const revelation = document.querySelector(".revelation");
   const reduced = matchMedia("(prefers-reduced-motion: reduce)");
   const { length: scoreLength, at, cue, phase, ending } = window.FateScore;
@@ -23,10 +25,11 @@
   let scene, timeline, intro, raf = 0, lastFrame = 0, version = 0, unavailable = false;
   let activeChapter = -1, pageVisible = !document.hidden, stageVisible = true, starting = false;
   let state = { progress: 0 };
+  let wantsHorizon = false, horizonReady = false;
   let resizeProgress = null;
   const scripts = new Map();
   const assetVersion = new URL(document.currentScript.src).search;
-  const sizeObserver = new ResizeObserver(() => scene?.resize());
+  const sizeObserver = new ResizeObserver(resizeScene);
   sizeObserver.observe(stage);
   const visibilityObserver = new IntersectionObserver(([entry]) => {
     stageVisible = entry.isIntersecting;
@@ -44,18 +47,37 @@
     return scripts.get(src);
   }
   function stopFrames() { cancelAnimationFrame(raf); raf = 0; lastFrame = 0; }
-  function canRender() { return scene && pageVisible && stageVisible && !root.classList.contains("is-sword-horizon"); }
+  function horizonFits() { return horizon.width === canvas.width && horizon.height === canvas.height; }
+  function canRender() {
+    return scene && pageVisible && stageVisible && (!wantsHorizon || !root.classList.contains("is-sword-horizon") || !horizonFits());
+  }
+  function copyHorizon() {
+    // Copy in the same frame, while the WebGL drawing buffer is still intact.
+    horizonReady = false;
+    const context = horizon.getContext("2d", { alpha: false });
+    if (!context || scene.renderer.getContext().isContextLost()) throw new Error("Horizon capture unavailable");
+    if (horizon.width !== canvas.width) horizon.width = canvas.width;
+    if (horizon.height !== canvas.height) horizon.height = canvas.height;
+    context.drawImage(canvas, 0, 0);
+    horizonReady = true;
+  }
   function frame(now) {
     raf = 0;
     if (!canRender()) return;
     const delta = lastFrame ? (now - lastFrame) / 1000 : 1 / 60;
     lastFrame = now;
-    try { scene.render(state.progress, delta); }
+    try {
+      scene.render(state.progress, delta);
+      if (wantsHorizon) copyHorizon();
+      // Keep the visible frame in place until its replacement has been drawn.
+      root.classList.toggle("is-sword-horizon", wantsHorizon);
+    }
     catch { fallback(true); return; }
     // Only the dark opening animates between scroll updates.
     if (state.progress * scoreLength < at(116)) raf = requestAnimationFrame(frame);
   }
   function wake() { if (canRender() && !raf) raf = requestAnimationFrame(frame); }
+  function resizeScene() { scene?.resize(); wake(); }
   function updateUI() {
     const p = state.progress, score = Math.round(cue(p * scoreLength) * 1000) / 1000;
     const white = Math.max(0, Math.min(1, (score - 104) / 12));
@@ -70,7 +92,7 @@
       });
     }
     root.classList.toggle("is-journey", score >= 128);
-    root.classList.toggle("is-sword-horizon", score >= ending.flat);
+    wantsHorizon = score >= ending.flat;
     stage.dataset.journeyPhase = phase(score);
     if (root.classList.contains("is-paper") !== (score >= 110)) {
       root.classList.toggle("is-paper", score >= 110);
@@ -98,7 +120,7 @@
     gsap.set(".silence", { autoAlpha: .7 });
     gsap.set(".revelation, .scroll-invitation, .chapter-marker", { autoAlpha: 0 });
     gsap.set(".journey-notes", { autoAlpha: 0 });
-    gsap.set(".whiteout, #sword-horizon", { opacity: 0 });
+    gsap.set(".whiteout", { opacity: 0 });
     timeline = gsap.timeline({
       defaults: { ease: "none" }, onUpdate: updateUI,
       scrollTrigger: {
@@ -140,7 +162,6 @@
     line(".note-services", 169, 179, 2);
     line(".note-craft", 182, 192, 2);
     timeline.set(".journey-notes", { autoAlpha: 0 }, at(194));
-    timeline.to("#sword-horizon", { opacity: 1, duration: at(ending.flat) - at(ending.flatten) }, at(ending.flatten));
     timeline.to(".revelation", { autoAlpha: 1, duration: 2 }, at(ending.return));
     intro = gsap.timeline();
     intro.fromTo(".captions", { opacity: 0 }, { opacity: 1, duration: 2.8 }, .4);
@@ -153,6 +174,7 @@
     version++;
     starting = false;
     resizeProgress = null;
+    wantsHorizon = false;
     delete stage.dataset.journeyPhase;
     stopFrames();
     intro?.kill(); intro = null;
@@ -183,8 +205,15 @@
   function fallback(failed = false) {
     const score = state.progress * scoreLength;
     const wasEnhanced = root.classList.contains("enhanced");
+    if (scene && !failed && score >= at(ending.flatten) && (!root.classList.contains("is-sword-horizon") || !horizonFits())) {
+      try {
+        scene.render(state.progress);
+        copyHorizon();
+      } catch { /* The illustrated story has its own exported frame. */ }
+    }
     unavailable = failed;
     teardown();
+    if (horizonReady) stillHorizon.prepend(horizon);
     syncToggle();
     if (wasEnhanced) {
       const scenes = [...story.querySelectorAll("[data-story-at]")];
@@ -206,6 +235,7 @@
       await script(`katana.js${assetVersion}`);
       await script(`scene.js${assetVersion}`);
       if (request !== version || reduced.matches || manualStill) return;
+      if (horizon.parentNode !== stage) stage.append(horizon);
       root.classList.add("enhanced");
       story.querySelectorAll("a").forEach((link) => { link.tabIndex = -1; });
       state = { progress: 0 };
@@ -251,7 +281,7 @@
   });
   window.addEventListener("resize", () => {
     if (scene && timeline) resizeProgress ??= state.progress;
-    scene?.resize();
+    resizeScene();
   }, { passive: true });
   document.addEventListener("visibilitychange", () => {
     pageVisible = !document.hidden;

@@ -52,9 +52,26 @@
     const channels = rgb.map(value => { const v = value / 255; return v <= .04045 ? v / 12.92 : Math.pow((v + .055) / 1.055, 2.4); });
     return channels.length === 3 ? channels[0] * .2126 + channels[1] * .7152 + channels[2] * .0722 : NaN;
   }
-  function horizonLoaded(element) {
-    const image = element?.matches("img") ? element : element?.querySelector('img[src*="sword-horizon"]');
-    return image?.naturalWidth > 0;
+  function bitmap(canvas) {
+    const { width, height } = canvas;
+    if (!width || !height) return null;
+    const copy = canvas.ownerDocument.createElement("canvas");
+    copy.width = width;
+    copy.height = height;
+    const context = copy.getContext("2d", { willReadFrequently: true });
+    context.drawImage(canvas, 0, 0);
+    return context.getImageData(0, 0, width, height);
+  }
+  function sameBitmap(live, frozen) {
+    if (!live || !frozen || live.width !== frozen.width || live.height !== frozen.height) return false;
+    let dark = 0, light = 0;
+    for (let i = 0; i < live.data.length; i += 4) {
+      if (live.data[i] !== frozen.data[i] || live.data[i + 1] !== frozen.data[i + 1] || live.data[i + 2] !== frozen.data[i + 2] || live.data[i + 3] !== frozen.data[i + 3]) return false;
+      if (live.data[i] < 25) dark++;
+      if (live.data[i] > 230) light++;
+    }
+    const minimum = live.width * live.height * .05;
+    return dark > minimum && light > minimum;
   }
   async function regression() {
     const button = document.getElementById("regression"), run = revision;
@@ -132,34 +149,57 @@
         await atCue(200);
         check("the katana reaches the ground before the sword rain", stage.dataset.journeyPhase === "ground" && Math.abs(renderedScore() - scoreForCue(200)) < 1 && !notes.some(visible));
         const finale = d.querySelector(".revelation");
+        const webgl = d.querySelector("#fate-canvas");
         const horizon = d.querySelector("#sword-horizon");
-        const horizonOpacity = () => Number(w.getComputedStyle(horizon).opacity);
         const drawsBeforeRain = w.qaGLDraws;
         await atCue(220);
-        check("the sword rain uses live WebGL without an early finale", stage.dataset.journeyPhase === "sword-rain" && w.qaGLDraws > drawsBeforeRain && !notes.some(visible) && horizonOpacity() < .01 && finale.inert);
+        check("the sword rain uses live WebGL without an early finale", stage.dataset.journeyPhase === "sword-rain" && w.qaGLDraws > drawsBeforeRain && !notes.some(visible) && visible(webgl) && !visible(horizon) && finale.inert);
         await atCue(238);
-        check("the settled sword field holds before the flat reveal", stage.dataset.journeyPhase === "sword-field" && horizonOpacity() < .01 && finale.inert);
-        await atCue(248);
-        check("the flat horizon gradually covers the settled 3D field", horizonOpacity() > .05 && horizonOpacity() < .95 && horizonLoaded(horizon) && !d.documentElement.classList.contains("is-sword-horizon"));
+        check("the settled sword field holds before the flat reveal", stage.dataset.journeyPhase === "sword-field" && visible(webgl) && !visible(horizon) && finale.inert);
+        // The default WebGL buffer may be discarded at presentation. Copy the
+        // final live frame immediately after its render for a pixel comparison.
+        let live;
+        const scene = w.FateScene.prototype, render = scene.render;
+        scene.render = function (progress, ...args) {
+          const result = render.call(this, progress, ...args);
+          if (!live && Math.abs(w.FateScore.cue(progress * scoreLength()) - 251) < .1) live = bitmap(this.canvas);
+          return result;
+        };
+        try { await atCue(251); await settle(); }
+        finally { scene.render = render; }
+        check("the last live frame remains visible immediately before the handoff", Boolean(live) && visible(webgl) && !visible(horizon) && !d.documentElement.classList.contains("is-sword-horizon"));
         await atCue(253); await settle();
-        check("the horizon replaces the 3D field before the return appears", stage.dataset.journeyPhase === "sword-horizon" && d.documentElement.classList.contains("is-sword-horizon") && visible(horizon) && horizonOpacity() > .99 && finale.inert);
+        check("the 2D horizon replaces the 3D field before the return appears", stage.dataset.journeyPhase === "sword-horizon" && d.documentElement.classList.contains("is-sword-horizon") && visible(horizon) && !visible(webgl) && finale.inert);
+        check("the frozen 2D horizon matches every pixel of the last live 3D frame", sameBitmap(live, bitmap(horizon)));
         const flatDraws = w.qaGLDraws;
         await atCue(258); await settle();
         check("the flat finale stops WebGL draw calls while scrolling", w.qaGLDraws === flatDraws);
         check("the ending appears over the flat horizon", stage.dataset.journeyPhase === "sword-horizon" && visible(finale) && finale.querySelector(".reveal-name").textContent.trim().length > 0);
         check("final return becomes interactive", !finale.inert && visible(finale.querySelector(".return-link")));
+        const frameWidth = frame.style.width, oldBackingWidth = horizon.width;
+        frame.style.width = `${w.innerWidth + (w.innerWidth >= 480 ? -37 : 37)}px`;
+        try {
+          await settle();
+          check("resizing the flat view refreshes its bitmap at the new drawing-buffer size", visible(horizon) && !visible(webgl) && horizon.width !== oldBackingWidth && horizon.width === webgl.width && horizon.height === webgl.height && w.qaGLDraws > flatDraws);
+        } finally {
+          frame.style.width = frameWidth;
+          await settle();
+        }
+        const resizedDraws = w.qaGLDraws;
         await atCue(238); await settle();
-        check("rewinding resumes the live field and gates the ending", stage.dataset.journeyPhase === "sword-field" && w.qaGLDraws > flatDraws && horizonOpacity() < .01 && !d.documentElement.classList.contains("is-sword-horizon") && finale.inert);
+        check("rewinding resumes the live field and gates the ending", stage.dataset.journeyPhase === "sword-field" && w.qaGLDraws > resizedDraws && visible(webgl) && !visible(horizon) && !d.documentElement.classList.contains("is-sword-horizon") && finale.inert);
         await at(85.8);
         check("reverse scroll restores the flash bridge and gates the return", Number(w.getComputedStyle(d.querySelector(".whiteout")).opacity) > 0 && finale.inert && !d.querySelector(".awakening-title"));
         check("reverse scroll restores the dark world", paper() === 0 && !d.documentElement.classList.contains("is-paper"));
         await atCue(253);
+        await settle();
+        const beforeStill = bitmap(horizon);
         const oldTime = audio?.currentTime || 0, oldPlays = w.qaAudioPlays, wasPlaying = audio?.paused === false;
         d.querySelector(".still-toggle").click(); await settle();
         const stillHorizon = d.querySelector(".still-sword-horizon");
-        check("motion to still preserves the horizon scene", d.documentElement.classList.contains("is-still") && visible(stillHorizon) && Math.abs(stillHorizon.getBoundingClientRect().top) < 4);
+        check("motion to still preserves the same canvas and its pixels", d.documentElement.classList.contains("is-still") && stillHorizon.contains(horizon) && visible(horizon) && Math.abs(stillHorizon.getBoundingClientRect().top) < 4 && sameBitmap(beforeStill, bitmap(horizon)));
         d.querySelector(".still-toggle").click(); await settle();
-        check("still to motion restores the horizon score", d.documentElement.classList.contains("enhanced") && Math.abs(renderedScore() - Number(stillHorizon.dataset.storyAt)) < 1);
+        check("still to motion restores the canvas and horizon score", d.documentElement.classList.contains("enhanced") && stage.contains(horizon) && visible(horizon) && Math.abs(renderedScore() - Number(stillHorizon.dataset.storyAt)) < 1);
         check("view switches preserve the soundtrack without restarting", w.qaAudio === audio && w.qaAudioPlays === oldPlays && (audio?.currentTime || 0) >= oldTime - .1 && (!wasPlaying || audio.paused === false));
       } else {
         const cues = [99, 116, 134, 158, 172, 186];
@@ -168,11 +208,13 @@
         check("static score selection reaches the white void", visible(d.querySelector(".still-void")));
         await atCue(253);
         const stillHorizon = d.querySelector(".still-sword-horizon");
-        check("static score selection displays the same sword horizon without WebGL", visible(stillHorizon) && horizonLoaded(stillHorizon) && w.qaGLDraws === 0);
+        const image = stillHorizon.querySelector("picture img.sword-horizon");
+        await image.decode();
+        check("static score selection displays the pre-rendered sword horizon without WebGL", visible(image) && /\/sword-horizon(?:-mobile)?\.png(?:\?|$)/.test(image.currentSrc) && image.naturalWidth > 0 && w.qaGLDraws === 0);
         const ending = d.querySelector(".still-ending");
         const returnLink = ending.querySelector(".return-link");
         check("the static ending has a usable return", visible(returnLink) && !ending.inert);
-        const artwork = ending.querySelector("img").getBoundingClientRect();
+        const artwork = image.getBoundingClientRect();
         const ink = luminance(w.getComputedStyle(returnLink).color);
         check("the static return has readable contrast over the black field", returnLink.getBoundingClientRect().top >= artwork.top + artwork.height * .35 && (ink + .05) / .05 >= 4.5);
       }

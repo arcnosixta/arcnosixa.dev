@@ -92,7 +92,7 @@
           <section class="blade-note note-services"><span class="note-index">02 / СВЯЗИ</span><h2>Сервисы и ИИ</h2><p>Работаю с серверной логикой, локальными сервисами и интеграциями ИИ-агентов.</p></section>
           <section class="blade-note note-craft"><span class="note-index">03 / ОСНОВА</span><h2>Надёжность</h2><p>Разбираюсь в устройстве Linux. Ценю решения, которые можно объяснить, проверить и развивать.</p></section>
         </div>
-        <img id="sword-horizon" class="sword-horizon" src="../assets/fate/sword-horizon.svg?v=1" alt="" aria-hidden="true" />
+        <canvas id="sword-horizon" class="sword-horizon" width="0" height="0" aria-hidden="true"></canvas>
         <div class="whiteout" aria-hidden="true"></div>
         <div class="revelation" aria-hidden="true" inert>
           <p class="reveal-name">ARCNOSIXTA</p>
@@ -160,7 +160,11 @@
         <div class="still-ground-plane" aria-hidden="true"></div>
       </figure>
       <div class="still-scene still-ending still-sword-horizon" data-story-at="289" data-story-start="281">
-        <img class="sword-horizon" src="../assets/fate/sword-horizon.svg?v=1" alt="A thousand black swords stand along the edge of the black earth beneath a white sky." />
+        <picture>
+          <source media="(max-width: 700px)" srcset="../assets/fate/sword-horizon-mobile.png?v=1" />
+          <img class="sword-horizon" src="../assets/fate/sword-horizon.png?v=1" loading="lazy" alt="A thousand black swords stand along the edge of the black earth beneath a white sky." />
+        </picture>
+        <div class="grain" aria-hidden="true"></div>
         <div class="ending-panel"><p class="reveal-name">ARCNOSIXTA</p><p class="reveal-will">FATE</p>
         <p class="reveal-end">The will to create.</p>
         <a class="return-link" data-void-return href="../">Return to reality <span aria-hidden="true">↗</span></a></div>
