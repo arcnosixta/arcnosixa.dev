@@ -4,6 +4,7 @@
   const clamp = value => Math.max(0, Math.min(1, value));
   const mix = (a, b, t) => a + (b - a) * t;
   const smooth = t => t * t * (3 - 2 * t);
+  const secondaryHeightScale = 1.26;
   const parts = {
     blade: { depth: .013, bevel: .0025, face: 0x08090b, rim: 0x24262a },
     guard: { depth: .024, bevel: .003, face: 0x131417, rim: 0x25272b },
@@ -50,6 +51,23 @@
         colors.push(color.r, color.g, color.b);
       }
       geometry.dispose();
+    }
+    if (profile.wrap) {
+      const { x, top, base, width } = profile.wrap;
+      const color = new T.Color(0x5b1725).convertSRGBToLinear();
+      const depth = parts.grip.depth * .5 + parts.grip.bevel + .0004;
+      for (let i = 1; i <= 5; i++) {
+        const y = mix(base, .976, i / 6), center = mix(x, top, (y - base) / (.981 - base));
+        const diamond = [[center - width * .19, y], [center, y - .009],
+          [center + width * .19, y], [center, y + .009]];
+        for (const side of [-1, 1]) {
+          const indices = side > 0 ? [0, 1, 2, 0, 2, 3] : [0, 2, 1, 0, 3, 2];
+          for (const index of indices) {
+            positions.push(...diamond[index], side * depth);
+            colors.push(color.r, color.g, color.b);
+          }
+        }
+      }
     }
     const geometry = new T.BufferGeometry();
     geometry.setAttribute("position", new T.Float32BufferAttribute(positions, 3));
@@ -133,7 +151,8 @@
             angle: between(0, Math.PI * 2), range: between(1.1, 3.5),
             lift: between(.45, 1.65), size: between(.085, .25),
           })) : [];
-        return { ...spec, id: i, groundY, launchCue, impactCue, settleCue: impactCue + embedTime,
+        return { ...spec, id: i, height: height * secondaryHeightScale, widthScale: height,
+          groundY, launchCue, impactCue, settleCue: impactCue + embedTime,
           embedDepth: height * between(.056, .106), fallHeight, yaw,
           pitch: between(-.13, .13), lean: between(-.17, .17), twist: between(-.42, .42),
           driftX: between(-2.6, 2.6), driftZ: between(-2.4, 2.4), chips,
@@ -207,7 +226,7 @@
         const height = mix(1.8, 4, Math.pow(random(), 1.65));
         pose.position.set(x, groundHeight(x, z) - height * .12, z);
         pose.rotation.set(mix(-.13, .13, random()), mix(-.8, .8, random()), mix(-.17, .17, random()), "YXZ");
-        pose.scale.set(height * .76, height, height);
+        pose.scale.set(height * .76, height * 1.1, height);
         pose.updateMatrix();
         mesh.setMatrixAt(i, pose.matrix);
       }
@@ -243,7 +262,7 @@
           const strike = Math.sin(sink * Math.PI) * (1 - sink) * .037;
           pose.position.fromArray(entry.tip);
           pose.rotation.set(entry.pitch + strike, entry.yaw + entry.twist * air, entry.lean - strike, "YXZ");
-          pose.scale.setScalar(height);
+          pose.scale.set(entry.widthScale, height, entry.widthScale);
           pose.updateMatrix();
           mesh.setMatrixAt(active++, pose.matrix);
         }
