@@ -7,7 +7,6 @@
   const stillToggle = document.querySelector(".still-toggle");
   const story = document.getElementById("written-story");
   const stillHorizon = story.querySelector(".still-sword-horizon");
-  const revelation = document.querySelector(".revelation");
   const reduced = matchMedia("(prefers-reduced-motion: reduce)");
   const { length: scoreLength, at, cue, phase, ending } = window.FateScore;
   const chapters = [
@@ -24,9 +23,8 @@
   try { manualStill = localStorage.getItem("fate-still") === "1"; } catch { /* optional */ }
   let scene, timeline, intro, raf = 0, lastFrame = 0, version = 0, unavailable = false;
   let activeChapter = -1, pageVisible = !document.hidden, stageVisible = true, starting = false;
-  let state = { progress: 0 };
   let wantsHorizon = false, horizonReady = false;
-  let resizeProgress = null;
+  let resizePosition = null;
   const scripts = new Map();
   const assetVersion = new URL(document.currentScript.src).search;
   const sizeObserver = new ResizeObserver(resizeScene);
@@ -47,6 +45,7 @@
     return scripts.get(src);
   }
   function stopFrames() { cancelAnimationFrame(raf); raf = 0; lastFrame = 0; }
+  function storyProgress() { return timeline?.progress() ?? 0; }
   function horizonFits() { return horizon.width === canvas.width && horizon.height === canvas.height; }
   function canRender() {
     return scene && pageVisible && stageVisible && (!wantsHorizon || !root.classList.contains("is-sword-horizon") || !horizonFits());
@@ -65,21 +64,28 @@
     raf = 0;
     if (!canRender()) return;
     const delta = lastFrame ? (now - lastFrame) / 1000 : 1 / 60;
+    const progress = storyProgress();
     lastFrame = now;
     try {
-      scene.render(state.progress, delta);
+      scene.render(progress, delta);
       if (wantsHorizon) copyHorizon();
       // Keep the visible frame in place until its replacement has been drawn.
       root.classList.toggle("is-sword-horizon", wantsHorizon);
     }
     catch { fallback(true); return; }
     // Only the dark opening animates between scroll updates.
-    if (state.progress * scoreLength < at(116)) raf = requestAnimationFrame(frame);
+    if (progress * scoreLength < at(116)) raf = requestAnimationFrame(frame);
   }
   function wake() { if (canRender() && !raf) raf = requestAnimationFrame(frame); }
   function resizeScene() { scene?.resize(); wake(); }
+  function offsetPastPin(trigger) { return Math.max(0, window.scrollY - trigger.end); }
+  function restoreMotionPosition(trigger, { progress, offset }) {
+    window.scrollTo(0, trigger.start + (trigger.end - trigger.start) * progress + offset);
+    trigger.animation.progress(progress);
+    updateUI();
+  }
   function updateUI() {
-    const p = state.progress, score = Math.round(cue(p * scoreLength) * 1000) / 1000;
+    const p = storyProgress(), score = Math.round(cue(p * scoreLength) * 1000) / 1000;
     const white = Math.max(0, Math.min(1, (score - 104) / 12));
     const paper = white * white * (3 - 2 * white);
     root.style.setProperty("--fate-paper", paper.toFixed(4));
@@ -105,9 +111,6 @@
       activeChapter = chapter;
       document.querySelector(".chapter-name").textContent = chapters[chapter].name;
     }
-    const revealed = score >= ending.return;
-    revelation.inert = !revealed;
-    revelation.setAttribute("aria-hidden", String(!revealed));
     wake();
   }
   function makeTimeline() {
@@ -118,7 +121,7 @@
     window.ScrollTrigger.config({ autoRefreshEvents: "visibilitychange,DOMContentLoaded,resize" });
     gsap.set(".caption, .blade-note", { autoAlpha: 0, y: 0 });
     gsap.set(".silence", { autoAlpha: .7 });
-    gsap.set(".revelation, .scroll-invitation, .chapter-marker", { autoAlpha: 0 });
+    gsap.set(".scroll-invitation, .chapter-marker", { autoAlpha: 0 });
     gsap.set(".journey-notes", { autoAlpha: 0 });
     gsap.set(".whiteout", { opacity: 0 });
     timeline = gsap.timeline({
@@ -127,17 +130,22 @@
         id: "fate-story", trigger: "#experience", pin: stage,
         start: "top top", end: () => `+=${Math.round(stage.clientHeight * scoreLength * .095)}`,
         scrub: .85, anticipatePin: 1, invalidateOnRefresh: true,
+        onLeave(self) {
+          // The pin releases at the final pose, even after a fast scroll.
+          self.getTween()?.progress?.(1);
+          self.animation.progress(1);
+        },
         onRefresh(self) {
-          if (resizeProgress === null) return;
-          const progress = resizeProgress;
-          resizeProgress = null;
-          window.scrollTo(0, self.start + (self.end - self.start) * progress);
-          self.animation.progress(progress);
+          if (resizePosition === null) return;
+          const position = resizePosition;
+          resizePosition = null;
+          restoreMotionPosition(self, position);
         }
       }
     });
     chapters.forEach((c) => timeline.addLabel(c.name, at(c.at)));
-    timeline.to(state, { progress: 1, duration: scoreLength }, 0);
+    // Keep the playhead running through the final shot after the captions end.
+    timeline.to({}, { duration: scoreLength }, 0);
     timeline.to(".silence", { autoAlpha: 0, duration: 3.5 }, 6);
     timeline.to(".scroll-invitation", { autoAlpha: 0, duration: 3 }, 3.5);
     timeline.to(".chapter-marker", { autoAlpha: 1, duration: 4 }, 7);
@@ -162,18 +170,17 @@
     line(".note-services", 169, 179, 2);
     line(".note-craft", 182, 192, 2);
     timeline.set(".journey-notes", { autoAlpha: 0 }, at(194));
-    timeline.to(".revelation", { autoAlpha: 1, duration: 2 }, at(ending.return));
     intro = gsap.timeline();
     intro.fromTo(".captions", { opacity: 0 }, { opacity: 1, duration: 2.8 }, .4);
     // Only the invitation's entrance uses clock time. The story never autoplays.
     intro.to(".scroll-invitation", { autoAlpha: .8, duration: 1.8,
-      onUpdate: () => { if (state.progress > .035) gsap.set(".scroll-invitation", { autoAlpha: 0 }); }
+      onUpdate: () => { if (storyProgress() > .035) gsap.set(".scroll-invitation", { autoAlpha: 0 }); }
     }, 2.4);
   }
   function teardown() {
     version++;
     starting = false;
-    resizeProgress = null;
+    resizePosition = null;
     wantsHorizon = false;
     delete stage.dataset.journeyPhase;
     stopFrames();
@@ -190,8 +197,6 @@
       control.removeAttribute("aria-hidden");
     });
     story.querySelectorAll("a").forEach((link) => link.removeAttribute("tabindex"));
-    revelation.inert = true;
-    revelation.setAttribute("aria-hidden", "true");
     activeChapter = -1;
   }
   function syncToggle() {
@@ -203,11 +208,12 @@
     if (stillToggle.disabled) stillToggle.textContent = "Still version";
   }
   function fallback(failed = false) {
-    const score = state.progress * scoreLength;
+    const progress = storyProgress(), score = progress * scoreLength;
     const wasEnhanced = root.classList.contains("enhanced");
+    const offset = timeline ? offsetPastPin(timeline.scrollTrigger) : 0;
     if (scene && !failed && score >= at(ending.flatten) && (!root.classList.contains("is-sword-horizon") || !horizonFits())) {
       try {
-        scene.render(state.progress);
+        scene.render(progress);
         copyHorizon();
       } catch { /* The illustrated story has its own exported frame. */ }
     }
@@ -219,9 +225,10 @@
       const scenes = [...story.querySelectorAll("[data-story-at]")];
       const current = scenes.filter(el => Number(el.dataset.storyStart || el.dataset.storyAt) <= score).at(-1) || scenes[0];
       current?.scrollIntoView({ behavior: "instant" });
+      if (current === stillHorizon && offset > 0) window.scrollBy(0, offset);
     }
   }
-  async function start(progress = 0) {
+  async function start({ progress = 0, offset = 0 } = {}) {
     syncToggle();
     if (reduced.matches || manualStill || unavailable || scene || starting) return;
     if (!window.gsap || !window.ScrollTrigger) { fallback(true); return; }
@@ -238,16 +245,12 @@
       if (horizon.parentNode !== stage) stage.append(horizon);
       root.classList.add("enhanced");
       story.querySelectorAll("a").forEach((link) => { link.tabIndex = -1; });
-      state = { progress: 0 };
       scene = new window.FateScene(canvas, () => fallback(true));
       const currentScene = scene;
       makeTimeline();
       scene.resize();
       window.ScrollTrigger.refresh();
-      if (progress > 0) {
-        window.scrollTo(0, timeline.scrollTrigger.start + (timeline.scrollTrigger.end - timeline.scrollTrigger.start) * progress);
-        timeline.progress(progress);
-      }
+      if (progress > 0) restoreMotionPosition(timeline.scrollTrigger, { progress, offset });
       wake();
       // Only /fate/ in motion mode loads the 3 art plates, never the portfolio.
       await currentScene.loadArt();
@@ -257,16 +260,18 @@
       if (request === version) fallback(true);
     } finally { if (request === version) starting = false; }
   }
-  function visibleStoryProgress() {
+  function visibleStoryPosition() {
+    const offset = -stillHorizon.getBoundingClientRect().top;
+    if (offset >= 0) return { progress: 1, offset };
     const current = [...story.querySelectorAll("[data-story-at]")].find(el => el.getBoundingClientRect().bottom > innerHeight * .5);
-    return Number(current?.dataset.storyAt || 0) / scoreLength;
+    return { progress: Number(current?.dataset.storyAt || 0) / scoreLength, offset: 0 };
   }
   stillToggle.addEventListener("click", () => {
     if (reduced.matches || unavailable) return;
     manualStill = !manualStill;
     try { localStorage.setItem("fate-still", manualStill ? "1" : "0"); } catch { /* optional */ }
     if (manualStill) fallback();
-    else void start(visibleStoryProgress());
+    else void start(visibleStoryPosition());
   });
   document.querySelector(".skip-story").addEventListener("click", (event) => {
     event.preventDefault();
@@ -277,10 +282,13 @@
   });
   reduced.addEventListener("change", () => {
     if (reduced.matches) fallback();
-    else void start(visibleStoryProgress());
+    else void start(visibleStoryPosition());
   });
   window.addEventListener("resize", () => {
-    if (scene && timeline) resizeProgress ??= state.progress;
+    if (scene && timeline && resizePosition === null) {
+      const offset = offsetPastPin(timeline.scrollTrigger);
+      resizePosition = { progress: offset > 0 ? 1 : storyProgress(), offset };
+    }
     resizeScene();
   }, { passive: true });
   document.addEventListener("visibilitychange", () => {

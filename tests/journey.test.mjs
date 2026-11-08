@@ -31,18 +31,18 @@ function terrainVerticesInView(journey) {
 
 test("the scroll score roundtrips original cues and gives the sword rain and finale distinct phases", () => {
   const score = scope.window.FateScore;
-  assert.equal(score.length, 297);
+  assert.equal(score.length, 289);
   assert.equal(score.at(194) - score.at(146), 84, "the long blade passage must retain its full reading interval");
   assert.equal(score.at(206) - score.at(194), 24, "the ground reveal must finish before the sword rain");
-  assert.deepEqual({ ...score.ending }, { rain: 206, settled: 234, flatten: 244, flat: 252, return: 254, end: 260 });
-  assert.equal(score.at(score.ending.end), score.length);
+  assert.deepEqual({ ...score.ending }, { rain: 206, settled: 234, flatten: 244, flat: 252 });
+  assert.equal(score.at(score.ending.flat), score.length, "the pin releases at the frozen frame");
   for (const [cue, phase] of [[205.99, "ground"], [206, "sword-rain"], [233.99, "sword-rain"], [234, "sword-field"], [251.99, "sword-field"], [252, "sword-horizon"]]) {
     assert.equal(score.phase(cue), phase);
   }
-  for (const cue of [0, 42.5, 83.5, 84.999, 96, 116, 128, 146, 160, 173, 194, 200, 206, 220, 234, 244, 252, 254, 260]) {
+  for (const cue of [0, 42.5, 83.5, 84.999, 96, 116, 128, 146, 160, 173, 194, 200, 206, 220, 234, 244, 252]) {
     assert.ok(Math.abs(score.cue(score.at(cue)) - cue) < 1e-9, `scene cue ${cue} must roundtrip, including retime boundaries`);
   }
-  for (const position of [0, 84.999, 85, 100, 135, 182.25, 219, 231, 243, 271, 281, 289, 291, 297]) {
+  for (const position of [0, 84.999, 85, 100, 135, 182.25, 219, 231, 243, 271, 281, 289]) {
     assert.ok(Math.abs(score.at(score.cue(position)) - position) < 1e-9, `scroll position ${position} must preserve its scene time`);
   }
 });

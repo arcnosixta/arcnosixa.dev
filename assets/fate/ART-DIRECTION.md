@@ -23,7 +23,7 @@ The original hand atlas remains unchanged. Its alpha channel defines the poses; 
 
 ### Continuous ascension (procedural, 2026-11-01)
 
-The initial ascension and liquid transition use the original plates and procedural shaders. The former chapter title and its 11-score hold are removed. The scroll score ends at 297; the geometry cues extend to 260. At scroll85 the renderer continues at internal96 with the same clamped pose and persistent character opacity, so the fading flash flows directly into the dissolving hands. A seeded sample of their atlas alpha supplies ash origins; the ash vertex shader shares the dissolution field and follows reversible scroll trajectories. All figures disappear by scroll105. A completely empty white interval remains until117. The supplied FATE recording continues independently of scroll position.
+The initial ascension and liquid transition use the original plates and procedural shaders. The former chapter title and its 11-score hold are removed. The scroll score ends at 289, corresponding to geometry cue 252. At scroll85 the renderer continues at internal96 with the same clamped pose and persistent character opacity, so the fading flash flows directly into the dissolving hands. A seeded sample of their atlas alpha supplies ash origins; the ash vertex shader shares the dissolution field and follows reversible scroll trajectories. All figures disappear by scroll105. A completely empty white interval remains until117. The supplied FATE recording continues independently of scroll position.
 
 ### Liquid white world (procedural, 2026-11-01)
 

@@ -6,7 +6,7 @@
   const metrics = document.getElementById("metrics");
   const report = document.getElementById("report");
   const checks = document.getElementById("checks");
-  const scoreLength = () => frame.contentWindow.FateScore?.length || 297;
+  const scoreLength = () => frame.contentWindow.FateScore?.length || 289;
   const scoreForCue = cue => frame.contentWindow.FateScore.at(cue);
   const query = new URLSearchParams(location.search);
   if ([...mode.options].some(option => option.value === query.get("mode"))) mode.value = query.get("mode");
@@ -112,8 +112,16 @@
       if (query.has("run")) frame.contentWindow.ScrollTrigger?.getById("fate-story")?.animation.progress(score / scoreLength());
     };
     const atCue = cue => at(scoreForCue(cue));
+    const scrollTo = async top => { w.scrollTo({ top, behavior: "instant" }); await settle(); };
+    const topOf = element => element.getBoundingClientRect().top;
+    const near = (actual, expected) => Math.abs(actual - expected) < 4;
     try {
       const motion = d.documentElement.classList.contains("enhanced");
+      const profile = d.querySelector("#fate-profile");
+      const heading = profile.querySelector("h2");
+      const returnLink = profile.querySelector(".fate-profile-return");
+      const links = [...profile.querySelectorAll(".fate-profile-contacts a[href]")];
+      check("one ARCNOSIXTA profile follows both forms of the story", d.querySelectorAll("#fate-profile").length === 1 && heading.textContent.trim() === "ARCNOSIXTA" && !profile.closest("#experience, #written-story") && !d.querySelector(".revelation, .ending-panel"));
       check("the removed chapter title is absent from every story mode", !d.querySelector(".awakening-title, .still-awakening-title") && !d.body.textContent.toUpperCase().includes("ПРОБУЖДЕНИЕ"));
       if (mode.value === "motion") check("requested motion renderer starts", motion);
       if (motion) {
@@ -148,14 +156,13 @@
         }
         await atCue(200);
         check("the katana reaches the ground before the sword rain", stage.dataset.journeyPhase === "ground" && Math.abs(renderedScore() - scoreForCue(200)) < 1 && !notes.some(visible));
-        const finale = d.querySelector(".revelation");
         const webgl = d.querySelector("#fate-canvas");
         const horizon = d.querySelector("#sword-horizon");
         const drawsBeforeRain = w.qaGLDraws;
         await atCue(220);
-        check("the sword rain uses live WebGL without an early finale", stage.dataset.journeyPhase === "sword-rain" && w.qaGLDraws > drawsBeforeRain && !notes.some(visible) && visible(webgl) && !visible(horizon) && finale.inert);
+        check("the sword rain uses live WebGL before the profile", stage.dataset.journeyPhase === "sword-rain" && w.qaGLDraws > drawsBeforeRain && !notes.some(visible) && visible(webgl) && !visible(horizon) && !visible(heading));
         await atCue(238);
-        check("the settled sword field holds before the flat reveal", stage.dataset.journeyPhase === "sword-field" && visible(webgl) && !visible(horizon) && finale.inert);
+        check("the settled sword field holds before the flat reveal", stage.dataset.journeyPhase === "sword-field" && visible(webgl) && !visible(horizon));
         // The default WebGL buffer may be discarded at presentation. Copy the
         // final live frame immediately after its render for a pixel comparison.
         let live;
@@ -167,56 +174,70 @@
         };
         try { await atCue(251); await settle(); }
         finally { scene.render = render; }
-        check("the last live frame remains visible immediately before the handoff", Boolean(live) && visible(webgl) && !visible(horizon) && !d.documentElement.classList.contains("is-sword-horizon"));
-        await atCue(253); await settle();
-        check("the 2D horizon replaces the 3D field before the return appears", stage.dataset.journeyPhase === "sword-horizon" && d.documentElement.classList.contains("is-sword-horizon") && visible(horizon) && !visible(webgl) && finale.inert);
+        const trigger = w.ScrollTrigger.getById("fate-story");
+        check("the last live frame remains pinned immediately before the handoff", Boolean(live) && trigger.isActive && near(topOf(stage), 0) && visible(webgl) && !visible(horizon));
+        await atCue(252); await settle();
+        check("the 2D horizon replaces the 3D field at the pin end", stage.dataset.journeyPhase === "sword-horizon" && d.documentElement.classList.contains("is-sword-horizon") && visible(horizon) && !visible(webgl) && near(w.scrollY, trigger.end));
         check("the frozen 2D horizon matches every pixel of the last live 3D frame", sameBitmap(live, bitmap(horizon)));
+        const profileStyle = w.getComputedStyle(profile);
+        const blackProfile = profileStyle.backgroundColor === "rgb(0, 0, 0)" || profileStyle.backgroundImage.includes("rgb(0, 0, 0)");
+        check("the white ARCNOSIXTA heading appears beneath the swords at the pin end", visible(heading) && topOf(heading) > w.innerHeight * .35 && luminance(w.getComputedStyle(heading).color) > .8 && blackProfile);
         const flatDraws = w.qaGLDraws;
-        await atCue(258); await settle();
-        check("the flat finale stops WebGL draw calls while scrolling", w.qaGLDraws === flatDraws);
-        check("the ending appears over the flat horizon", stage.dataset.journeyPhase === "sword-horizon" && visible(finale) && finale.querySelector(".reveal-name").textContent.trim().length > 0);
-        check("final return becomes interactive", !finale.inert && visible(finale.querySelector(".return-link")));
-        const frameWidth = frame.style.width, oldBackingWidth = horizon.width;
+        const pinnedTop = topOf(stage), profileTop = topOf(profile), pinnedY = w.scrollY;
+        const belowPin = Math.round(w.innerHeight * .28);
+        await scrollTo(trigger.end + belowPin);
+        const delta = w.scrollY - pinnedY;
+        check("the frozen frame and profile move together in native scroll after the pin", delta > w.innerHeight * .2 && !trigger.isActive && near(topOf(stage), pinnedTop - delta) && near(topOf(profile), profileTop - delta) && visible(heading));
+        check("native scrolling past the pin keeps the frozen bitmap with no new WebGL draws", w.qaGLDraws === flatDraws && sameBitmap(live, bitmap(horizon)));
+        const nativeTop = topOf(stage);
+        const frameWidth = frame.style.width, frameHeight = frame.style.height, oldBackingWidth = horizon.width;
+        // Keep the real scrub active while refreshing the pin after a resize.
+        if (query.has("run")) trigger.scrubDuration(trigger.vars.scrub);
         frame.style.width = `${w.innerWidth + (w.innerWidth >= 480 ? -37 : 37)}px`;
+        frame.style.height = `${Math.max(360, w.innerHeight - 41)}px`;
         try {
-          await settle();
-          check("resizing the flat view refreshes its bitmap at the new drawing-buffer size", visible(horizon) && !visible(webgl) && horizon.width !== oldBackingWidth && horizon.width === webgl.width && horizon.height === webgl.height && w.qaGLDraws > flatDraws);
+          await new Promise(resolve => setTimeout(resolve, 1300));
+          check("resizing refreshes the flat bitmap without pulling the profile back to the pin", near(topOf(stage), nativeTop) && visible(horizon) && !visible(webgl) && horizon.width !== oldBackingWidth && horizon.width === webgl.width && horizon.height === webgl.height && w.qaGLDraws > flatDraws);
         } finally {
           frame.style.width = frameWidth;
+          frame.style.height = frameHeight;
           await settle();
+          if (query.has("run")) trigger.scrubDuration(0);
         }
+        returnLink.scrollIntoView({ block: "end", behavior: "instant" }); await settle();
+        check("the profile contains working contact and portfolio links in the scroll flow", links.length >= 3 && links.every(link => !link.closest("[inert]")) && visible(returnLink) && !returnLink.closest("[inert]") && returnLink.getAttribute("href") === "../");
         const resizedDraws = w.qaGLDraws;
         await atCue(238); await settle();
-        check("rewinding resumes the live field and gates the ending", stage.dataset.journeyPhase === "sword-field" && w.qaGLDraws > resizedDraws && visible(webgl) && !visible(horizon) && !d.documentElement.classList.contains("is-sword-horizon") && finale.inert);
+        check("rewinding from the profile pins the stage again and resumes live WebGL", trigger.isActive && near(topOf(stage), 0) && stage.dataset.journeyPhase === "sword-field" && w.qaGLDraws > resizedDraws && visible(webgl) && !visible(horizon) && !visible(heading));
         await at(85.8);
-        check("reverse scroll restores the flash bridge and gates the return", Number(w.getComputedStyle(d.querySelector(".whiteout")).opacity) > 0 && finale.inert && !d.querySelector(".awakening-title"));
+        check("reverse scroll restores the flash bridge before the profile", Number(w.getComputedStyle(d.querySelector(".whiteout")).opacity) > 0 && !visible(heading) && !d.querySelector(".awakening-title"));
         check("reverse scroll restores the dark world", paper() === 0 && !d.documentElement.classList.contains("is-paper"));
-        await atCue(253);
-        await settle();
-        const beforeStill = bitmap(horizon);
+        await atCue(252); await settle();
+        await scrollTo(trigger.end + belowPin);
+        const beforeStill = bitmap(horizon), beforeStillTop = topOf(stage), beforeStillProfile = topOf(profile);
         const oldTime = audio?.currentTime || 0, oldPlays = w.qaAudioPlays, wasPlaying = audio?.paused === false;
         d.querySelector(".still-toggle").click(); await settle();
         const stillHorizon = d.querySelector(".still-sword-horizon");
-        check("motion to still preserves the same canvas and its pixels", d.documentElement.classList.contains("is-still") && stillHorizon.contains(horizon) && visible(horizon) && Math.abs(stillHorizon.getBoundingClientRect().top) < 4 && sameBitmap(beforeStill, bitmap(horizon)));
+        check("motion to still preserves the bitmap and native scroll offset below the pin", d.documentElement.classList.contains("is-still") && stillHorizon.contains(horizon) && visible(horizon) && near(topOf(stillHorizon), beforeStillTop) && near(topOf(profile), beforeStillProfile) && sameBitmap(beforeStill, bitmap(horizon)));
         d.querySelector(".still-toggle").click(); await settle();
-        check("still to motion restores the canvas and horizon score", d.documentElement.classList.contains("enhanced") && stage.contains(horizon) && visible(horizon) && Math.abs(renderedScore() - Number(stillHorizon.dataset.storyAt)) < 1);
+        check("still to motion restores the canvas at the same native scroll offset", d.documentElement.classList.contains("enhanced") && stage.contains(horizon) && visible(horizon) && near(topOf(stage), beforeStillTop) && near(topOf(profile), beforeStillProfile) && Math.abs(renderedScore() - Number(stillHorizon.dataset.storyAt)) < 1);
         check("view switches preserve the soundtrack without restarting", w.qaAudio === audio && w.qaAudioPlays === oldPlays && (audio?.currentTime || 0) >= oldTime - .1 && (!wasPlaying || audio.paused === false));
       } else {
         const cues = [99, 116, 134, 158, 172, 186];
         check("the original katana scenes and notes remain in document flow", cues.every(cue => d.querySelector(`[data-story-at="${scoreForCue(cue)}"]`)?.getBoundingClientRect().height > 0));
         await atCue(120);
         check("static score selection reaches the white void", visible(d.querySelector(".still-void")));
-        await atCue(253);
+        await atCue(252);
         const stillHorizon = d.querySelector(".still-sword-horizon");
         const image = stillHorizon.querySelector("picture img.sword-horizon");
         await image.decode();
         check("static score selection displays the pre-rendered sword horizon without WebGL", visible(image) && /\/sword-horizon(?:-mobile)?\.png(?:\?|$)/.test(image.currentSrc) && image.naturalWidth > 0 && w.qaGLDraws === 0);
-        const ending = d.querySelector(".still-ending");
-        const returnLink = ending.querySelector(".return-link");
-        check("the static ending has a usable return", visible(returnLink) && !ending.inert);
-        const artwork = image.getBoundingClientRect();
-        const ink = luminance(w.getComputedStyle(returnLink).color);
-        check("the static return has readable contrast over the black field", returnLink.getBoundingClientRect().top >= artwork.top + artwork.height * .35 && (ink + .05) / .05 >= 4.5);
+        const oldY = w.scrollY, stillTop = topOf(stillHorizon), profileTop = topOf(profile);
+        await scrollTo(oldY + Math.round(w.innerHeight * .28));
+        const delta = w.scrollY - oldY;
+        check("the illustrated horizon and shared profile use the same native scroll flow", delta > w.innerHeight * .2 && near(topOf(stillHorizon), stillTop - delta) && near(topOf(profile), profileTop - delta) && visible(heading) && w.qaGLDraws === 0);
+        returnLink.scrollIntoView({ block: "end", behavior: "instant" }); await settle();
+        check("the static profile keeps white readable contacts and a usable return", links.length >= 3 && visible(returnLink) && !returnLink.closest("[inert]") && luminance(w.getComputedStyle(returnLink).color) > .8);
       }
       check("no story or shader errors", report.textContent.trim() === "");
       checks.textContent += "Complete.";
@@ -302,7 +323,8 @@
           const w = frame.contentWindow, d = frame.contentDocument;
           const artwork = w.performance.getEntriesByType("resource").filter(entry => /assets\/fate\/(newborn|hands-atlas|congregation)\.png/.test(entry.name));
           // Audio loading does not affect layout. Wait for the story and its art.
-          const hasDocument = Boolean(d.querySelector(".still-ending")) && w.getComputedStyle(d.querySelector(".still-ending")).position === "relative" && Boolean(w.FateScore);
+          const stillHorizon = d.querySelector(".still-sword-horizon");
+          const hasDocument = Boolean(stillHorizon && d.querySelector("#fate-profile") && w.getComputedStyle(stillHorizon).position === "relative" && w.FateScore);
           // WebGL failure is asynchronous; wait until the fallback has actually
           // finished before seeking its static scenes.
           const staticReady = d.documentElement.classList.contains("is-still");
@@ -345,6 +367,7 @@
     finally { clearTimeout(watchdog); finish(); }
   }
   document.getElementById("load").addEventListener("click", load);
+  document.getElementById("profile").addEventListener("click", () => frame.contentDocument.querySelector("#fate-profile")?.scrollIntoView({ behavior: "instant" }));
   document.querySelectorAll("[data-score]").forEach(button => button.addEventListener("click", () => seek(Number(button.dataset.score))));
   document.querySelectorAll("[data-cue]").forEach(button => button.addEventListener("click", () => seek(scoreForCue(Number(button.dataset.cue)))));
   document.getElementById("regression").addEventListener("click", regression);
