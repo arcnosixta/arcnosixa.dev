@@ -80,17 +80,12 @@
           resolve(texture);
         }, undefined, reject);
       });
-      const plates = Promise.all([load("newborn"), load("hands-atlas"), load("congregation")]).then(([child, hands, sea]) => {
-        if (this.disposed) return;
-        this.makeChild(child);
-        this.makeHands(hands);
-        this.makeCongregation(sea);
-        this.ready = true;
-      });
-      const witness = this.journey.brave.load(new URL("../assets/fate/brave-boy-approved.png", document.baseURI).href).then(() => {
-        if (!this.disposed) document.getElementById("stage").dataset.witnessReady = "true";
-      });
-      await Promise.all([plates, witness]);
+      const [child, hands, sea] = await Promise.all([load("newborn"), load("hands-atlas"), load("congregation")]);
+      if (this.disposed) return;
+      this.makeChild(child);
+      this.makeHands(hands);
+      this.makeCongregation(sea);
+      this.ready = true;
     }
     makeAtmosphere() {
       this.fog = this.material({
@@ -577,7 +572,7 @@
       if (score >= 116) {
         // Direct rendering keeps black geometry and the etched red patterns
         // literal. The earlier monochrome inversion must not touch this world.
-        this.journey.update(score, time);
+        this.journey.update(score);
         this.renderer.setRenderTarget(null);
         this.renderer.render(this.journey.scene, this.journey.camera);
         return;

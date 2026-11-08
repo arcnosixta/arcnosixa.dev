@@ -6,7 +6,7 @@
   const metrics = document.getElementById("metrics");
   const report = document.getElementById("report");
   const checks = document.getElementById("checks");
-  const scoreLength = () => frame.contentWindow.FateScore?.length || 377;
+  const scoreLength = () => frame.contentWindow.FateScore?.length || 297;
   const scoreForCue = cue => frame.contentWindow.FateScore.at(cue);
   const query = new URLSearchParams(location.search);
   if ([...mode.options].some(option => option.value === query.get("mode"))) mode.value = query.get("mode");
@@ -52,9 +52,9 @@
     const channels = rgb.map(value => { const v = value / 255; return v <= .04045 ? v / 12.92 : Math.pow((v + .055) / 1.055, 2.4); });
     return channels.length === 3 ? channels[0] * .2126 + channels[1] * .7152 + channels[2] * .0722 : NaN;
   }
-  function paperContrast(scene, text) {
-    const w = frame.contentWindow, background = luminance(w.getComputedStyle(scene).backgroundColor), ink = luminance(w.getComputedStyle(text).color);
-    return background > .75 && ink < .2 && (background + .05) / (ink + .05) >= 4.5;
+  function horizonLoaded(element) {
+    const image = element?.matches("img") ? element : element?.querySelector('img[src*="sword-horizon"]');
+    return image?.naturalWidth > 0;
   }
   async function regression() {
     const button = document.getElementById("regression"), run = revision;
@@ -130,51 +130,51 @@
           check(`${name} note stays inside the viewport and appears alone`, Boolean(box) && box.left >= 0 && box.right <= w.innerWidth + 1 && box.top >= 0 && box.bottom <= w.innerHeight + 1 && notes.filter(visible).length === 1);
         }
         await atCue(200);
-        check("the katana reaches the ground before the meadow", stage.dataset.journeyPhase === "ground" && Math.abs(renderedScore() - scoreForCue(200)) < 1 && !notes.some(visible));
-        await atCue(215);
-        const grovePhase = stage.dataset.journeyPhase;
-        check("the meadow begins with a clear white field", grovePhase === "meadow" && paper() === 1 && !notes.some(visible));
-        await atCue(230);
-        check("the horizontal meadow continues without early return", stage.dataset.journeyPhase === grovePhase && d.querySelector(".revelation").inert && !visible(d.querySelector(".revelation")));
+        check("the katana reaches the ground before the sword rain", stage.dataset.journeyPhase === "ground" && Math.abs(renderedScore() - scoreForCue(200)) < 1 && !notes.some(visible));
         const finale = d.querySelector(".revelation");
-        check("the real child model finishes loading before the camera visits him", stage.dataset.witnessReady === "true");
-        for (const [cue, phase, shot] of [[238, "witness-approach", "meadow approach"], [250, "witness-rise", "first foot"], [283, "witness-back", "back and katana"], [310, "witness-orbit", "rising orbit"], [330, "witness-face", "frontal face"]]) {
-          await atCue(cue);
-          check(`${shot} has no early captions, notes or return`, stage.dataset.journeyPhase === phase && stage.dataset.witnessReady === "true" && paper() === 1 && ![...d.querySelectorAll(".caption, .journey-notes")].some(visible) && !notes.some(visible) && finale.inert && !visible(finale));
-        }
-        await atCue(338);
-        check("the ending appears after the final face shot", stage.dataset.journeyPhase === "witness-face" && visible(finale) && finale.querySelector(".reveal-name").textContent.trim().length > 0);
+        const horizon = d.querySelector("#sword-horizon");
+        const horizonOpacity = () => Number(w.getComputedStyle(horizon).opacity);
+        const drawsBeforeRain = w.qaGLDraws;
+        await atCue(220);
+        check("the sword rain uses live WebGL without an early finale", stage.dataset.journeyPhase === "sword-rain" && w.qaGLDraws > drawsBeforeRain && !notes.some(visible) && horizonOpacity() < .01 && finale.inert);
+        await atCue(238);
+        check("the settled sword field holds before the flat reveal", stage.dataset.journeyPhase === "sword-field" && horizonOpacity() < .01 && finale.inert);
+        await atCue(248);
+        check("the flat horizon gradually covers the settled 3D field", horizonOpacity() > .05 && horizonOpacity() < .95 && horizonLoaded(horizon) && !d.documentElement.classList.contains("is-sword-horizon"));
+        await atCue(253); await settle();
+        check("the horizon replaces the 3D field before the return appears", stage.dataset.journeyPhase === "sword-horizon" && d.documentElement.classList.contains("is-sword-horizon") && visible(horizon) && horizonOpacity() > .99 && finale.inert);
+        const flatDraws = w.qaGLDraws;
+        await atCue(258); await settle();
+        check("the flat finale stops WebGL draw calls while scrolling", w.qaGLDraws === flatDraws);
+        check("the ending appears over the flat horizon", stage.dataset.journeyPhase === "sword-horizon" && visible(finale) && finale.querySelector(".reveal-name").textContent.trim().length > 0);
         check("final return becomes interactive", !finale.inert && visible(finale.querySelector(".return-link")));
-        check("the ending keeps the white world", Math.abs(paper() - 1) < .001 && d.documentElement.classList.contains("is-paper"));
+        await atCue(238); await settle();
+        check("rewinding resumes the live field and gates the ending", stage.dataset.journeyPhase === "sword-field" && w.qaGLDraws > flatDraws && horizonOpacity() < .01 && !d.documentElement.classList.contains("is-sword-horizon") && finale.inert);
         await at(85.8);
         check("reverse scroll restores the flash bridge and gates the return", Number(w.getComputedStyle(d.querySelector(".whiteout")).opacity) > 0 && finale.inert && !d.querySelector(".awakening-title"));
         check("reverse scroll restores the dark world", paper() === 0 && !d.documentElement.classList.contains("is-paper"));
-        await atCue(215);
+        await atCue(253);
         const oldTime = audio?.currentTime || 0, oldPlays = w.qaAudioPlays, wasPlaying = audio?.paused === false;
         d.querySelector(".still-toggle").click(); await settle();
-        const grove = d.querySelector(".still-grove");
-        check("motion to still preserves the grove scene", d.documentElement.classList.contains("is-still") && visible(grove) && Math.abs(grove.getBoundingClientRect().top) < 4);
+        const stillHorizon = d.querySelector(".still-sword-horizon");
+        check("motion to still preserves the horizon scene", d.documentElement.classList.contains("is-still") && visible(stillHorizon) && Math.abs(stillHorizon.getBoundingClientRect().top) < 4);
         d.querySelector(".still-toggle").click(); await settle();
-        check("still to motion restores the grove score", d.documentElement.classList.contains("enhanced") && Math.abs(renderedScore() - scoreForCue(218)) < 1);
+        check("still to motion restores the horizon score", d.documentElement.classList.contains("enhanced") && Math.abs(renderedScore() - Number(stillHorizon.dataset.storyAt)) < 1);
         check("view switches preserve the soundtrack without restarting", w.qaAudio === audio && w.qaAudioPlays === oldPlays && (audio?.currentTime || 0) >= oldTime - .1 && (!wasPlaying || audio.paused === false));
       } else {
-        const cues = [99, 116, 134, 158, 172, 186, 199, 218, 250, 281, 330, 336];
-        check("every katana, meadow and child scene exists in document flow", cues.every(cue => d.querySelector(`[data-story-at="${scoreForCue(cue)}"]`)?.getBoundingClientRect().height > 0));
+        const cues = [99, 116, 134, 158, 172, 186];
+        check("the original katana scenes and notes remain in document flow", cues.every(cue => d.querySelector(`[data-story-at="${scoreForCue(cue)}"]`)?.getBoundingClientRect().height > 0));
         await atCue(120);
         check("static score selection reaches the white void", visible(d.querySelector(".still-void")));
-        await atCue(230);
-        check("static score selection reaches the meadow", visible(d.querySelector(".still-grove")));
-        const grove = d.querySelector(".still-grove");
-        check("the static meadow uses dark readable ink on white", paperContrast(grove, grove.querySelector("figcaption")));
-        for (const [cue, shot] of [[250, "foot"], [281, "back"], [330, "face"]]) {
-          await atCue(cue);
-          const scene = d.querySelector(`[data-story-at="${scoreForCue(cue)}"]`);
-          check(`the static child ${shot} shot exists before the ending`, visible(scene) && Boolean(scene.querySelector("svg, img")) && !visible(d.querySelector(".still-ending")));
-        }
-        await atCue(338);
-        check("the static ending has a usable return", visible(d.querySelector(".still-ending .return-link")) && !d.querySelector(".still-ending").inert);
+        await atCue(253);
+        const stillHorizon = d.querySelector(".still-sword-horizon");
+        check("static score selection displays the same sword horizon without WebGL", visible(stillHorizon) && horizonLoaded(stillHorizon) && w.qaGLDraws === 0);
         const ending = d.querySelector(".still-ending");
-        check("the static final return has readable contrast", paperContrast(ending, ending.querySelector(".return-link")));
+        const returnLink = ending.querySelector(".return-link");
+        check("the static ending has a usable return", visible(returnLink) && !ending.inert);
+        const artwork = ending.querySelector("img").getBoundingClientRect();
+        const ink = luminance(w.getComputedStyle(returnLink).color);
+        check("the static return has readable contrast over the black field", returnLink.getBoundingClientRect().top >= artwork.top + artwork.height * .35 && (ink + .05) / .05 >= 4.5);
       }
       check("no story or shader errors", report.textContent.trim() === "");
       checks.textContent += "Complete.";
@@ -194,6 +194,11 @@
       window.addEventListener('error',e=>parent.qaError(e.message));
       window.addEventListener('unhandledrejection',e=>parent.qaError(String(e.reason)));
       const err=console.error;console.error=(...args)=>{parent.qaError(args.join(' '));err(...args)};
+      window.qaGLDraws=0;
+      for(const type of [window.WebGLRenderingContext,window.WebGL2RenderingContext])for(const name of ['drawArrays','drawElements','drawArraysInstanced','drawElementsInstanced']){
+        const prototype=type?.prototype, draw=prototype?.[name];
+        if(typeof draw==='function'&&Object.hasOwn(prototype,name))prototype[name]=function(...args){window.qaGLDraws++;return draw.apply(this,args)};
+      }
       const audio=window.Audio;window.qaAudioPlays=0;window.Audio=function(...args){const a=new audio(...args);window.qaAudio=a;const play=a.play.bind(a);a.play=(...args)=>{window.qaAudioPlays++;return play(...args)};return a};
       window.qaFPS=0;let start=performance.now(),n=0;function sample(t){n++;if(t-start>1800){window.qaFPS=Math.round(n*1000/(t-start));start=t;n=0}requestAnimationFrame(sample)}requestAnimationFrame(sample);
       ${mode.value === "reduced" ? "const mm=window.matchMedia;window.matchMedia=(q)=>q.includes('prefers-reduced-motion')?{matches:true,media:q,addEventListener(){},removeEventListener(){}}:mm.call(window,q);" : ""}
@@ -209,7 +214,7 @@
         const marker = d.querySelector(".chapter-name")?.textContent || "static";
         const caption = [...d.querySelectorAll(".caption, .journey-notes > *")].filter(visible).map(e => e.textContent.trim().replace(/\s+/g, " ")).join(" / ");
         const paper = Number.parseFloat(w.getComputedStyle(d.documentElement).getPropertyValue("--fate-paper"));
-        metrics.textContent = `${d.documentElement.className || 'static'} | ${w.innerWidth}×${w.innerHeight} | q${renderedScore().toFixed(1)}/${scoreLength()} cue${w.FateScore?.cue(renderedScore()).toFixed(1) || "…"} ${marker} ${d.querySelector("#stage")?.dataset.journeyPhase || ""} | child ${d.querySelector("#stage")?.dataset.witnessReady || "pending"} | paper ${Number.isFinite(paper) ? paper.toFixed(3) : "static"} | ${caption || "no caption"} | y${Math.round(w.scrollY)} | ${w.qaFPS || '…'}fps | ${audio?.paused === false ? 'playing' : 'silent'} ${(audio?.currentTime || 0).toFixed(1)}s`;
+        metrics.textContent = `${d.documentElement.className || 'static'} | ${w.innerWidth}×${w.innerHeight} | q${renderedScore().toFixed(1)}/${scoreLength()} cue${w.FateScore?.cue(renderedScore()).toFixed(1) || "…"} ${marker} ${d.querySelector("#stage")?.dataset.journeyPhase || ""} | GL draws ${w.qaGLDraws || 0} | paper ${Number.isFinite(paper) ? paper.toFixed(3) : "static"} | ${caption || "no caption"} | y${Math.round(w.scrollY)} | ${w.qaFPS || '…'}fps | ${audio?.paused === false ? 'playing' : 'silent'} ${(audio?.currentTime || 0).toFixed(1)}s`;
       }, 300);
     };
     frame.srcdoc = html;
@@ -231,7 +236,7 @@
       const w = frame.contentWindow, d = frame.contentDocument;
       document.body.dataset.qaReady = "true";
       console.log("FATE_QA_RESULT " + JSON.stringify({ checks: checks.textContent, errors: report.textContent,
-        score: renderedScore(), scoreLength: scoreLength(), cue: w.FateScore?.cue(renderedScore()), phase: d.querySelector("#stage")?.dataset.journeyPhase || "", witnessReady: d.querySelector("#stage")?.dataset.witnessReady === "true",
+        score: renderedScore(), scoreLength: scoreLength(), cue: w.FateScore?.cue(renderedScore()), phase: d.querySelector("#stage")?.dataset.journeyPhase || "", glDraws: w.qaGLDraws || 0,
         paper: w.getComputedStyle(d.documentElement).getPropertyValue("--fate-paper"),
         enhanced: d.documentElement.classList.contains("enhanced"), viewport: [w.innerWidth, w.innerHeight],
         startupMs: readyAt === null ? null : Math.round(readyAt - started), durationMs: Math.round(performance.now() - started) }));
@@ -254,18 +259,16 @@
           if (run !== revision) { clearInterval(poll); reject(new Error("Case changed during startup")); return; }
           const w = frame.contentWindow, d = frame.contentDocument;
           const artwork = w.performance.getEntriesByType("resource").filter(entry => /assets\/fate\/(newborn|hands-atlas|congregation)\.png/.test(entry.name));
-          // Audio loading does not affect layout and may outlive the model.
-          // The explicit artwork/model signals are the visual readiness gate.
+          // Audio loading does not affect layout. Wait for the story and its art.
           const hasDocument = Boolean(d.querySelector(".still-ending")) && w.getComputedStyle(d.querySelector(".still-ending")).position === "relative" && Boolean(w.FateScore);
           // WebGL failure is asynchronous; wait until the fallback has actually
           // finished before seeking its static scenes.
           const staticReady = d.documentElement.classList.contains("is-still");
-          const witnessReady = d.querySelector("#stage")?.dataset.witnessReady === "true";
-          if (hasDocument && (staticReady || (w.ScrollTrigger?.getById("fate-story") && artwork.length >= 3 && witnessReady))) {
+          if (hasDocument && (staticReady || (w.ScrollTrigger?.getById("fate-story") && artwork.length >= 3))) {
             clearInterval(poll); resolve();
           } else if (performance.now() > deadline) {
             clearInterval(poll);
-            reject(new Error(`Story readiness timed out: document=${hasDocument}, images=${artwork.length}, child=${witnessReady}, mode=${mode.value}`));
+            reject(new Error(`Story readiness timed out: document=${hasDocument}, images=${artwork.length}, mode=${mode.value}`));
           }
         }, 50);
       });

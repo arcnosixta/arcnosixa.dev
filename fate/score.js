@@ -1,8 +1,20 @@
 /* Scroll time is longer along the blade; scene geometry keeps its cue space. */
 (() => {
   "use strict";
+  const ending = Object.freeze({ rain: 206, settled: 234, flatten: 244, flat: 252, return: 254, end: 260 });
   window.FateScore = Object.freeze({
-    length: 377,
+    ending,
+    length: ending.end + 37,
+    phase(cue) {
+      if (cue < 116) return "ascension";
+      if (cue < 128) return "void";
+      if (cue < 146) return "fall";
+      if (cue < 194) return "blade";
+      if (cue < ending.rain) return "ground";
+      if (cue < ending.settled) return "sword-rain";
+      if (cue < ending.flat) return "sword-field";
+      return "sword-horizon";
+    },
     at(cue) {
       if (cue <= 85) return cue;
       if (cue < 96) return 85;

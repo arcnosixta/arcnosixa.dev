@@ -100,10 +100,8 @@
     earth.computeBoundingSphere();
     const ground = journey.mesh(earth, material(), journey.terrain); ground.name = "organic-black-earth";
     stats.triangles += earth.index.count / 3; stats.meshes++;
-    // Jittered, occupied cells form a carpet. Fine blades cover the sword
-    // passage; broader, lower-detail blades continue underneath the full orbit.
-    // Overlapping density bands feather their border so no rectangular planting
-    // patch appears under the boy when the camera rises.
+    // Fine blades cover the landing. Broader, lower-detail blades fill the
+    // retreat, with overlapping bands so no rectangular patch is exposed.
     const bands = [
       { x0: -28, x1: 178, z0: -38, z1: 82, step: compact ? 1.05 : .78, blades: 3, segments: compact ? 2 : 3, size: 1 },
       { x0: -260, x1: 510, z0: -350, z1: 350, step: compact ? 5 : 3.6, blades: 2, segments: 2, size: 1.8 },

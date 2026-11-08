@@ -7,16 +7,16 @@
   const story = document.getElementById("written-story");
   const revelation = document.querySelector(".revelation");
   const reduced = matchMedia("(prefers-reduced-motion: reduce)");
-  const scoreLength = window.FateScore.length, at = window.FateScore.at;
+  const { length: scoreLength, at, cue, phase, ending } = window.FateScore;
   const chapters = [
     { at: 0, name: "Silence" }, { at: 10.5, name: "The cut" },
     { at: 30, name: "The child" }, { at: 42.5, name: "The thousand hands" },
     { at: 71.5, name: "Ascension" }, { at: 96, name: "Ashes" },
     { at: 116, name: "" }, { at: 128, name: "The descent" },
     { at: 146, name: "Along the blade" }, { at: 194, name: "The ground" },
-    { at: 218, name: "The black meadow" }, { at: 256.08, name: "Brave" },
-    { at: 279.6, name: "The witness" }, { at: 289.68, name: "" },
-    { at: 312.08, name: "" }, { at: 330, name: "Face to face" }
+    { at: ending.rain, name: "The falling blades" },
+    { at: ending.settled, name: "The field of swords" },
+    { at: ending.flat, name: "A thousand swords" }
   ];
   let manualStill = false;
   try { manualStill = localStorage.getItem("fate-still") === "1"; } catch { /* optional */ }
@@ -44,20 +44,20 @@
     return scripts.get(src);
   }
   function stopFrames() { cancelAnimationFrame(raf); raf = 0; lastFrame = 0; }
+  function canRender() { return scene && pageVisible && stageVisible && !root.classList.contains("is-sword-horizon"); }
   function frame(now) {
     raf = 0;
-    if (!pageVisible || !stageVisible || !scene) return;
+    if (!canRender()) return;
     const delta = lastFrame ? (now - lastFrame) / 1000 : 1 / 60;
     lastFrame = now;
     try { scene.render(state.progress, delta); }
     catch { fallback(true); return; }
-    // Camera motion remains scroll driven; only the visible ink material and
-    // the earlier hands animate in clock time. Hidden pages stop all frames.
-    if (state.progress * scoreLength < at(116) || scene.journey?.brave?.needsAnimation) raf = requestAnimationFrame(frame);
+    // Only the dark opening animates between scroll updates.
+    if (state.progress * scoreLength < at(116)) raf = requestAnimationFrame(frame);
   }
-  function wake() { if (scene && pageVisible && stageVisible && !raf) raf = requestAnimationFrame(frame); }
+  function wake() { if (canRender() && !raf) raf = requestAnimationFrame(frame); }
   function updateUI() {
-    const p = state.progress, score = Math.round(window.FateScore.cue(p * scoreLength) * 1000) / 1000;
+    const p = state.progress, score = Math.round(cue(p * scoreLength) * 1000) / 1000;
     const white = Math.max(0, Math.min(1, (score - 104) / 12));
     const paper = white * white * (3 - 2 * white);
     root.style.setProperty("--fate-paper", paper.toFixed(4));
@@ -70,10 +70,8 @@
       });
     }
     root.classList.toggle("is-journey", score >= 128);
-    root.classList.toggle("is-brave", score >= 194);
-    const arrival = Math.max(0, Math.min(1, (score-194)/24));
-    root.style.setProperty("--brave-arrival", (arrival*arrival*(3-2*arrival)).toFixed(4));
-    stage.dataset.journeyPhase = score < 116 ? "ascension" : score < 128 ? "void" : score < 146 ? "fall" : score < 194 ? "blade" : score < 218 ? "clearing-arrival" : window.braveCameraPose((score-218)/112, stage.clientWidth/stage.clientHeight).phase;
+    root.classList.toggle("is-sword-horizon", score >= ending.flat);
+    stage.dataset.journeyPhase = phase(score);
     if (root.classList.contains("is-paper") !== (score >= 110)) {
       root.classList.toggle("is-paper", score >= 110);
       document.querySelector('meta[name="theme-color"]').content = score >= 110 ? "#ffffff" : "#000000";
@@ -85,7 +83,7 @@
       activeChapter = chapter;
       document.querySelector(".chapter-name").textContent = chapters[chapter].name;
     }
-    const revealed = score >= 336;
+    const revealed = score >= ending.return;
     revelation.inert = !revealed;
     revelation.setAttribute("aria-hidden", String(!revealed));
     wake();
@@ -93,14 +91,14 @@
   function makeTimeline() {
     const gsap = window.gsap;
     gsap.registerPlugin(window.ScrollTrigger);
-    // Model/texture loading never changes this pinned viewport's dimensions.
+    // Artwork loading never changes this pinned viewport's dimensions.
     // Explicit refresh and resize handling preserve the current scroll position.
     window.ScrollTrigger.config({ autoRefreshEvents: "visibilitychange,DOMContentLoaded,resize" });
     gsap.set(".caption, .blade-note", { autoAlpha: 0, y: 0 });
     gsap.set(".silence", { autoAlpha: .7 });
     gsap.set(".revelation, .scroll-invitation, .chapter-marker", { autoAlpha: 0 });
     gsap.set(".journey-notes", { autoAlpha: 0 });
-    gsap.set(".whiteout", { opacity: 0 });
+    gsap.set(".whiteout, #sword-horizon", { opacity: 0 });
     timeline = gsap.timeline({
       defaults: { ease: "none" }, onUpdate: updateUI,
       scrollTrigger: {
@@ -142,7 +140,8 @@
     line(".note-services", 169, 179, 2);
     line(".note-craft", 182, 192, 2);
     timeline.set(".journey-notes", { autoAlpha: 0 }, at(194));
-    timeline.to(".revelation", { autoAlpha: 1, duration: 2 }, at(336));
+    timeline.to("#sword-horizon", { opacity: 1, duration: at(ending.flat) - at(ending.flatten) }, at(ending.flatten));
+    timeline.to(".revelation", { autoAlpha: 1, duration: 2 }, at(ending.return));
     intro = gsap.timeline();
     intro.fromTo(".captions", { opacity: 0 }, { opacity: 1, duration: 2.8 }, .4);
     // Only the invitation's entrance uses clock time. The story never autoplays.
@@ -154,7 +153,7 @@
     version++;
     starting = false;
     resizeProgress = null;
-    stage.dataset.witnessReady = "false";
+    delete stage.dataset.journeyPhase;
     stopFrames();
     intro?.kill(); intro = null;
     timeline?.scrollTrigger?.kill();
@@ -162,8 +161,7 @@
     scene?.dispose(); scene = null;
     root.classList.remove("enhanced");
     root.classList.remove("is-paper");
-    root.classList.remove("is-void", "is-journey", "is-brave");
-    root.style.removeProperty("--brave-arrival");
+    root.classList.remove("is-void", "is-journey", "is-sword-horizon");
     root.style.removeProperty("--fate-paper");
     document.querySelectorAll(".fate-hud, .sound-control").forEach(control => {
       control.inert = false;
@@ -202,11 +200,9 @@
     const request = ++version;
     try {
       await script("../vendor/three.min.js");
-      await script(`brave-world.js${assetVersion}`);
-      await script(`brave-camera.js${assetVersion}`);
-      await script(`brave-ground.js${assetVersion}`);
-      await script(`brave-ink.js${assetVersion}`);
-      await script(`brave.js${assetVersion}`);
+      await script(`grove.js${assetVersion}`);
+      await script(`sword-profiles.js${assetVersion}`);
+      await script(`sword-field.js${assetVersion}`);
       await script(`katana.js${assetVersion}`);
       await script(`scene.js${assetVersion}`);
       if (request !== version || reduced.matches || manualStill) return;

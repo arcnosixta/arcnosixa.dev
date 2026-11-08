@@ -7,9 +7,9 @@ import { runInNewContext } from "node:vm";
 const require = createRequire(import.meta.url);
 const THREE = require("../vendor/three.min.js");
 const scope = { window: {} };
-runInNewContext(await readFile(new URL("../fate/score.js", import.meta.url), "utf8"), scope);
-runInNewContext(await readFile(new URL("../fate/grove.js", import.meta.url), "utf8"), scope);
-runInNewContext(await readFile(new URL("../fate/katana.js", import.meta.url), "utf8"), scope);
+for (const script of ["score", "grove", "sword-profiles", "sword-field", "katana"]) {
+  runInNewContext(await readFile(new URL(`../fate/${script}.js`, import.meta.url), "utf8"), scope);
+}
 const FateJourney = scope.window.FateJourney;
 const snapshot = journey => JSON.parse(JSON.stringify(journey.snapshot()));
 const sample = (journey, score, time = 0) => { journey.update(score, time); return snapshot(journey); };
@@ -29,17 +29,20 @@ function terrainVerticesInView(journey) {
   return count;
 }
 
-test("the scroll score roundtrips scene cues while extending blade and ground passages", () => {
+test("the scroll score roundtrips original cues and gives the sword rain and finale distinct phases", () => {
   const score = scope.window.FateScore;
-  assert.equal(score.length, 377);
+  assert.equal(score.length, 297);
   assert.equal(score.at(194) - score.at(146), 84, "the long blade passage must retain its full reading interval");
-  assert.equal(score.at(206) - score.at(194), 24, "the ground reveal must remain separate from the horizontal grove");
-  assert.equal(score.at(340), score.length);
-  assert.equal(score.at(330) - score.at(250), 80, "the full foot-to-face orbit must retain its reading interval");
-  for (const cue of [0, 42.5, 83.5, 84.999, 96, 116, 128, 146, 160, 173, 194, 200, 206, 230, 234, 250, 283, 310, 330, 340]) {
+  assert.equal(score.at(206) - score.at(194), 24, "the ground reveal must finish before the sword rain");
+  assert.deepEqual({ ...score.ending }, { rain: 206, settled: 234, flatten: 244, flat: 252, return: 254, end: 260 });
+  assert.equal(score.at(score.ending.end), score.length);
+  for (const [cue, phase] of [[205.99, "ground"], [206, "sword-rain"], [233.99, "sword-rain"], [234, "sword-field"], [251.99, "sword-field"], [252, "sword-horizon"]]) {
+    assert.equal(score.phase(cue), phase);
+  }
+  for (const cue of [0, 42.5, 83.5, 84.999, 96, 116, 128, 146, 160, 173, 194, 200, 206, 220, 234, 244, 252, 254, 260]) {
     assert.ok(Math.abs(score.cue(score.at(cue)) - cue) < 1e-9, `scene cue ${cue} must roundtrip, including retime boundaries`);
   }
-  for (const position of [0, 84.999, 85, 100, 135, 182.25, 219, 231, 243, 277, 287, 320, 347, 367, 377]) {
+  for (const position of [0, 84.999, 85, 100, 135, 182.25, 219, 231, 243, 271, 281, 289, 291, 297]) {
     assert.ok(Math.abs(score.at(score.cue(position)) - position) < 1e-9, `scroll position ${position} must preserve its scene time`);
   }
 });
@@ -99,21 +102,54 @@ test("the information passage frames only the giant blade, with all terrain belo
   }
 });
 
-test("the meadow traversal is strictly horizontal before the child approach", () => {
+test("the camera retreats smoothly during the rain and aligns the hero with the 35% seam", () => {
   for (const [width, height] of [[1440, 900], [390, 844]]) {
     const journey = new FateJourney(THREE);
     try {
       journey.resize(width, height);
-      const start = sample(journey, 206), states = [215, 230, 233.99].map(score => sample(journey, score, 100));
-      let previousX = start.camera[0];
-      for (const state of states) {
-        assert.equal(state.camera[1], start.camera[1], "camera Y must never bob during the meadow");
-        assert.equal(state.target[1], start.target[1], "target Y must remain fixed during the meadow");
-        assert.equal(state.camera[2], start.camera[2]);
-        assert.ok(state.camera[0] > previousX, "the camera must translate sideways through the meadow");
-        previousX = state.camera[0];
+      const before = sample(journey, 205.9999), start = sample(journey, 206);
+      assert.ok(new THREE.Vector3(...before.camera).distanceTo(new THREE.Vector3(...start.camera)) < .01, "the rain must join the ground shot without a camera cut");
+      const falling = sample(journey, 226), settled = sample(journey, 238), flatten = sample(journey, 244), flat = sample(journey, 252);
+      assert.ok(start.camera[2] < falling.camera[2] && falling.camera[2] < settled.camera[2] && settled.camera[2] < flatten.camera[2]);
+      assert.ok(start.silhouette === 0 && falling.silhouette > 0 && falling.silhouette < 1 && flatten.silhouette === 1);
+      assert.deepEqual(flat.camera, flatten.camera, "the camera holds while the SVG covers the field");
+      assert.deepEqual(flat.target, flatten.target);
+      const [x, , z] = flat.tip;
+      const contact = new THREE.Vector3(x, journey.groundHeight(x, z), z).project(journey.camera);
+      assert.ok(Math.abs((contact.x + 1) / 2 - .5) < .015, "the hero contact must be centered in the flat artwork");
+      assert.ok(Math.abs((1 - contact.y) / 2 - .35) < .015, "the hero contact must meet the flat artwork's seam");
+    } finally { journey.dispose(); }
+  }
+});
+
+test("swords descend in staggered groups and remain embedded in the rendered terrain", () => {
+  for (const quality of [1, .6]) {
+    const journey = new FateJourney(THREE, { quality });
+    try {
+      assert.equal(sample(journey, 205).swordField.visible, false);
+      const rain = sample(journey, 220).swordField;
+      assert.ok(rain.visible && rain.falling > 0 && rain.waiting > 0 && rain.planted > 0, "the rain mixes falling, waiting and already planted swords");
+      const falling = journey.swordField.snapshot().swords.find(sword => sword.phase === "falling");
+      const tipY = cue => {
+        journey.update(cue);
+        return journey.swordField.snapshot().swords.find(sword => sword.id === falling.id).tip[1];
+      };
+      const flight = falling.impactCue - falling.launchCue;
+      assert.ok(tipY(falling.launchCue + flight * .2) > tipY(falling.launchCue + flight * .8), "a sword travels downward before it hits");
+      const settled = sample(journey, 234).swordField;
+      assert.equal(settled.planted, settled.count);
+      assert.equal(settled.waiting + settled.falling + settled.embedding, 0);
+      assert.ok(settled.count >= 80 && settled.meshCount <= 12 && settled.triangleBudget < 200000, "instanced sword rain must stay within its render budget");
+      const swords = journey.swordField.snapshot().swords;
+      assert.equal(new Set(swords.map(sword => sword.profile)).size, 9);
+      for (const sword of swords) {
+        const [x, y, z] = sword.tip;
+        assert.ok(sword.launchCue < sword.impactCue && sword.impactCue < sword.settleCue && sword.settleCue <= 234);
+        assert.equal(x, sword.anchor[0]);
+        assert.equal(z, sword.anchor[2]);
+        assert.ok(sword.embedDepth > 0 && Math.abs(y - (journey.groundHeight(x, z) - sword.embedDepth)) < 1e-7);
       }
-      assert.deepEqual(sample(journey, 230, 0), sample(journey, 230, 10000), "wall-clock time must not add vertical movement");
+      assert.deepEqual(sample(journey, 252).swordField.swords, settled.swords, "the planted swords hold through the reveal");
     } finally { journey.dispose(); }
   }
 });
@@ -166,10 +202,10 @@ test("scroll geometry is finite and fully reversible after arbitrary scene visit
     try {
       for (const [width, height] of [[1440, 900], [390, 844]]) {
         journey.resize(width, height);
-        for (const score of [0, 116, 128, 138, 146, 160, 173, 186, 200, 206, 218, 230, 240]) {
+        for (const score of [0, 116, 128, 138, 146, 160, 173, 186, 200, 206, 218, 230, 244, 252, 260]) {
           const before = sample(journey, score);
           assert.ok([...before.camera, ...before.target, ...before.tip, before.katanaY, before.terrainOpacity].every(Number.isFinite));
-          for (const visit of [240, 138, 116, 230, 0, 194]) journey.update(visit, 123);
+          for (const visit of [252, 138, 116, 230, 0, 194]) journey.update(visit, 123);
           assert.deepEqual(sample(journey, score, 987), before, `q${score} must restore exactly after reverse scrolling`);
         }
       }

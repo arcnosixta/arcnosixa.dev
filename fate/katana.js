@@ -1,10 +1,11 @@
-/* A monumental ink-black blade and a black grove in a white world.
+/* A monumental ink-black blade and a field of swords in a white world.
    Geometry and camera transforms are deterministic functions of the scroll score. */
 (() => {
   "use strict";
   const clamp = value => Math.max(0, Math.min(1, value));
   const smooth = (a, b, value) => { const t = clamp((value - a) / (b - a)); return t * t * (3 - 2 * t); };
   const mix = (a, b, t) => a + (b - a) * t;
+  const { ending, phase } = window.FateScore;
   const bladeCenter = y => 1.25 * Math.pow(clamp(y / 44), 1.8) - .62 * (1 - clamp(y / 4.2));
   const bladeWidth = y => y < 4.2 ? 1.12 * clamp(y / 4.2) : mix(1.12, 1.5, clamp((y - 4.2) / 39.8));
 
@@ -22,16 +23,16 @@
       this.katana.scale.setScalar(2);
       this.katana.rotation.y = Math.PI / 4;
       this.terrain = new THREE.Group();
-      this.terrain.name = "black-grove";
+      this.terrain.name = "black-meadow";
       this.scene.add(this.katana, this.terrain);
       this.terrainMaterials = [];
       this.makeKatana();
-      this.makeGrove();
-      if (!this.brave && window.FateWitness) this.witness = new window.FateWitness(THREE, {
-        scene: this.scene, quality, x: 112, z: 4, groundY: this.groundHeight(112, 4), height: 148
-      });
+      window.FateGrove.build(this);
+      this.swordField = new window.FateSwordField(this, { start: ending.rain, settle: ending.settled });
+      this.silhouetteMaterials = [...this.resources].filter(resource => resource.isMaterial)
+        .map(material => [material, material.color.clone()]);
       this.resize(1440, 900);
-      this.update(0, 0);
+      this.update(0);
     }
     own(resource) { this.resources.add(resource); return resource; }
     material(color, extra = {}) {
@@ -220,10 +221,6 @@
       chainGeometry.setIndex(chainTriangles); chainGeometry.computeVertexNormals();
       this.mesh(chainGeometry, metal).name = "katana-chain";
     }
-    makeGrove() {
-      if (window.FateBrave) this.brave = new window.FateBrave(this);
-      else window.FateGrove.build(this);
-    }
     resize(width, height) {
       this.mobile = width <= 700;
       this.width = Math.max(1, width); this.height = Math.max(1, height);
@@ -231,12 +228,11 @@
       this.camera.fov = this.mobile ? 49 : 42;
       this.camera.updateProjectionMatrix();
     }
-    update(score, time = 0) {
+    update(score) {
       if (this.disposed) return;
       this.score = score;
-      const far = this.brave ? 1200 : this.witness ? mix(240, 900, smooth(234, 250, score)) : 240;
+      const far = mix(240, 2400, smooth(ending.rain, ending.rain + 10, score));
       if (this.camera.far !== far) { this.camera.far = far; this.camera.updateProjectionMatrix(); }
-      this.witness?.update(score, time);
       this.katana.visible = score > 128;
       const fall = smooth(128, 146, score);
       this.katana.position.y = mix(330, -8, fall);
@@ -257,24 +253,35 @@
       const offset = halfWidth * framing;
       const bladeX = 2 * bladeCenter(clamp((targetHeight + 8) / 88) * 44);
       const baseX = 2 * bladeCenter(5.5) + Math.tan(this.camera.fov * Math.PI / 360) * 18 * this.camera.aspect * framing;
-      const travel = smooth(206, 234, score) * 44;
-      const x = score >= 206 ? baseX + travel : bladeX + offset;
+      const x = score >= ending.rain ? baseX : bladeX + offset;
       // During the information passage we look upward, with the pre-existing
       // landscape below the frustum. Its reveal is a separate downward move.
       this.camera.position.set(x + .7, eyeHeight, distance);
       this.target.set(x, targetHeight, 0);
       // At the mobile wide establishing distance, aim higher until the zoom
-      // closes in; otherwise the wider vertical FOV catches the distant grove.
+      // closes in; otherwise the wider vertical FOV catches the distant grass.
       if (this.mobile) this.target.y += 40 * smooth(134, 146, score) * (1 - smooth(146, 154, score));
+      if (score >= ending.rain) {
+        const retreat = smooth(ending.rain, ending.flatten, score);
+        const halfFov = Math.tan(this.camera.fov * Math.PI / 360);
+        const endDistance = 198 / halfFov;
+        const endEye = 2.2;
+        // Place the hero's contact with the earth at the future 35% seam.
+        const pitch = Math.atan2(-endEye, endDistance) - Math.atan(.3 * halfFov);
+        const endTarget = endEye + Math.tan(pitch) * endDistance;
+        this.camera.position.set(mix(x + .7, 1.3, retreat), mix(eyeHeight, endEye, retreat) + Math.sin(Math.PI * retreat) * 6,
+          mix(distance, endDistance, retreat));
+        this.target.set(mix(x, 1.3, retreat), mix(targetHeight, endTarget, retreat), 0);
+      }
       this.camera.lookAt(this.target);
       this.camera.updateMatrixWorld();
-      if (score >= 234 && this.witness && window.FateWitnessCamera) {
-        this.witnessPose = window.FateWitnessCamera.update(this, score, this.camera.position.toArray(), this.target.toArray());
+      const silhouette = smooth(ending.rain + 10, ending.flatten, score);
+      if (silhouette !== this.silhouette) {
+        this.silhouette = silhouette;
+        this.silhouetteMaterials.forEach(([material, color]) => material.color.copy(color).multiplyScalar(1 - silhouette));
       }
-      this.terrain.visible = true;
-      this.terrainMaterials.forEach(material => { material.opacity = 1; });
-      this.phase = score <= 128 ? "white" : score < 146 ? "fall" : score < 194 ? "blade" : score < 206 ? "ground" : score < 236 ? "grove" : "ending";
-      this.brave?.update(score, time);
+      this.swordField.update(score);
+      this.phase = phase(score);
     }
     snapshot() {
       const scale = this.katana.scale.x;
@@ -284,13 +291,13 @@
         katanaY: this.katana.position.y, tip: tip.toArray(),
         scale, embedDepth: 8,
         swordVisible: this.katana.visible, groundVisible: this.terrain.visible, terrain: this.terrain.visible,
-        terrainOpacity: this.terrainMaterials[0].opacity, mobile: this.mobile };
+        terrainOpacity: this.terrainMaterials[0].opacity, mobile: this.mobile,
+        silhouette: this.silhouette, swordField: this.swordField.snapshot() };
     }
     dispose() {
       if (this.disposed) return;
       this.disposed = true;
-      this.witness?.dispose();
-      this.brave?.dispose();
+      this.swordField.dispose();
       this.resources.forEach(resource => resource.dispose());
       this.resources.clear(); this.scene.clear();
     }

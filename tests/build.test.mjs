@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { readFile, stat } from "node:fs/promises";
+import { readFile, readdir, stat } from "node:fs/promises";
 import { spawn } from "node:child_process";
 import { resolve, join } from "node:path";
 import { createHash } from "node:crypto";
@@ -48,26 +48,31 @@ test("all narrative assets are real files with portable browser URLs", async () 
     assert.equal(file.subarray(1, 4).toString(), "PNG");
     assert.ok(file.length > 100000);
   }
-  for (const name of ["scene.js", "fate.js", "score.js", "katana.js", "grove.js", "witness.js", "witness-camera.js", "audio.js"]) {
+  for (const name of ["scene.js", "fate.js", "score.js", "katana.js", "grove.js", "sword-profiles.js", "sword-field.js", "audio.js"]) {
     assert.doesNotMatch(await readFile(join(root, "fate", name), "utf8"), /[A-Z]:\\|file:\/\//);
   }
 });
 
-test("the witness is a real locally licensed skinned model with a matching loader", async () => {
-  const binary = await readFile(join(root, "assets/fate/witness.glb"));
-  assert.equal(binary.toString("ascii", 0, 4), "glTF");
-  assert.equal(binary.readUInt32LE(4), 2);
-  assert.equal(binary.readUInt32LE(8), binary.length);
-  const model = JSON.parse(binary.toString("utf8", 20, 20 + binary.readUInt32LE(12)));
-  assert.equal(model.extensions.VRM.meta.licenseName, "CC0");
-  const bones = model.extensions.VRM.humanoid.humanBones.map(bone => bone.bone);
-  for (const bone of ["head", "hips", "leftEye", "rightEye", "leftFoot", "rightFoot"]) assert.ok(bones.includes(bone));
-  assert.ok(model.skins.length > 0 && model.meshes.length > 0 && model.images.length > 0);
-  const license = await readFile(join(root, "assets/fate/witness-LICENSE.txt"), "utf8");
-  assert.match(license, /Creative Commons CC0/);
-  assert.ok(license.toLowerCase().includes(createHash("sha256").update(binary).digest("hex")));
-  await stat(join(root, "vendor/GLTFLoader.js"));
+test("the public build drops the retired character models, art and scripts", async () => {
+  const files = (await readdir(root, { recursive: true })).map(path => path.replace(/\\/g, "/"));
+  const retired = files.filter(path => /^(?:fate\/(?:brave|witness)[^/]*\.js|assets\/fate\/(?:brave|witness)[^/]*|vendor\/GLTFLoader\.js)$/i.test(path));
+  assert.deepEqual(retired, []);
+  for (const name of ["index.html", "fate.js", "scene.js", "katana.js"]) {
+    assert.doesNotMatch(await readFile(join(root, "fate", name), "utf8"), /(?:brave-(?:boy|world|camera)|witness(?:-camera)?\.(?:glb|js)|GLTFLoader)/);
+  }
   await stat(join(root, "vendor/three-LICENSE.txt"));
+});
+
+test("the flat horizon contains 1,000 distinct SVG swords planted on the 35% seam", async () => {
+  const svg = await readFile(join(root, "assets/fate/sword-horizon.svg"), "utf8");
+  assert.match(svg, /<svg\b(?=[^>]*\bviewBox="0 0 1800 1000")(?=[^>]*\bpreserveAspectRatio="none")/);
+  assert.match(svg, /<rect\b(?=[^>]*\bdata-horizon="black")(?=[^>]*\by="350")(?=[^>]*\bheight="650")(?=[^>]*\bfill="#000")/);
+  const swords = [...svg.matchAll(/<use\b[^>]*\bdata-sword="([^"]+)"[^>]*>/g)];
+  assert.equal(swords.length, 1000);
+  assert.equal(new Set(swords.map(([, id]) => id)).size, 1000);
+  assert.ok(swords.every(([element]) => /\btransform="translate\(\s*[\d.]+[ ,]+350\s*\)/.test(element)), "every sword tip must share the black and white seam");
+  const hero = swords.find(([element]) => /\bdata-role="hero"/.test(element));
+  assert.match(hero?.[0] || "", /translate\(900[ ,]+350\)/);
 });
 test("direct route, artwork and soundtrack streaming work under the GitHub Pages base", async () => {
   const server = spawn(process.execPath, ["scripts/serve.mjs"], {
@@ -84,7 +89,7 @@ test("direct route, artwork and soundtrack streaming work under the GitHub Pages
     const direct = await fetch(`${base}fate?test=1`, { redirect: "manual" });
     assert.equal(direct.status, 301);
     assert.equal(direct.headers.get("location"), "/arcnosixa.dev/fate/?test=1");
-    for (const path of ["", "fate/", "fate/fate.css", "fate/scene.js?v=local", "fate/grove.js?v=local", "fate/katana.js?v=local", "vendor/three.min.js", "assets/fate/hands-atlas.png", "assets/fate/reference-katana.svg", "assets/fate/organic-grove.svg"]) {
+    for (const path of ["", "fate/", "fate/fate.css", "fate/scene.js?v=local", "fate/grove.js?v=local", "fate/katana.js?v=local", "fate/sword-field.js?v=local", "vendor/three.min.js", "assets/fate/hands-atlas.png", "assets/fate/reference-katana.svg", "assets/fate/sword-horizon.svg"]) {
       const response = await fetch(base + path);
       assert.equal(response.status, 200, path);
       await response.arrayBuffer();
