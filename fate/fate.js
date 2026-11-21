@@ -24,6 +24,7 @@
   let scene, timeline, intro, raf = 0, lastFrame = 0, version = 0, unavailable = false;
   let activeChapter = -1, pageVisible = !document.hidden, stageVisible = true, starting = false;
   let wantsHorizon = false, horizonReady = false;
+  let revealObserver;
   let resizePosition = null;
   const scripts = new Map();
   const assetVersion = new URL(document.currentScript.src).search;
@@ -297,7 +298,7 @@
   });
   window.addEventListener("pagehide", (event) => {
     pageVisible = false;
-    if (event.persisted) stopFrames(); else { teardown(); sizeObserver.disconnect(); visibilityObserver.disconnect(); }
+    if (event.persisted) stopFrames(); else { teardown(); sizeObserver.disconnect(); visibilityObserver.disconnect(); revealObserver?.disconnect(); }
   });
   window.addEventListener("pageshow", (event) => {
     if (!event.persisted) return;
@@ -305,5 +306,19 @@
     window.ScrollTrigger?.refresh();
     wake();
   });
+  if (!reduced.matches) {
+    revealObserver = new IntersectionObserver(entries => {
+      entries.forEach(entry => {
+        if (!entry.isIntersecting) return;
+        entry.target.classList.add("is-visible");
+        revealObserver.unobserve(entry.target);
+      });
+    }, { threshold: .12 });
+    document.querySelectorAll(".fate-selected, .fate-epilogue").forEach(section => {
+      section.classList.add("fate-reveal");
+      revealObserver.observe(section);
+    });
+    root.classList.add("has-fate-reveals");
+  }
   void start();
 })();
