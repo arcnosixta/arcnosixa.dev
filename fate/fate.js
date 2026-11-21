@@ -314,7 +314,7 @@
         revealObserver.unobserve(entry.target);
       });
     }, { threshold: .12 });
-    document.querySelectorAll(".fate-selected, .fate-epilogue").forEach(section => {
+    document.querySelectorAll(".fate-selected-heading, .fate-project, .fate-epilogue h3, .fate-epilogue-cta").forEach(section => {
       section.classList.add("fate-reveal");
       revealObserver.observe(section);
     });
