@@ -115,35 +115,38 @@ button:disabled { opacity: .4; cursor: default; }
   color: #fff;
   background: linear-gradient(transparent, #000 var(--profile-overlap));
 }
-.fate-profile-inner { max-width: 72rem; margin-inline: auto; }
-.fate-profile-label { margin: 0 0 16px; color: #bebec4; font: 10px/1.5 Arial, sans-serif; text-transform: uppercase; letter-spacing: .2em; }
+.fate-profile-inner { display: grid; grid-template-columns: minmax(var(--edge), 1fr) min(72rem, calc(100% - 2 * var(--edge))) minmax(var(--edge), 1fr); margin-inline: calc(-1 * var(--edge)); }
+.fate-profile-inner > * { grid-column: 2; }
+.fate-profile-label { margin: 0 0 16px; color: #a8c9ff; font: 10px/1.5 Arial, sans-serif; text-transform: uppercase; letter-spacing: .2em; }
 .fate-profile h2 { margin: 0; font: 500 clamp(28px, 8.4vw, 108px)/.96 Arial, sans-serif; letter-spacing: -.065em; }
 .fate-profile-details { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, .68fr); gap: clamp(24px, 6vw, 92px); margin-top: clamp(22px, 4svh, 48px); }
 .fate-profile-details > p { margin: 0; max-width: 48ch; font: clamp(15px, 1.5vw, 19px)/1.7 Arial, sans-serif; }
 .fate-profile-contacts { margin: 0; padding: 0; list-style: none; font: 14px/1.5 Arial, sans-serif; }
 .fate-profile-contacts a { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding: 10px 0; border-bottom: 1px solid #46464b; overflow-wrap: anywhere; }
-.fate-profile-contacts a span { color: #bebec4; }
+.fate-profile-contacts a span { color: #a8c9ff; }
 .fate-profile-contacts a:hover, .fate-profile-return:hover { border-color: #fff; }
 .fate-profile-return { display: inline-flex; align-items: center; gap: 16px; margin-top: clamp(28px, 5svh, 54px); padding: 10px 0; border-bottom: 1px solid #646469; font: 12px/1.5 Arial, sans-serif; }
-.fate-selected { margin-top: clamp(72px, 12svh, 132px); }
+.fate-profile-inner > :is(.fate-selected, .fate-epilogue) { grid-column: 1 / -1; padding-inline: max(var(--edge), calc((100% - 72rem) / 2)); }
+.fate-selected { margin-top: clamp(72px, 12svh, 132px); padding-block: clamp(48px, 6vw, 80px); color: #080c15; background: #f3f5fa; }
 .fate-selected-heading { display: flex; justify-content: space-between; align-items: baseline; gap: 24px; padding-bottom: 22px; }
 .fate-selected-heading h3 { margin: 0; font: 400 clamp(16px, 1.8vw, 23px)/1.4 Arial, sans-serif; }
-.fate-selected-heading > span, .fate-project-meta, .fate-project-link { color: #aaaab2; font: 10px/1.5 Arial, sans-serif; letter-spacing: .1em; }
+.fate-selected-heading > span, .fate-project-meta, .fate-project-link { color: #35518a; font: 10px/1.5 Arial, sans-serif; letter-spacing: .1em; }
 .fate-selected-heading > span { white-space: nowrap; }
-.fate-selected-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); border-top: 1px solid #414146; border-bottom: 1px solid #414146; }
+.fate-selected-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); border-top: 1px solid #c2cbdc; border-bottom: 1px solid #c2cbdc; }
 .fate-project { padding: clamp(24px, 3vw, 42px) clamp(24px, 4vw, 56px) clamp(24px, 3vw, 42px) 0; }
-.fate-project + .fate-project { border-left: 1px solid #414146; padding-left: clamp(24px, 4vw, 56px); padding-right: 0; }
+.fate-project + .fate-project { border-left: 1px solid #c2cbdc; padding-left: clamp(24px, 4vw, 56px); padding-right: 0; }
 .fate-project h4 { display: flex; align-items: center; justify-content: space-between; gap: 20px; margin: 26px 0 16px; font: 400 clamp(27px, 3.2vw, 44px)/1.1 Georgia, serif; letter-spacing: -.03em; }
-.fate-project h4 span { color: #b5b5be; font: 26px/1 Arial, sans-serif; transition: transform .25s, color .25s; }
-.fate-project p { max-width: 35ch; min-height: 3.2em; margin: 0 0 28px; color: #cccbd1; font: 14px/1.6 Arial, sans-serif; }
-.fate-project-link { display: inline-block; padding-bottom: 5px; border-bottom: 1px solid #62626a; color: #eee; }
-.fate-project:hover h4 span, .fate-project:focus-visible h4 span { color: #fff; transform: translate(3px, -3px); }
-.fate-epilogue { padding-block: clamp(88px, 16svh, 180px); text-align: center; }
-.fate-epilogue-label { display: flex; flex-direction: column; align-items: center; gap: 24px; margin: 0 0 28px; color: #b8b7c0; font: 10px/1.5 Arial, sans-serif; letter-spacing: .22em; text-transform: uppercase; }
-.fate-epilogue-label::before { content: ""; width: 1px; height: 52px; background: #9e2436; }
+.fate-project h4 span { color: #1745c7; font: 26px/1 Arial, sans-serif; transition: transform .25s, color .25s; }
+.fate-project p { max-width: 35ch; min-height: 3.2em; margin: 0 0 28px; color: #3d4759; font: 14px/1.6 Arial, sans-serif; }
+.fate-project-link { display: inline-block; padding-bottom: 5px; border-bottom: 1px solid #8aabe9; color: #1745c7; }
+.fate-project:hover h4 span, .fate-project:focus-visible h4 span { color: #092e94; transform: translate(3px, -3px); }
+.fate-selected a:focus-visible { outline-color: #1745c7; outline-offset: -5px; }
+.fate-epilogue { padding-block: clamp(88px, 16svh, 180px); color: #fff; text-align: center; background: radial-gradient(ellipse at 85% 0%, #5189ef66, transparent 65%), linear-gradient(150deg, #245ce3, #1239a5 66%, #07163e); }
+.fate-epilogue-label { display: flex; flex-direction: column; align-items: center; gap: 24px; margin: 0 0 28px; color: #d9e7ff; font: 10px/1.5 Arial, sans-serif; letter-spacing: .22em; text-transform: uppercase; }
+.fate-epilogue-label::before { content: ""; width: 1px; height: 52px; background: #c3dcff; }
 .fate-epilogue h3 { margin: 0; font: 400 clamp(48px, 8.2vw, 116px)/1.02 Georgia, serif; letter-spacing: -.045em; }
-.fate-epilogue h3 em { font-weight: 400; }
-.fate-epilogue-cta { display: inline-flex; align-items: center; gap: 36px; margin-top: 40px; padding: 14px 0; border-bottom: 1px solid #777780; font: 13px/1.5 Arial, sans-serif; }
+.fate-epilogue h3 em { color: #c3dcff; font-weight: 400; }
+.fate-epilogue-cta { display: inline-flex; align-items: center; gap: 36px; margin-top: 40px; padding: 14px 0; border-bottom: 1px solid #a9c9ff; font: 13px/1.5 Arial, sans-serif; }
 .fate-epilogue-cta span { font-size: 22px; transition: transform .25s; }
 .fate-epilogue-cta:hover span, .fate-epilogue-cta:focus-visible span { transform: translate(3px, -3px); }
 .fate-profile-footer { display: flex; justify-content: space-between; align-items: center; gap: 24px; padding-top: 22px; border-top: 1px solid #414146; }
@@ -151,7 +154,6 @@ button:disabled { opacity: .4; cursor: default; }
 .fate-profile-footer .fate-profile-return { margin-top: 0; white-space: nowrap; }
 .has-fate-reveals .fate-reveal { opacity: 0; transform: translateY(18px); transition: opacity .7s, transform .7s cubic-bezier(.22, .68, .22, 1); }
 .has-fate-reveals .fate-reveal.is-visible, .has-fate-reveals .fate-reveal:focus-within { opacity: 1; transform: none; }
-.has-fate-reveals .fate-reveal:focus-within { transition: none; }
 .has-fate-reveals .fate-reveal:focus-within { transition: none; }
 .is-void :is(.fate-hud, .sound-control, .sound-status, .chapter-marker, .story-progress, .grain, .film-edge, .vignette) { visibility: hidden !important; }
 html.is-void { scrollbar-color: #fff #fff; }
@@ -179,7 +181,7 @@ html.is-void { scrollbar-color: #fff #fff; }
   .fate-profile h2 { font-size: clamp(31px, 11vw, 67px); }
   .fate-profile-details { grid-template-columns: 1fr; }
   .fate-selected-grid { grid-template-columns: 1fr; }
-  .fate-project + .fate-project { border-left: 0; border-top: 1px solid #414146; padding-left: 0; }
+  .fate-project + .fate-project { border-left: 0; border-top: 1px solid #c2cbdc; padding-left: 0; }
   .fate-project { padding-right: 0; }
   .fate-project p { min-height: 0; }
   .fate-profile-footer { align-items: flex-start; flex-direction: column; gap: 16px; }
